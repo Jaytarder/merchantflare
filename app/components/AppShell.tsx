@@ -18,16 +18,23 @@ const links: Array<{ key: NavKey; label: string; href: string }> = [
   { key: "settings", label: "Settings", href: "/dashboard#settings" },
 ];
 
+function BrandLogo({ compact = false }: { compact?: boolean }) {
+  return (
+    <img
+      className={compact ? "brand-logo compact" : "brand-logo"}
+      src="/merchantflare-logo.svg"
+      alt="MerchantFlare — The AI Workforce for Commerce"
+    />
+  );
+}
+
 export default function AppShell({ active, children }: AppShellProps) {
   const [open, setOpen] = useState(false);
 
   return (
     <div className="shell">
       <header className="mobile-bar">
-        <a className="brand" href="/dashboard" aria-label="MerchantFlare command center">
-          <span className="brand-mark">M</span>
-          <span>MerchantFlare</span>
-        </a>
+        <a href="/dashboard" aria-label="MerchantFlare command center"><BrandLogo compact /></a>
         <button
           className="menu-button"
           type="button"
@@ -35,9 +42,7 @@ export default function AppShell({ active, children }: AppShellProps) {
           aria-label={open ? "Close navigation" : "Open navigation"}
           onClick={() => setOpen((value) => !value)}
         >
-          <span />
-          <span />
-          <span />
+          <span /><span /><span />
         </button>
       </header>
 
@@ -45,27 +50,19 @@ export default function AppShell({ active, children }: AppShellProps) {
 
       <aside className={`sidebar ${open ? "open" : ""}`}>
         <div className="sidebar-head">
-          <a className="brand" href="/dashboard" aria-label="MerchantFlare command center">
-            <span className="brand-mark">M</span>
-            <span>MerchantFlare</span>
-          </a>
+          <a href="/dashboard" aria-label="MerchantFlare command center"><BrandLogo /></a>
           <button className="close-button" type="button" aria-label="Close navigation" onClick={() => setOpen(false)}>×</button>
         </div>
         <nav className="nav" aria-label="Primary navigation">
           {links.map((link) => (
-            <a
-              className={active === link.key ? "active" : ""}
-              href={link.href}
-              key={link.key}
-              onClick={() => setOpen(false)}
-            >
-              {link.label}
+            <a className={active === link.key ? "active" : ""} href={link.href} key={link.key} onClick={() => setOpen(false)}>
+              <span className="nav-dot" />{link.label}
             </a>
           ))}
         </nav>
         <div className="sidebar-footer">
-          <strong>Mercury OS</strong><br />
-          <small>Preview environment online</small>
+          <div className="sidebar-status"><span className="dot" /><strong>Mercury online</strong></div>
+          <small>Preview environment · Main branch</small>
         </div>
       </aside>
       <main className="main">{children}</main>
