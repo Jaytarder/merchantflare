@@ -1,4 +1,5 @@
 import { randomUUID } from "crypto";
+import type { JSONValue } from "postgres";
 import { getDatabase } from "../db";
 import type {
   OrchestrationEvent,
@@ -374,7 +375,7 @@ export async function updateTaskExecution(input: {
   planId: string;
   taskId: string;
   status: TaskExecutionResult["status"];
-  output?: unknown;
+  output?: JSONValue;
   error?: string;
 }) {
   const sql = getDatabase();
