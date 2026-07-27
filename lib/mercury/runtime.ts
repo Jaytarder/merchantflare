@@ -1,3 +1,4 @@
+import type { JSONValue } from "postgres";
 import {
   appendMercuryEvent,
   getMercuryPlan,
@@ -9,6 +10,10 @@ import { getWorkerForTask } from "./workers";
 
 function errorMessage(error: unknown) {
   return error instanceof Error ? error.message : "Unknown worker execution error.";
+}
+
+function toJsonValue(value: unknown): JSONValue {
+  return JSON.parse(JSON.stringify(value)) as JSONValue;
 }
 
 export async function executeMercuryPlan(planId: string): Promise<ExecutionRun> {
@@ -83,7 +88,7 @@ export async function executeMercuryPlan(planId: string): Promise<ExecutionRun> 
         planId,
         taskId: task.id,
         status: "succeeded",
-        output,
+        output: toJsonValue(output),
       });
       await appendMercuryEvent({
         planId,
