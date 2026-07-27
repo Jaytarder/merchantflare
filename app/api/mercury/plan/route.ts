@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { orchestrate } from "../../../../lib/mercury/orchestrator";
+import { saveOrchestrationResult } from "../../../../lib/mercury/repository";
 
 export async function POST(request: Request) {
   try {
@@ -21,7 +22,12 @@ export async function POST(request: Request) {
     }
 
     const result = await orchestrate(objective);
-    return NextResponse.json(result);
+    const persistence = await saveOrchestrationResult(result);
+
+    return NextResponse.json({
+      ...result,
+      persistence,
+    });
   } catch (error) {
     console.error("Mercury planning failed", error);
     return NextResponse.json(
