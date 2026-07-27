@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import AppShell from "../components/AppShell";
 import MetricCard from "../components/MetricCard";
 
@@ -27,6 +27,17 @@ type MercuryResult = {
   status: "ready" | "awaiting_approval" | "running" | "completed" | "failed";
   approvalReasons: string[];
   routes: Array<PlannedTask & { routeStatus: string }>;
+};
+
+type MercuryPlanSummary = {
+  id: string;
+  objective: string;
+  summary: string;
+  status: MercuryResult["status"];
+  confidence: number;
+  requiresApproval: boolean;
+  createdAt: string;
+  updatedAt: string;
 };
 
 const metrics = [
@@ -73,12 +84,53 @@ const suggestions = [
   "Prepare executive report",
 ];
 
+function formatConfidence(confidence: number) {
+  const normalized = confidence <= 1 ? confidence * 100 : confidence;
+  return `${Math.round(normalized)}%`;
+}
+
+function formatCreatedAt(value: string) {
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(new Date(value));
+}
+
+function formatStatus(status: MercuryResult["status"]) {
+  return status.replaceAll("_", " ");
+}
+
 export default function DashboardPage() {
   const [objective, setObjective] = useState("");
   const [result, setResult] = useState<MercuryResult | null>(null);
   const [running, setRunning] = useState(false);
   const [error, setError] = useState("");
   const [approved, setApproved] = useState(false);
+  const [history, setHistory] = useState<MercuryPlanSummary[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(true);
+  const [historyError, setHistoryError] = useState("");
+
+  const loadHistory = useCallback(async () => {
+    setHistoryLoading(true);
+    setHistoryError("");
+
+    try {
+      const response = await fetch("/api/mercury/history?limit=8", { cache: "no-store" });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || "Mercury could not load plan history.");
+      setHistory(Array.isArray(payload.plans) ? payload.plans : []);
+    } catch (requestError) {
+      setHistoryError(requestError instanceof Error ? requestError.message : "Mercury could not load plan history.");
+    } finally {
+      setHistoryLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadHistory();
+  }, [loadHistory]);
 
   async function runObjective() {
     const value = objective.trim();
@@ -98,6 +150,8 @@ export default function DashboardPage() {
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error || "Mercury could not create a plan.");
       setResult(payload as MercuryResult);
+      setObjective("");
+      await loadHistory();
     } catch (requestError) {
       setResult(null);
       setError(requestError instanceof Error ? requestError.message : "Mercury could not create a plan.");
@@ -129,11 +183,11 @@ export default function DashboardPage() {
             aria-label="Command Mercury"
             value={objective}
             onChange={(event) => setObjective(event.target.value)}
-            onKeyDown={(event) => { if (event.key === "Enter") runObjective(); }}
+            onKeyDown={(event) => { if (event.key === "Enter") void runObjective(); }}
             placeholder="Example: Improve ROAS without reducing revenue"
             maxLength={500}
           />
-          <button className="btn primary" type="button" onClick={runObjective} disabled={running || !objective.trim()}>
+          <button className="btn primary" type="button" onClick={() => void runObjective()} disabled={running || !objective.trim()}>
             {running ? "Mercury is planning…" : "Run objective"}
           </button>
         </div>
@@ -149,7 +203,7 @@ export default function DashboardPage() {
         <section className="plan-panel" aria-live="polite">
           <div className="plan-heading">
             <div>
-              <div className="eyebrow">Execution plan · {Math.round(result.plan.confidence * 100)}% confidence</div>
+              <div className="eyebrow">Execution plan · {formatConfidence(result.plan.confidence)} confidence</div>
               <h2>{result.plan.objective}</h2>
               <p className="muted">{result.plan.summary}</p>
             </div>
@@ -183,6 +237,36 @@ export default function DashboardPage() {
           </div>
         </section>
       )}
+
+      <section className="card" aria-labelledby="recent-objectives-title">
+        <div className="section-title">
+          <div><div className="eyebrow">Mercury memory</div><h2 id="recent-objectives-title">Recent objectives</h2></div>
+          <button className="text-button" type="button" onClick={() => void loadHistory()} disabled={historyLoading}>
+            {historyLoading ? "Refreshing…" : "Refresh"}
+          </button>
+        </div>
+        {historyError && <p className="command-error" role="alert">{historyError}</p>}
+        {!historyError && !historyLoading && history.length === 0 && (
+          <p className="muted">No persisted objectives yet. Configure DATABASE_URL and run an objective to populate Mercury history.</p>
+        )}
+        <div className="priority-list">
+          {history.map((plan) => (
+            <div className="priority-item" key={plan.id}>
+              <span className={`priority ${plan.status === "failed" ? "critical" : plan.status === "awaiting_approval" ? "high" : ""}`}>
+                {formatStatus(plan.status)}
+              </span>
+              <div className="priority-copy">
+                <strong>{plan.objective}</strong>
+                <p>{plan.summary}</p>
+                <span>{formatConfidence(plan.confidence)} confidence · {formatCreatedAt(plan.createdAt)}</span>
+              </div>
+              <span className={`badge ${plan.requiresApproval ? "review" : "live"}`}>
+                {plan.requiresApproval ? "Approval gated" : "Autonomous"}
+              </span>
+            </div>
+          ))}
+        </div>
+      </section>
 
       <section className="grid metrics command-metrics" id="performance">
         {metrics.map((metric) => <MetricCard key={metric.title} {...metric} />)}
