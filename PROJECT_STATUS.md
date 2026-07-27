@@ -6,9 +6,9 @@ This file is the current implementation record for MerchantFlare. Product direct
 
 ## Current project summary
 
-MerchantFlare is an early-stage Commerce Intelligence Platform built with the Next.js App Router and TypeScript. Mercury is the Commerce Intelligence Engine and intended primary conversational workspace.
+MerchantFlare is an early-stage Commerce Intelligence Platform built with the Next.js App Router and TypeScript. Mercury is the Commerce Intelligence Engine and primary conversational workspace.
 
-Sprint 1, the application shell, is implemented. The repository also contains an initial Mercury objective-planning and persistence foundation, an administrator login prototype, and static dashboard and marketing experiences. It does not yet provide a complete conversational Mercury workspace, production intelligence modules, live commerce data, or the planned AWS deployment architecture.
+Sprint 1, the application shell, is implemented. Sprint 2 now has an organization-scoped conversation foundation: authenticated APIs, durable conversations and messages when PostgreSQL is configured, deterministic plans linked to their originating messages, and a responsive Mercury workspace on `/dashboard`. It does not yet provide model-backed reasoning, commerce evidence, production intelligence modules, live commerce data, governed execution controls, or the planned AWS deployment architecture.
 
 ## Completed work
 
@@ -26,9 +26,13 @@ Sprint 1, the application shell, is implemented. The repository also contains an
 
 - Root marketing page, administrator login page, dashboard page, and legacy `/workers` prototype.
 - HMAC-signed administrator session cookie with login, logout, and a server-side guard for `/dashboard`.
+- Organization context in the interim administrator session and server-side authentication checks on Mercury application APIs.
 - Mercury objective validation, deterministic keyword-based planning, capability routing, approval-policy evaluation, event generation, and plan responses through `POST /api/mercury/plan`.
-- Optional PostgreSQL persistence for Mercury plans, tasks, events, approvals, execution state, and integration metadata when `DATABASE_URL` is configured.
-- Mercury plan history through `GET /api/mercury/history`.
+- PostgreSQL persistence for organization-scoped Mercury conversations, messages, plans, tasks, events, approvals, execution state, and integration metadata when `DATABASE_URL` is configured and migrations are applied.
+- Authenticated, organization-scoped conversation APIs to create, list, open, rename, archive, restore, and extend conversations.
+- Atomic persistence of each submitted user message, its deterministic plan, tasks, approval requirements, events, and the linked Mercury response.
+- A real `/dashboard` Mercury conversation workspace with thread history, plan review, responsive navigation, and explicit database-unavailable and evidence-unavailable states.
+- Authenticated, organization-scoped Mercury plan history through `GET /api/mercury/history`.
 - Repository functions for plan detail, approval decisions, execution updates, and event appends.
 - Deterministic module-output and generic mock-execution foundations for routed Mercury tasks.
 - Amazon Selling Partner API helper code for Login with Amazon token exchange and marketplace participation requests.
@@ -43,14 +47,14 @@ Sprint 1, the application shell, is implemented. The repository also contains an
 | --- | --- |
 | Web application | Next.js App Router application with React and TypeScript |
 | Styling | Global CSS in `app/globals.css` and shell CSS in `app/components/app-shell.css`; a second `styles/design-system.css` token set exists but is not imported |
-| Pages | `/`, `/login`, `/dashboard`, and `/workers` |
-| API | Next.js route handlers for login, logout, Mercury planning, and Mercury plan history |
-| Authentication | Environment-configured administrator credentials and an HMAC-signed, HTTP-only cookie; `/dashboard` is guarded |
+| Pages | `/`, `/login`, `/dashboard`, and legacy `/workers` |
+| API | Next.js route handlers for login, logout, Mercury conversations/messages, deterministic planning, and plan history |
+| Authentication | Environment-configured administrator credentials and an HMAC-signed, HTTP-only cookie carrying organization context; `/dashboard` and Mercury APIs are guarded |
 | Domain services | Local TypeScript modules under `lib/mercury/` for planning, routing, approvals, timelines, persistence, and execution foundations |
 | Data | Optional PostgreSQL connection via `DATABASE_URL`; SQL migrations are committed but no migration runner is included |
 | Integrations | An incomplete Amazon SP-API helper; no live integration is connected to application UI or Mercury |
 
-The implemented application is currently a single Next.js codebase. Without `DATABASE_URL`, Mercury planning still returns a result but reports that it was not persisted. The dashboard uses hard-coded business metrics and activity rather than database or provider data.
+The implemented application is currently a single Next.js codebase. Conversation operations require `DATABASE_URL` and migration `003_mercury_conversations.sql`; the workspace presents a truthful unavailable state when persistence is absent. The compatibility planning endpoint can still return a deterministic, unpersisted plan without a database. Mercury explicitly reports that no live commerce evidence is available.
 
 ### Planned production architecture
 
@@ -67,58 +71,57 @@ The documented target uses AWS Amplify Hosting, API Gateway, Lambda, Aurora Post
 | Shared UI | `Button`, `Card`, `Badge`, `StatusDot`, `MetricTile` | Reusable styled presentation components |
 | Marketing | Root page plus components under `components/marketing/` | Public presentation only; the active page uses the shared brand component but does not use all newer marketing components |
 | Login | `/login`, login/logout route handlers, `lib/auth.ts` | Single administrator credential check and cookie lifecycle |
-| Dashboard | `/dashboard` and guarded dashboard layout | Static metrics, recommendations, charts, brief, and activity; objective submission calls the Mercury planning endpoint |
+| Mercury workspace | `/dashboard`, `MercuryWorkspace`, `ConversationSidebar`, `MercuryPlanCard` | Creates and resumes durable conversations, submits messages, renders deterministic linked plans, and supports rename/archive/restore |
 | Legacy prototype | `/workers` | Static AI-worker-oriented prototype retained as migration debt; it is not a completed intelligence-module experience |
-| Mercury API | `POST /api/mercury/plan`, `GET /api/mercury/history` | Creates deterministic plans and optionally persists them; lists persisted plans |
+| Mercury API | `/api/mercury/conversations`, conversation detail/message routes, `POST /api/mercury/plan`, `GET /api/mercury/history` | Enforces the administrator session, scopes reads/writes by organization, persists conversation turns, and supports compatibility planning/history |
 | Mercury services | `lib/mercury/` | Keyword planning, capability mapping, approval rules, dependency routing, events, repository operations, and two execution foundations |
-| Database | `db/migrations/001_mercury_core.sql`, `002_mercury_execution.sql` | PostgreSQL schemas for Mercury and integration metadata; migrations are not automatically applied |
+| Database | `db/migrations/001_mercury_core.sql` through `003_mercury_conversations.sql` | PostgreSQL schemas for conversations, messages, plans, execution, and integration metadata; migrations are not automatically applied |
 | Amazon integration | `lib/amazon/sp-api.ts` | LWA token exchange and request helper only; it is not a complete production SP-API integration |
 
 ## Work in progress
 
 - Sprint 2: Mercury Command Center.
-- Converting the dashboard's objective form and static content into the primary conversational Mercury workspace.
-- Connecting planning, approvals, execution, history, and evidence into one user-facing workflow.
+- Replacing deterministic response construction with evidence-grounded conversational reasoning while retaining deterministic routing as an explicitly limited fallback.
+- Connecting the conversation workspace to plan revision, approval decisions, canonical execution, unified history, and measured outcomes.
 - Replacing legacy “AI workforce,” “AI workers,” and worker-oriented product language with the approved Commerce Intelligence vocabulary.
 - Consolidating the duplicated styling/token foundations and deciding which unused marketing components belong in the active page.
 - Turning module navigation entries and platform statuses into real routes and data-backed experiences.
 
 ## Known gaps and blockers
 
-- Mercury is not yet conversational: there are no threads, messages, streaming responses, or durable conversation model.
+- Mercury conversations require PostgreSQL plus migrations `001` through `003`; no automated migration command is defined.
+- Mercury responses are deterministic planning summaries. No model/provider, evidence retrieval, citations, attachments, streaming, or plan-revision workflow is implemented.
 - Atlas, Vector, Oracle, Sentinel, Forge, and Pulse have navigation, types, routing metadata, and deterministic output scaffolding only. They do not have production module pages, data pipelines, or live analysis.
 - Navigation links for Execution, Approvals, History, Knowledge, Integrations, Billing, Settings, and all six module pages currently lead to unimplemented routes.
-- Dashboard metrics, recommendations, charts, activity, notifications, account details, and sidebar connection statuses are static.
-- Mercury history and planning API routes do not validate the administrator session.
+- Notifications and account details are static. Sidebar provider entries truthfully display “Not configured” but are not live health checks.
 - `/workers` uses the application shell but is not protected by the `/dashboard` layout guard.
 - Authentication contains development fallback credentials and a fallback signing secret. It is not suitable for production, and Cognito is not implemented.
 - The Amazon SP-API helper is not wired to UI or persistence and does not implement the complete production authentication/signing and ingestion lifecycle. Amazon Ads is not implemented.
 - Stripe billing, S3 artifact storage, API Gateway, Lambda, Aurora provisioning, Amplify configuration, and Cognito are not implemented in this repository.
 - Mercury has separate `executor.ts` and `runtime.ts` execution paths. Neither is exposed as a complete authenticated application workflow, and the boundary between them is not finalized.
 - Approval-decision and execution repository functions exist without corresponding application routes or user interfaces.
-- No automated database migration command is defined.
 - No lint or test scripts are defined, and no automated test files were found.
-- The legacy `/workers` surface, dashboard copy, shell navigation/search copy, and some domain/code identifiers still use worker terminology that conflicts with the current product definition.
+- The legacy `/workers` surface and internal compatibility identifiers still use worker terminology. The canonical shell navigation and Mercury workspace no longer do.
 
 ## Next sprint
 
 Sprint 2 is the Mercury Command Center.
 
-The next implementation should establish Mercury as the primary conversational commerce workspace while building on the existing planner rather than presenting deterministic planning as a finished intelligence engine. Expected engineering focus:
+The next implementation should turn the durable conversation foundation into an evidence-grounded planning workflow:
 
-- Add a real Mercury workspace and conversation data model.
-- Persist and retrieve conversations, messages, generated plans, evidence, and status transitions.
-- Present plan review, approval requirements, execution state, and history coherently.
-- Add authentication and authorization checks to Mercury application APIs.
-- Make sample or static data explicit until live providers are connected.
-- Remove or migrate legacy worker-oriented surfaces only after confirming their replacement routes and components are in use.
+- Choose and integrate the conversational model/provider behind a typed server boundary.
+- Define and persist evidence/citation contracts with source, date range, freshness, and limitations.
+- Add plan revision and approval-decision APIs and UI without implying execution occurred.
+- Consolidate the two execution foundations before exposing execution controls.
+- Add database migration tooling and automated API/domain tests.
+- Remove or migrate `/workers` only after confirming its replacement route and any compatibility requirements.
 
 ## Roadmap
 
 | Stage | Status | Repository evidence |
 | --- | --- | --- |
 | 1. Application Shell | Complete | Responsive shell components are wired into the application |
-| 2. Mercury Command Center | In progress | Objective planning exists, but the conversational workspace and complete workflow do not |
+| 2. Mercury Command Center | In progress | Durable organization-scoped conversations, authenticated APIs, message-linked deterministic plans, and the responsive workspace exist; evidence-grounded reasoning, revision, approval, execution, and outcomes remain |
 | 3. Atlas | Not started | Navigation, types, routing, and output scaffolding only |
 | 4. Vector | Not started | Navigation, types, routing, and output scaffolding only |
 | 5. Oracle | Not started | Navigation, types, routing, and output scaffolding only |
@@ -143,6 +146,7 @@ Validation was run against this repository state on 2026-07-27.
 
 | Date | Change |
 | --- | --- |
+| 2026-07-27 | Added the authenticated, organization-scoped Mercury conversation foundation and replaced the static dashboard with the durable conversation workspace. |
 | 2026-07-27 | Implemented the reusable MerchantFlare SVG brand system across marketing, login, the application shell, metadata, favicons, and the web app manifest. |
 | 2026-07-27 | Added this code-verified project status baseline. |
 | 2026-07-27 | Added MerchantFlare module and platform specifications. |

@@ -159,7 +159,7 @@ export function planObjective(rawObjective: string): ExecutionPlan {
   return {
     id: planId,
     objective,
-    summary: `Mercury created a ${tasks.length}-task execution plan across ${new Set(tasks.map((task) => task.worker)).size} workers.`,
+    summary: `Mercury created a ${tasks.length}-task execution plan across ${new Set(tasks.map((task) => task.worker)).size} intelligence modules.`,
     createdAt: new Date().toISOString(),
     confidence: matchedRules.length > 0 ? 0.86 : 0.62,
     tasks,

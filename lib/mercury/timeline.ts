@@ -39,7 +39,7 @@ export function createPlanTimeline(plan: ExecutionPlan): OrchestrationEvent[] {
       createEvent(
         plan.id,
         "task.queued",
-        `${task.worker} queued: ${task.title}`,
+        `${task.worker[0].toUpperCase()}${task.worker.slice(1)} queued: ${task.title}`,
       ),
     );
   }

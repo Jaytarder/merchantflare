@@ -11,9 +11,9 @@ This specification defines cross-cutting contracts that feature specifications i
 
 - Strict TypeScript is enabled in `tsconfig.json`.
 - `lib/domain.ts` contains early organization, user, account, objective, task, alert, metric, and event types.
-- `lib/auth.ts` provides a single administrator session with development fallbacks.
+- `lib/auth.ts` provides a single administrator session with development fallbacks and an organization identifier.
 - `lib/db.ts` provides an optional PostgreSQL connection.
-- Mercury migrations establish plans, tasks, events, approvals, execution fields, and integration metadata.
+- Mercury migrations establish organization-scoped conversations, messages, plans, tasks, events, approvals, execution fields, and integration metadata.
 - No production tenancy, authorization, normalized commerce model, audit policy, queue, observability stack, or AWS resource configuration is implemented.
 
 ## Core domain boundaries

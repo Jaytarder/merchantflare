@@ -144,4 +144,4 @@ In particular:
 - call them intelligence modules or use their full intelligence names; and
 - do not add new “worker,” “assistant,” or “AI workforce” labels.
 
-Legacy copy remains in `/workers`, the dashboard, shell navigation and search, and source types. Migrate it deliberately without obscuring whether the underlying feature exists.
+Legacy copy remains in `/workers` and internal compatibility identifiers. The canonical shell navigation, search, and Mercury workspace use Commerce Intelligence language. Migrate the remaining legacy surface deliberately without obscuring whether the underlying feature exists.

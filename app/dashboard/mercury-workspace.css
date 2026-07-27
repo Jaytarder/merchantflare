@@ -1,0 +1,759 @@
+.mercury-workspace {
+  min-height: calc(100vh - var(--shell-topbar) - 56px);
+  display: grid;
+  grid-template-columns: 292px minmax(0, 1fr);
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: #090c12;
+}
+
+.mercury-conversations {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--line);
+  background: #0c1017;
+}
+
+.mercury-conversations-heading,
+.mercury-thread-header {
+  min-height: 82px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--line);
+}
+
+.mercury-conversations-heading span,
+.mercury-thread-header > div:first-child > span,
+.mercury-configuration-state > span {
+  display: block;
+  color: var(--accent-2);
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.mercury-conversations-heading h2,
+.mercury-thread-header h1 {
+  margin: 6px 0 0;
+  color: var(--text);
+}
+
+.mercury-conversations-heading h2 {
+  font-size: 18px;
+}
+
+.mercury-thread-header h1 {
+  overflow: hidden;
+  font-size: clamp(20px, 2vw, 27px);
+  letter-spacing: -0.025em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mercury-new-conversation,
+.mercury-thread-actions button,
+.mercury-title-form button,
+.mercury-configuration-state button {
+  border: 1px solid var(--line-strong);
+  border-radius: 9px;
+  background: #141a24;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.mercury-new-conversation {
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 11px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.mercury-new-conversation span {
+  color: var(--accent-2);
+  font-size: 15px;
+}
+
+.mercury-new-conversation:hover,
+.mercury-thread-actions button:hover,
+.mercury-title-form button:hover,
+.mercury-configuration-state button:hover {
+  border-color: rgba(255, 106, 0, 0.5);
+  background: var(--accent-soft);
+}
+
+.mercury-conversation-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.mercury-conversation-tabs button {
+  min-height: 34px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--subtle);
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.mercury-conversation-tabs button:hover {
+  color: var(--text);
+}
+
+.mercury-conversation-tabs button.is-active {
+  background: rgba(255, 255, 255, 0.055);
+  color: var(--text);
+}
+
+.mercury-conversation-list {
+  min-height: 0;
+  display: grid;
+  align-content: start;
+  gap: 5px;
+  padding: 9px;
+  overflow-y: auto;
+}
+
+.mercury-conversation-item {
+  width: 100%;
+  min-width: 0;
+  display: block;
+  padding: 12px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--muted);
+  text-align: left;
+  cursor: pointer;
+}
+
+.mercury-conversation-item:hover {
+  background: rgba(255, 255, 255, 0.035);
+  color: var(--text);
+}
+
+.mercury-conversation-item.is-selected {
+  border-color: rgba(255, 106, 0, 0.26);
+  background: var(--accent-soft);
+  color: var(--text);
+}
+
+.mercury-conversation-item strong {
+  display: block;
+  overflow: hidden;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mercury-conversation-item > span {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 7px;
+  color: var(--subtle);
+  font-size: 9px;
+}
+
+.mercury-conversation-list-state {
+  margin: 0;
+  padding: 28px 14px;
+  color: var(--subtle);
+  font-size: 11px;
+  line-height: 1.55;
+  text-align: center;
+}
+
+.mercury-thread {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: #090c12;
+}
+
+.mercury-thread-header {
+  flex: 0 0 auto;
+  padding-inline: 24px;
+}
+
+.mercury-thread-header > div:first-child {
+  min-width: 0;
+}
+
+.mercury-thread-actions {
+  display: flex;
+  gap: 7px;
+}
+
+.mercury-thread-actions button,
+.mercury-title-form button,
+.mercury-configuration-state button {
+  min-height: 34px;
+  padding: 0 11px;
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.mercury-title-form {
+  display: flex;
+  gap: 7px;
+  margin-top: 5px;
+}
+
+.mercury-title-form input {
+  width: min(48vw, 520px);
+  min-height: 36px;
+  padding: 0 10px;
+  border: 1px solid rgba(255, 106, 0, 0.48);
+  border-radius: 8px;
+  outline: 0;
+  background: #101620;
+  color: var(--text);
+}
+
+.mercury-message-region {
+  min-height: 0;
+  flex: 1 1 auto;
+  padding: 28px clamp(20px, 4vw, 56px);
+  overflow-y: auto;
+  scroll-behavior: smooth;
+}
+
+.mercury-message {
+  width: min(100%, 920px);
+  margin: 0 auto 24px;
+}
+
+.mercury-message.is-user {
+  width: min(86%, 760px);
+  margin-right: 0;
+  padding: 17px 19px;
+  border: 1px solid rgba(255, 106, 0, 0.24);
+  border-radius: 15px 15px 4px 15px;
+  background: #15171b;
+}
+
+.mercury-message-author {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  color: var(--subtle);
+  font-size: 10px;
+}
+
+.mercury-message-author strong {
+  color: var(--text);
+  font-size: 11px;
+}
+
+.mercury-message.is-mercury .mercury-message-author strong {
+  color: var(--accent-2);
+}
+
+.mercury-message > p {
+  margin: 10px 0 0;
+  color: #d8dde6;
+  font-size: 14px;
+  line-height: 1.68;
+}
+
+.mercury-thread-state {
+  display: grid;
+  min-height: 320px;
+  place-items: center;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.mercury-welcome {
+  width: min(100%, 720px);
+  min-height: 460px;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.mercury-welcome > span {
+  width: 54px;
+  height: 54px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255, 106, 0, 0.42);
+  border-radius: 15px;
+  background: var(--accent-soft);
+  color: var(--accent-2);
+  font-size: 20px;
+  font-weight: 900;
+}
+
+.mercury-welcome > p:first-of-type {
+  margin: 18px 0 0;
+  color: var(--accent-2);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.mercury-welcome h2 {
+  margin: 12px 0 0;
+  font-size: clamp(30px, 4vw, 48px);
+  letter-spacing: -0.045em;
+}
+
+.mercury-welcome > p:last-of-type {
+  max-width: 660px;
+  margin: 15px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.mercury-suggestions {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 25px;
+}
+
+.mercury-suggestions button {
+  min-height: 74px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: #10151e;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.45;
+  text-align: left;
+  cursor: pointer;
+}
+
+.mercury-suggestions button:hover {
+  border-color: rgba(255, 106, 0, 0.38);
+  color: var(--text);
+}
+
+.mercury-plan {
+  margin-top: 18px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #0f141d;
+}
+
+.mercury-plan-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.mercury-plan-heading span {
+  color: var(--accent-2);
+  font-size: 9px;
+  font-weight: 850;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.mercury-plan-heading h3 {
+  margin: 7px 0 0;
+  font-size: 19px;
+}
+
+.mercury-plan-status {
+  padding: 6px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.055);
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 850;
+  text-transform: capitalize;
+}
+
+.mercury-plan-status.is-ready {
+  color: var(--success);
+  background: rgba(53, 212, 154, 0.09);
+}
+
+.mercury-plan-status.is-awaiting_approval {
+  color: var(--warning);
+  background: rgba(243, 201, 105, 0.09);
+}
+
+.mercury-evidence-notice {
+  margin-top: 15px;
+  padding: 12px 14px;
+  border-left: 2px solid var(--warning);
+  background: rgba(243, 201, 105, 0.055);
+}
+
+.mercury-evidence-notice strong {
+  color: var(--warning);
+  font-size: 11px;
+}
+
+.mercury-evidence-notice p {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.mercury-plan-tasks {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.mercury-plan-task {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr);
+  gap: 10px;
+  padding: 13px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.018);
+}
+
+.mercury-plan-task-number {
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border-radius: 7px;
+  background: var(--accent-soft);
+  color: var(--accent-2);
+  font-size: 10px;
+  font-weight: 850;
+}
+
+.mercury-plan-task-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.mercury-plan-task-meta strong,
+.mercury-plan-task-meta span,
+.mercury-plan-task small {
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: capitalize;
+}
+
+.mercury-plan-task-meta strong {
+  color: var(--accent-2);
+}
+
+.mercury-plan-task-meta span {
+  color: var(--muted);
+}
+
+.mercury-plan-task-meta span.is-critical {
+  color: var(--danger);
+}
+
+.mercury-plan-task-meta span.is-high {
+  color: var(--warning);
+}
+
+.mercury-plan-task h4 {
+  margin: 7px 0 0;
+  font-size: 12px;
+}
+
+.mercury-plan-task p {
+  margin: 5px 0 8px;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.mercury-plan-task small {
+  color: var(--subtle);
+}
+
+.mercury-approval-notice,
+.mercury-review-notice {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.mercury-approval-notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.mercury-approval-notice strong {
+  color: var(--warning);
+  font-size: 11px;
+}
+
+.mercury-approval-notice p,
+.mercury-review-notice {
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.mercury-approval-notice p {
+  margin: 4px 0 0;
+}
+
+.mercury-approval-notice > span {
+  flex: 0 0 auto;
+  color: var(--subtle);
+  font-size: 9px;
+}
+
+.mercury-composer {
+  flex: 0 0 auto;
+  margin: 0 clamp(18px, 4vw, 52px) 24px;
+  padding: 13px;
+  border: 1px solid var(--line-strong);
+  border-radius: 14px;
+  background: #111722;
+}
+
+.mercury-composer:focus-within {
+  border-color: rgba(255, 106, 0, 0.52);
+}
+
+.mercury-composer label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.mercury-composer textarea {
+  width: 100%;
+  min-height: 72px;
+  resize: vertical;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.mercury-composer textarea::placeholder {
+  color: var(--subtle);
+}
+
+.mercury-composer > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+
+.mercury-composer > div span {
+  color: var(--subtle);
+  font-size: 9px;
+}
+
+.mercury-composer button {
+  min-height: 38px;
+  padding: 0 15px;
+  border: 1px solid var(--accent);
+  border-radius: 9px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.mercury-composer button:hover {
+  background: #e85f00;
+}
+
+.mercury-composer button:disabled,
+.mercury-new-conversation:disabled,
+.mercury-thread-actions button:disabled,
+.mercury-title-form button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.mercury-request-error {
+  margin: 0 clamp(18px, 4vw, 52px) 10px;
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 111, 117, 0.3);
+  border-radius: 9px;
+  background: rgba(255, 111, 117, 0.07);
+  color: var(--danger);
+  font-size: 11px;
+}
+
+.mercury-archived-state {
+  margin: 0 clamp(18px, 4vw, 52px) 24px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  color: var(--muted);
+  font-size: 11px;
+  text-align: center;
+}
+
+.mercury-configuration-state {
+  width: min(calc(100% - 40px), 680px);
+  margin: auto;
+  padding: 30px;
+  border: 1px solid rgba(243, 201, 105, 0.25);
+  border-radius: 15px;
+  background: #11151d;
+}
+
+.mercury-configuration-state.is-error {
+  border-color: rgba(255, 111, 117, 0.28);
+}
+
+.mercury-configuration-state h2 {
+  margin: 12px 0 0;
+  font-size: clamp(25px, 3vw, 36px);
+  letter-spacing: -0.035em;
+}
+
+.mercury-configuration-state p {
+  margin: 14px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.mercury-configuration-state code {
+  margin-inline: 4px;
+  color: var(--text);
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 0.92em;
+}
+
+.mercury-configuration-state button {
+  margin-top: 18px;
+}
+
+@media (max-width: 1080px) {
+  .mercury-workspace {
+    grid-template-columns: 242px minmax(0, 1fr);
+  }
+
+  .mercury-plan-tasks,
+  .mercury-suggestions {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 767px) {
+  .mercury-workspace {
+    min-height: auto;
+    grid-template-columns: 1fr;
+    overflow: visible;
+  }
+
+  .mercury-conversations {
+    max-height: 280px;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .mercury-conversation-list {
+    max-height: 150px;
+  }
+
+  .mercury-thread {
+    min-height: 680px;
+  }
+
+  .mercury-thread-header {
+    min-height: auto;
+    align-items: flex-start;
+    flex-direction: column;
+    padding: 16px;
+  }
+
+  .mercury-thread-actions {
+    width: 100%;
+  }
+
+  .mercury-thread-actions button {
+    flex: 1;
+  }
+
+  .mercury-title-form {
+    flex-wrap: wrap;
+  }
+
+  .mercury-title-form input {
+    width: 100%;
+  }
+
+  .mercury-message-region {
+    padding: 22px 15px;
+  }
+
+  .mercury-message.is-user {
+    width: 94%;
+  }
+
+  .mercury-plan {
+    padding: 14px;
+  }
+
+  .mercury-plan-heading,
+  .mercury-approval-notice {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .mercury-composer {
+    margin: 0 12px 14px;
+  }
+
+  .mercury-composer > div {
+    align-items: flex-end;
+    flex-direction: column;
+  }
+
+  .mercury-composer button {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mercury-message-region {
+    scroll-behavior: auto;
+  }
+}

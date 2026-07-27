@@ -1,4 +1,5 @@
 import { randomUUID } from "crypto";
+import type postgres from "postgres";
 import type { JSONValue } from "postgres";
 import { getDatabase } from "../db";
 import type {
@@ -7,6 +8,15 @@ import type {
   OrchestrationStatus,
   TaskExecutionResult,
 } from "./types";
+
+type MercuryTransaction = postgres.TransactionSql;
+
+export type PlanPersistenceContext = {
+  organizationId: string;
+  conversationId?: string;
+  sourceMessageId?: string;
+  responseMessageId?: string;
+};
 
 export type MercuryPlanSummary = {
   id: string;
@@ -37,17 +47,33 @@ export type MercuryPlanDetail = MercuryPlanSummary & {
   approvals: MercuryApproval[];
 };
 
-export async function saveOrchestrationResult(result: OrchestrationResult) {
+export async function saveOrchestrationResult(
+  result: OrchestrationResult,
+  context: PlanPersistenceContext,
+) {
   const sql = getDatabase();
 
   if (!sql) {
     return { persisted: false as const, reason: "DATABASE_URL is not configured." };
   }
 
-  await sql.begin(async (tx) => {
-    await tx`
+  await sql.begin((tx) => persistOrchestrationResult(tx, result, context));
+
+  return { persisted: true as const };
+}
+
+export async function persistOrchestrationResult(
+  tx: MercuryTransaction,
+  result: OrchestrationResult,
+  context: PlanPersistenceContext,
+) {
+  await tx`
       insert into mercury_plans (
         id,
+        organization_id,
+        conversation_id,
+        source_message_id,
+        response_message_id,
         objective,
         summary,
         status,
@@ -59,6 +85,10 @@ export async function saveOrchestrationResult(result: OrchestrationResult) {
         updated_at
       ) values (
         ${result.plan.id},
+        ${context.organizationId},
+        ${context.conversationId ?? null},
+        ${context.sourceMessageId ?? null},
+        ${context.responseMessageId ?? null},
         ${result.plan.objective},
         ${result.plan.summary},
         ${result.status},
@@ -70,6 +100,10 @@ export async function saveOrchestrationResult(result: OrchestrationResult) {
         now()
       )
       on conflict (id) do update set
+        organization_id = excluded.organization_id,
+        conversation_id = excluded.conversation_id,
+        source_message_id = excluded.source_message_id,
+        response_message_id = excluded.response_message_id,
         objective = excluded.objective,
         summary = excluded.summary,
         status = excluded.status,
@@ -80,11 +114,11 @@ export async function saveOrchestrationResult(result: OrchestrationResult) {
         updated_at = now()
     `;
 
-    await tx`delete from mercury_tasks where plan_id = ${result.plan.id}`;
-    await tx`delete from mercury_events where plan_id = ${result.plan.id}`;
+  await tx`delete from mercury_tasks where plan_id = ${result.plan.id}`;
+  await tx`delete from mercury_events where plan_id = ${result.plan.id}`;
 
-    for (const task of result.routes) {
-      await tx`
+  for (const task of result.routes) {
+    await tx`
         insert into mercury_tasks (
           id,
           plan_id,
@@ -113,10 +147,10 @@ export async function saveOrchestrationResult(result: OrchestrationResult) {
           ${task.routeStatus === "ready" ? "pending" : "blocked"}
         )
       `;
-    }
+  }
 
-    for (const event of result.events) {
-      await tx`
+  for (const event of result.events) {
+    await tx`
         insert into mercury_events (
           id,
           plan_id,
@@ -133,21 +167,21 @@ export async function saveOrchestrationResult(result: OrchestrationResult) {
           ${event.createdAt}
         )
       `;
-    }
+  }
 
-    if (result.plan.requiresApproval) {
-      await tx`
+  if (result.plan.requiresApproval) {
+    await tx`
         insert into mercury_approvals (plan_id)
         values (${result.plan.id})
         on conflict do nothing
       `;
-    }
-  });
-
-  return { persisted: true as const };
+  }
 }
 
-export async function listMercuryPlans(limit = 25): Promise<MercuryPlanSummary[]> {
+export async function listMercuryPlans(
+  organizationId: string,
+  limit = 25,
+): Promise<MercuryPlanSummary[]> {
   const sql = getDatabase();
   if (!sql) return [];
 
@@ -174,6 +208,7 @@ export async function listMercuryPlans(limit = 25): Promise<MercuryPlanSummary[]
       created_at,
       updated_at
     from mercury_plans
+    where organization_id = ${organizationId}
     order by created_at desc
     limit ${safeLimit}
   `;
@@ -190,11 +225,14 @@ export async function listMercuryPlans(limit = 25): Promise<MercuryPlanSummary[]
   }));
 }
 
-export async function getMercuryPlan(planId: string): Promise<MercuryPlanDetail | null> {
+export async function getMercuryPlan(
+  planId: string,
+  organizationId?: string,
+): Promise<MercuryPlanDetail | null> {
   const sql = getDatabase();
   if (!sql) return null;
 
-  const plans = await sql<Array<{
+  type PlanRow = {
     id: string;
     objective: string;
     summary: string;
@@ -205,9 +243,17 @@ export async function getMercuryPlan(planId: string): Promise<MercuryPlanDetail 
     payload: OrchestrationResult["plan"];
     created_at: Date;
     updated_at: Date;
-  }>>`
-    select * from mercury_plans where id = ${planId} limit 1
-  `;
+  };
+
+  const plans = organizationId
+    ? await sql<Array<PlanRow>>`
+        select * from mercury_plans
+        where id = ${planId} and organization_id = ${organizationId}
+        limit 1
+      `
+    : await sql<Array<PlanRow>>`
+        select * from mercury_plans where id = ${planId} limit 1
+      `;
 
   const row = plans[0];
   if (!row) return null;

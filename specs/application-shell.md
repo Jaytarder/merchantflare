@@ -19,7 +19,7 @@ The current shell implements:
 - a sticky topbar;
 - navigation search with `Ctrl+K`;
 - notification and user-menu surfaces;
-- static platform-status presentation; and
+- explicit “Not configured” platform-status presentation;
 - a responsive workspace boundary;
 - a reusable MerchantFlare horizontal wordmark and compact monogram; and
 - canonical application metadata, favicon, and app-icon references.
@@ -62,11 +62,9 @@ The shell is composed from `app/components/layout/` and styled by `app/component
 
 ## Known gaps
 
-- `AI Workers` is a non-canonical navigation entry.
 - Most configured destinations are not implemented.
-- Connection states are static.
+- Provider states are static “Not configured” entries rather than live health.
 - Notifications are a static empty state.
-- Search placeholder text includes legacy worker language.
 - `/workers` bypasses the dashboard authentication layout.
 
 ## Acceptance criteria
@@ -81,7 +79,7 @@ The Sprint 1 shell remains complete while these regression criteria pass:
 - all authenticated routes reuse one shell boundary; and
 - typecheck and production build pass.
 
-Follow-up shell work is complete only when canonical navigation replaces the legacy entry, all protected routes share the auth boundary, and platform status is data-backed or explicitly unavailable.
+Follow-up shell work is complete only when the legacy route is migrated or removed, all protected routes share the auth boundary, and platform status is data-backed.
 
 ## Open decisions
 

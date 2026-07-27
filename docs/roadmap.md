@@ -25,32 +25,35 @@ Implemented:
 
 Known follow-up:
 
-- remove the non-canonical `AI Workers` navigation item and `/workers` prototype during a scoped terminology/module migration;
-- replace static connection status with real integration health; and
+- migrate or remove the `/workers` prototype during a scoped terminology/module migration;
+- replace explicit “Not configured” provider states with real integration health when connections exist; and
 - ensure all future platform routes share the authenticated shell layout.
 
 ## 2. Mercury Command Center — In progress
 
 Implemented:
 
-- `/dashboard` command-center page;
-- objective submission to `POST /api/mercury/plan`;
+- a responsive `/dashboard` conversation workspace;
+- organization-scoped conversation and message persistence;
+- authenticated APIs for conversation creation, listing, detail, message submission, rename, archive, and restore;
+- transactional conversation turns linked to generated plans;
 - rule-based planning, routing, approvals, and timeline generation;
-- optional PostgreSQL persistence; and
-- plan-history API.
+- reviewable deterministic plan details and approval requirements;
+- explicit persistence-unavailable and evidence-unavailable states; and
+- authenticated organization-scoped plan history.
 
 Still required:
 
-- a real conversational workspace;
-- message and thread persistence;
-- evidence and source presentation;
-- plan detail and review;
-- approval interaction;
+- model-backed conversational reasoning;
+- commerce evidence, citations, freshness, and limitations;
+- plan revision and version history;
+- approval decision interaction;
 - execution controls and live progress;
 - history UI;
 - knowledge context;
-- measured outcome reporting; and
-- replacement of static dashboard data with sourced data.
+- measured outcome reporting;
+- attachments and optional response streaming; and
+- automated migration and test infrastructure.
 
 ## 3. Atlas — Not started
 

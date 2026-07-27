@@ -42,15 +42,8 @@ export const navigation: NavigationSection[] = [
         label: "Mercury",
         href: "/dashboard",
         icon: "mercury",
-        description: "Command center and business intelligence",
-        keywords: ["home", "dashboard", "command"],
-      },
-      {
-        label: "AI Workers",
-        href: "/workers",
-        icon: "workers",
-        description: "Mercury worker activity and assignments",
-        keywords: ["agents", "workforce", "automation"],
+        description: "Commerce Intelligence workspace",
+        keywords: ["home", "dashboard", "command", "conversation"],
       },
     ],
   },
@@ -87,8 +80,8 @@ export const navigation: NavigationSection[] = [
 export const navigationItems = navigation.flatMap((section) => section.items);
 
 export const connections: PlatformConnection[] = [
-  { label: "Amazon Vendor", status: "connected", detail: "Connected" },
-  { label: "Amazon Ads", status: "connected", detail: "Connected" },
-  { label: "Stripe", status: "syncing", detail: "Syncing" },
-  { label: "Shopify", status: "disconnected", detail: "Not connected" },
+  { label: "Amazon Vendor", status: "disconnected", detail: "Not configured" },
+  { label: "Amazon Ads", status: "disconnected", detail: "Not configured" },
+  { label: "Stripe", status: "disconnected", detail: "Not configured" },
+  { label: "Shopify", status: "disconnected", detail: "Not configured" },
 ];

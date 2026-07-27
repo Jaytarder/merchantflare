@@ -5,6 +5,7 @@ export const ADMIN_COOKIE_MAX_AGE = 60 * 60 * 8;
 
 export type AdminSession = {
   email: string;
+  organizationId: string;
   role: "super_admin";
   expiresAt: number;
 };
@@ -15,6 +16,10 @@ export function getAdminEmail() {
 
 export function getAdminPassword() {
   return process.env.ADMIN_PASSWORD ?? "MerchantFlare2026!";
+}
+
+export function getAdminOrganizationId() {
+  return process.env.ADMIN_ORGANIZATION_ID ?? "org_merchantflare";
 }
 
 function getSessionSecret() {
@@ -40,6 +45,7 @@ export function validateAdminCredentials(email: string, password: string) {
 export function createAdminSession() {
   const session: AdminSession = {
     email: getAdminEmail(),
+    organizationId: getAdminOrganizationId(),
     role: "super_admin",
     expiresAt: Date.now() + ADMIN_COOKIE_MAX_AGE * 1000,
   };
@@ -53,9 +59,27 @@ export function verifyAdminSession(value?: string | null): AdminSession | null {
   if (!payload || !signature || !safeEqual(signature, sign(payload))) return null;
 
   try {
-    const session = JSON.parse(Buffer.from(payload, "base64url").toString("utf8")) as AdminSession;
-    if (session.role !== "super_admin" || session.expiresAt <= Date.now()) return null;
-    return session;
+    const session = JSON.parse(
+      Buffer.from(payload, "base64url").toString("utf8"),
+    ) as Partial<AdminSession>;
+    if (
+      session.role !== "super_admin" ||
+      typeof session.expiresAt !== "number" ||
+      session.expiresAt <= Date.now() ||
+      typeof session.email !== "string"
+    ) {
+      return null;
+    }
+
+    return {
+      email: session.email,
+      organizationId:
+        typeof session.organizationId === "string"
+          ? session.organizationId
+          : getAdminOrganizationId(),
+      role: session.role,
+      expiresAt: session.expiresAt,
+    };
   } catch {
     return null;
   }

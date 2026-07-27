@@ -12,14 +12,14 @@ Mercury is not a persona managing assistants or a workforce.
 
 ## Current implementation evidence
 
-- `/dashboard` is protected by the administrator session layout.
-- The objective form calls `POST /api/mercury/plan`.
-- The planning endpoint validates a string objective up to 500 characters.
-- Deterministic keyword rules produce a plan, routes, approval reasons, and events.
-- Results may be persisted when `DATABASE_URL` exists.
-- `GET /api/mercury/history` lists persisted plan summaries.
-- The remaining dashboard metrics, signals, brief, recommendations, activity, filters, system health, and provider state are static.
-- There is no conversation/thread schema, message API, evidence model, streaming response, plan-detail UI, approval UI, or execution control.
+- `/dashboard` is protected by the administrator session layout and renders the responsive Mercury conversation workspace.
+- Authenticated, organization-scoped APIs create, list, open, rename, archive, restore, and extend conversations.
+- PostgreSQL schemas persist conversations and messages and link generated plans to their originating user and Mercury messages.
+- A submitted turn transactionally stores the user message, deterministic plan, routed tasks, events, approval requirements, and Mercury response.
+- The workspace renders durable messages and reviewable plan details and supports first-use, loading, persistence-unavailable, evidence-unavailable, error, active, and archived states.
+- Deterministic keyword rules produce the current responses and are labeled as limited planning behavior.
+- `POST /api/mercury/plan` remains as an authenticated compatibility endpoint, and `GET /api/mercury/history` returns organization-scoped plan summaries.
+- There is no model-backed reasoning, evidence model, citations, attachments, streaming response, plan revision, approval-decision UI, execution control, or outcome measurement.
 
 ## User outcomes
 
@@ -40,7 +40,7 @@ A permitted operator must be able to:
 ### Conversations
 
 - Conversations MUST have durable identifiers, organization ownership, title, lifecycle state, and timestamps.
-- Messages MUST record author type, content, creation time, and structured attachments.
+- Messages MUST record author type, content, and creation time. Structured attachments are a remaining requirement.
 - The user MUST be able to create, list, open, rename, archive, and resume conversations.
 - Concurrent submissions MUST not reorder or duplicate messages.
 - Conversation context MUST be bounded and auditable.
@@ -112,7 +112,7 @@ Mercury Command Center is implemented only when:
 ## Open decisions
 
 - Canonical URL and whether `/dashboard` remains an alias.
-- Conversation retention and archive behavior.
+- Conversation retention and deletion behavior; archive and restore are implemented.
 - Model/provider strategy for conversational reasoning.
 - Citation granularity and evidence rendering.
 - Whether plan approval is plan-level, task-level, or policy-dependent.

@@ -43,7 +43,7 @@ This diagram is the target architecture, not a statement that the AWS resources 
 | --- | --- |
 | `/` | Marketing page; contains some legacy workforce positioning |
 | `/login` | Administrator login form |
-| `/dashboard` | Auth-gated Mercury Command Center shell with static business panels and a working plan request form |
+| `/dashboard` | Auth-gated Mercury conversation workspace with durable threads and deterministic message-linked plans when PostgreSQL is available |
 | `/workers` | Legacy intelligence-module prototype using workforce terminology; not a canonical product destination |
 
 Atlas, Vector, Oracle, Sentinel, Forge, Pulse, Execution, Approvals, History, Knowledge, Integrations, Billing, and Settings appear in shell configuration, but corresponding page routes are not implemented.
@@ -65,29 +65,32 @@ It includes:
 - platform-status presentation; and
 - a workspace content boundary.
 
-The shell is wired into `app/dashboard/layout.tsx`. The legacy `/workers` page renders the same shell directly. Platform connection states in the sidebar are static configuration and must not be treated as live integration health.
+The shell is wired into `app/dashboard/layout.tsx`. The legacy `/workers` page renders the same shell directly. Provider entries in the sidebar explicitly show “Not configured”; they are configuration presentation, not live integration health.
 
 ### Authentication
 
 Current authentication is a repository-local administrator session:
 
 - credentials come from `ADMIN_EMAIL` and `ADMIN_PASSWORD`, with development fallbacks;
-- `lib/auth.ts` creates an HMAC-signed cookie;
+- `lib/auth.ts` creates an HMAC-signed cookie containing the administrator identity and organization identifier;
 - `/api/auth/login` creates the session;
 - `/api/auth/logout` clears it; and
-- the `/dashboard` layout validates the cookie.
+- the `/dashboard` layout validates the cookie; and
+- Mercury route handlers validate the cookie and scope persistence by its organization identifier.
 
 This is not the target enterprise identity architecture. Cognito is planned later. The `/workers` prototype is not protected by the dashboard layout.
-The Mercury API route handlers do not currently perform their own session validation.
 
 ### Mercury APIs
 
 Implemented route handlers:
 
 - `POST /api/mercury/plan` validates an objective, creates a plan, and attempts persistence;
-- `GET /api/mercury/history` returns persisted plan summaries when a database is configured.
+- `GET /api/mercury/history` returns organization-scoped persisted plan summaries;
+- `GET` and `POST /api/mercury/conversations` list conversations and create the first durable turn;
+- `GET` and `PATCH /api/mercury/conversations/[conversationId]` load, rename, archive, or restore a conversation; and
+- `POST /api/mercury/conversations/[conversationId]/messages` appends a durable conversation turn.
 
-The dashboard calls the plan endpoint and reports the number of generated tasks. It does not yet render a full conversational thread, evidence, plan detail, approval flow, or execution lifecycle.
+The dashboard renders the conversation thread and deterministic plan detail, including modules, dependencies, and approval requirements. It explicitly reports that live evidence is unavailable. Model-backed reasoning, citations, plan revision, approval decisions, and execution controls are not implemented.
 
 ### Mercury domain layer
 
@@ -114,13 +117,15 @@ Legacy internal types use `Worker`, `WorkerKey`, `workerRegistry`, and related n
 
 Migrations currently define:
 
+- Mercury conversations;
+- Mercury messages;
 - Mercury plans;
 - Mercury tasks;
 - Mercury events;
 - Mercury approvals; and
 - commerce integration metadata.
 
-When `DATABASE_URL` is absent, plan creation still returns a plan but reports that it was not persisted, and history returns an empty collection.
+Conversation operations require `DATABASE_URL` and the committed migrations. A submitted turn is persisted transactionally with its user message, plan, tasks, events, approval requirements, and Mercury response. When persistence is unavailable, the workspace presents an explicit unavailable state rather than fabricated conversation data. The compatibility plan endpoint can still return an unpersisted deterministic plan.
 
 Aurora PostgreSQL is the target managed database, but the repository contains no AWS deployment configuration proving an Aurora cluster exists.
 

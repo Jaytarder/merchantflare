@@ -63,7 +63,7 @@ export default function SearchBar() {
           id="mercury-search"
           type="search"
           value={query}
-          placeholder="Search workers, operations, and settings"
+          placeholder="Search Mercury, intelligence, and settings"
           autoComplete="off"
           aria-autocomplete="list"
           aria-controls="mercury-search-results"
