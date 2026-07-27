@@ -383,6 +383,7 @@ export async function updateTaskExecution(input: {
 
   const started = input.status === "running";
   const completed = input.status === "succeeded" || input.status === "failed";
+  const outputJson = input.output === undefined ? null : sql.json(input.output);
 
   await sql`
     update mercury_tasks
@@ -391,7 +392,7 @@ export async function updateTaskExecution(input: {
       attempts = case when ${started} then attempts + 1 else attempts end,
       started_at = case when ${started} then coalesce(started_at, now()) else started_at end,
       completed_at = case when ${completed} then now() else completed_at end,
-      output = case when ${input.output !== undefined} then ${sql.json(input.output)} else output end,
+      output = case when ${input.output !== undefined} then ${outputJson} else output end,
       error = ${input.error ?? null},
       updated_at = now()
     where id = ${input.taskId} and plan_id = ${input.planId}
