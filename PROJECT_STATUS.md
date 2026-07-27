@@ -32,6 +32,7 @@ Sprint 1, the application shell, is implemented. The repository also contains an
 - Deterministic module-output and generic mock-execution foundations for routed Mercury tasks.
 - Amazon Selling Partner API helper code for Login with Amazon token exchange and marketplace participation requests.
 - Permanent product, architecture, roadmap, design-system, and module documentation in `docs/`.
+- A specification library in `specs/` covering shared platform contracts, every roadmap stage, each intelligence module, and every canonical operational and platform surface. Specifications define target behavior and do not change feature implementation status.
 
 ## Current architecture
 
@@ -141,6 +142,7 @@ Validation was run against this repository state on 2026-07-27.
 | Date | Change |
 | --- | --- |
 | 2026-07-27 | Added this code-verified project status baseline. |
+| 2026-07-27 | Added MerchantFlare module and platform specifications. |
 | 2026-07-27 | Added permanent MerchantFlare product and engineering documentation (`9886941`). |
 | 2026-07-27 | Implemented the responsive application shell (`4761e93`). |
 

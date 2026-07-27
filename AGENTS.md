@@ -6,13 +6,11 @@ This file governs work across the repository. It is the starting point for every
 
 Before changing code, read:
 
-1. `docs/vision.md`
-2. `docs/architecture.md`
-3. `docs/roadmap.md`
-4. `docs/design-system.md`
-5. `docs/modules.md`
+1. `PROJECT_STATUS.md`
+2. every file in `docs/`
+3. every file in `specs/`
 
-Use those documents together. The vision and module names define the product language; the architecture and roadmap distinguish implemented code from planned capabilities.
+Use those documents together. The vision and module names define the product language; the architecture, roadmap, and project status distinguish implemented code from planned capabilities; specifications define target behavior and acceptance criteria. A specification is not evidence that its feature is implemented.
 
 ## Product definition
 
@@ -37,8 +35,9 @@ Legacy code and copy still contain terms such as `worker`, `AI Workers`, and `AI
 - Avoid placeholders, dead controls, fabricated data integrations, and UI that implies an unavailable backend capability.
 - Keep changes scoped to the requested sprint. Do not bundle unrelated redesigns or speculative infrastructure.
 - Do not describe a configured navigation target, type definition, mock response, or static dashboard card as a completed feature.
+- Keep specification status aligned with `PROJECT_STATUS.md` and the actual code.
 - Keep public product language consistent with `docs/vision.md` and `docs/modules.md`.
-- Update the project documents when a sprint materially changes architecture, implementation status, navigation, or product behavior.
+- Update `PROJECT_STATUS.md`, `docs/`, and `specs/` when a sprint materially changes architecture, implementation status, navigation, product behavior, or accepted requirements.
 
 ## Validation
 
