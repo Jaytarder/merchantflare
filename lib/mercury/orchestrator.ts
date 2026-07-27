@@ -1,26 +1,32 @@
-import { planObjective } from './planner';
-import { applyApprovalPolicies, getApprovalReasons } from './approvals';
-import { createPlanTimeline } from './timeline';
-import type { ExecutionPlan, OrchestrationResult } from './types';
+import { applyApprovalPolicies, getApprovalReasons } from "./approvals";
+import { planObjective } from "./planner";
+import { routeExecutionPlan } from "./router";
+import { createPlanTimeline } from "./timeline";
+import type { ExecutionPlan, OrchestrationResult } from "./types";
 
 function finalizePlan(plan: ExecutionPlan): ExecutionPlan {
   const tasks = applyApprovalPolicies(plan.tasks);
+
   return {
     ...plan,
     tasks,
-    requiresApproval: tasks.some(t => t.requiresApproval),
+    requiresApproval: tasks.some((task) => task.requiresApproval),
   };
 }
 
-export async function orchestrate(objective: string): Promise<OrchestrationResult> {
+export async function orchestrate(
+  objective: string,
+): Promise<OrchestrationResult> {
   const initialPlan = planObjective(objective);
   const plan = finalizePlan(initialPlan);
-  const timeline = createPlanTimeline(plan);
+  const events = createPlanTimeline(plan);
+  const routes = routeExecutionPlan(plan);
 
   return {
     plan,
-    timeline,
+    events,
+    routes,
     approvalReasons: getApprovalReasons(plan.tasks),
-    status: plan.requiresApproval ? 'awaiting_approval' : 'ready',
+    status: plan.requiresApproval ? "awaiting_approval" : "ready",
   };
 }
