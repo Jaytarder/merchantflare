@@ -41,7 +41,16 @@ export type OrchestrationEvent = {
   createdAt: string;
 };
 
+export type OrchestrationStatus = "ready" | "awaiting_approval";
+
+export type RoutedTask = PlannedTask & {
+  routeStatus: "ready" | "blocked_by_dependency" | "blocked_by_approval";
+};
+
 export type OrchestrationResult = {
   plan: ExecutionPlan;
   events: OrchestrationEvent[];
+  approvalReasons: string[];
+  status: OrchestrationStatus;
+  routes: RoutedTask[];
 };
