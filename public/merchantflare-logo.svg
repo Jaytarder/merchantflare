@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 220" role="img" aria-labelledby="title desc">
+  <title id="title">MerchantFlare</title>
+  <desc id="desc">MerchantFlare logo with an angular M and upward orange arrow.</desc>
+  <defs>
+    <linearGradient id="flare" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#ff6a00"/>
+      <stop offset="1" stop-color="#ff9a2f"/>
+    </linearGradient>
+  </defs>
+  <rect width="920" height="220" fill="none"/>
+  <g transform="translate(18 22)">
+    <path d="M18 154V36l60 65 60-65v118" fill="none" stroke="#f7f7f8" stroke-width="16" stroke-linecap="square" stroke-linejoin="miter"/>
+    <path d="M58 154 151 42" fill="none" stroke="url(#flare)" stroke-width="16" stroke-linecap="square"/>
+    <path d="m143 33 37-15-13 39z" fill="url(#flare)"/>
+    <rect x="204" y="18" width="3" height="146" rx="1.5" fill="#ff7a16"/>
+    <g transform="translate(248 42)" fill="#f7f7f8" font-family="Arial, Helvetica, sans-serif">
+      <text x="0" y="52" font-size="47" font-weight="700" letter-spacing="8">MERCHANT<tspan fill="url(#flare)">FLARE</tspan></text>
+      <text x="1" y="96" font-size="21" font-weight="500" letter-spacing="6">THE AI WORKFORCE FOR COMMERCE</text>
+    </g>
+  </g>
+</svg>
