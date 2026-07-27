@@ -33,18 +33,64 @@ export type ExecutionPlan = {
   requiresApproval: boolean;
 };
 
+export type OrchestrationEventType =
+  | "plan.created"
+  | "approval.required"
+  | "task.queued"
+  | "task.started"
+  | "task.succeeded"
+  | "task.failed"
+  | "task.retrying";
+
 export type OrchestrationEvent = {
   id: string;
   planId: string;
-  type: "plan.created" | "approval.required" | "task.queued";
+  taskId?: string;
+  type: OrchestrationEventType;
   message: string;
   createdAt: string;
 };
 
-export type OrchestrationStatus = "ready" | "awaiting_approval";
+export type OrchestrationStatus =
+  | "ready"
+  | "awaiting_approval"
+  | "running"
+  | "completed"
+  | "failed";
+
+export type RouteStatus =
+  | "ready"
+  | "blocked_by_dependency"
+  | "blocked_by_approval";
 
 export type RoutedTask = PlannedTask & {
-  routeStatus: "ready" | "blocked_by_dependency" | "blocked_by_approval";
+  routeStatus: RouteStatus;
+};
+
+export type TaskExecutionStatus =
+  | "pending"
+  | "running"
+  | "succeeded"
+  | "failed"
+  | "blocked";
+
+export type TaskExecutionResult = {
+  taskId: string;
+  worker: WorkerKey;
+  capability: MercuryCapability;
+  status: TaskExecutionStatus;
+  attempts: number;
+  startedAt?: string;
+  completedAt?: string;
+  output?: unknown;
+  error?: string;
+};
+
+export type ExecutionRun = {
+  planId: string;
+  status: OrchestrationStatus;
+  results: TaskExecutionResult[];
+  events: OrchestrationEvent[];
 };
 
 export type OrchestrationResult = {
