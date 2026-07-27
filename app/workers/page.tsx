@@ -1,4 +1,4 @@
-import AppShell from "../components/AppShell";
+import AppShell from "../components/layout/AppShell";
 
 const workers = [
   {
@@ -84,7 +84,7 @@ const queue = [
 
 export default function WorkersPage() {
   return (
-    <AppShell active="workers">
+    <AppShell>
       <header className="topbar workers-header">
         <div>
           <div className="eyebrow">Mercury AI Workforce</div>

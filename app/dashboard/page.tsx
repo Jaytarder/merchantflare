@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import AppShell from "../components/AppShell";
 
 const metrics = [
   ["Ordered Revenue", "$2.48M", "+12.4%", "up"],
@@ -56,7 +55,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <AppShell active="dashboard">
+    <>
       <div className="terminal-page">
         <header className="terminal-header">
           <div><h1>Mercury Command Center</h1><p>Executive intelligence for Accutime&apos;s Amazon Vendor business.</p></div>
@@ -100,6 +99,6 @@ export default function DashboardPage() {
 
         <footer className="terminal-status"><span><i /> All systems operational</span><span>Last Data Refresh: July 27, 2026 9:42 AM</span><span>Amazon Vendor · Ads · Catalog</span></footer>
       </div>
-    </AppShell>
+    </>
   );
 }

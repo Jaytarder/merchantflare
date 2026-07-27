@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { ADMIN_COOKIE, verifyAdminSession } from "../../lib/auth";
+import AppShell from "../components/layout/AppShell";
 
 export default async function DashboardLayout({
   children,
@@ -14,5 +15,5 @@ export default async function DashboardLayout({
     redirect("/login");
   }
 
-  return <>{children}</>;
+  return <AppShell userEmail={session.email}>{children}</AppShell>;
 }
