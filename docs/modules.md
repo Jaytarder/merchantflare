@@ -35,7 +35,7 @@ Mercury is responsible for:
 - tracking execution and history; and
 - connecting activity to outcomes.
 
-Current code provides early objective planning, routing, approval, persistence, and execution primitives. The full conversational and orchestration experience is not complete.
+Current code provides early objective planning, routing, approval, persistence, normalized evidence selection, and execution primitives. Mercury can attach normalized evidence already stored in the Commerce Evidence layer, but no live provider currently populates that store. The full conversational and orchestration experience is not complete.
 
 ## Atlas
 
@@ -67,7 +67,7 @@ Scope:
 - wasted spend and scaling opportunities; and
 - governed optimization recommendations.
 
-Current implementation is limited to navigation metadata, advertising capability types, planning rules, and deterministic example output. There is no Vector route or Amazon Ads API integration.
+Current implementation is limited to navigation metadata, advertising capability types, planning rules, deterministic example output, and an Amazon Ads evidence reader/record interface with a normalization pipeline. There is no Vector route, Amazon Ads API client, authorization flow, or live integration.
 
 ## Oracle
 

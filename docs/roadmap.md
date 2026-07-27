@@ -42,6 +42,8 @@ Implemented:
 - immutable plan versioning and superseding revisions;
 - plan-level approval and rejection with idempotency, policy version, proposal snapshot, and audit identity;
 - evidence-source, evidence-item, freshness, limitation, and plan-citation storage contracts;
+- provider-neutral evidence readers, normalized record/value contracts, versioned normalization, provenance, freshness policies, cache adapters, and bounded sync orchestration;
+- capability-scoped normalized evidence lookup and plan attachment in Mercury;
 - explicit persistence-unavailable and evidence-unavailable states; and
 - checksum-enforced database migration tooling and initial domain tests;
 - authenticated organization-scoped plan history.
@@ -49,7 +51,7 @@ Implemented:
 Still required:
 
 - model-backed conversational reasoning;
-- live commerce evidence ingestion and retrieval;
+- a production provider reader, authorization flow, and live commerce evidence synchronization;
 - evidence-grounded model responses and confidence explanations;
 - a dedicated approval queue, multi-user reviewer authorization, expiry, and delegation;
 - execution controls and live progress;
@@ -87,18 +89,18 @@ The legacy `/workers` page displays static cards for all six modules. It is not 
 
 ## 9. Live Amazon integrations — Foundation only
 
-An early SP-API helper and integration database table exist.
+An early SP-API helper and integration database table exist. Provider-neutral synchronization contracts plus typed SP-API and Amazon Ads evidence reader/record interfaces and normalization pipelines are implemented. No production reader is registered and no live synchronization occurs.
 
 Still required:
 
 - production credential storage;
 - complete request authentication/signing;
 - account connection workflow;
-- synchronization jobs;
-- normalized commerce data models;
+- production provider readers and synchronization jobs;
+- provider connection to the normalized evidence models;
 - observability and retry behavior;
 - live connection health;
-- Amazon Ads API support; and
+- Amazon Ads authorization and API client; and
 - integration management UI.
 
 ## 10. Mercury orchestration engine — Foundation only

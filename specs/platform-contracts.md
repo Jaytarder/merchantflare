@@ -15,9 +15,13 @@ This specification defines cross-cutting contracts that feature specifications i
 - `lib/db.ts` provides an optional PostgreSQL connection.
 - Mercury migrations establish organization-scoped conversations, messages, versioned plans, tasks, events, approvals, evidence/provenance records, mutation idempotency records, execution fields, and integration metadata.
 - `lib/mercury/evidence.ts` defines typed evidence coverage and freshness summaries; without ingested records it returns an explicit unavailable limitation.
+- `lib/evidence/` defines provider-neutral reader/adaptor contracts, canonical attribute/metric/status evidence values, deterministic identity, versioned normalization, provenance hashes, dataset freshness policies, memory and PostgreSQL caching, normalized queries, provider registration, and bounded idempotent synchronization orchestration.
+- Migration `005_commerce_evidence_engine.sql` adds normalized evidence fields, sync runs, durable cursors, and a normalized cache projection.
+- Mercury maps plan capabilities to evidence datasets and consumes only normalized records; provider-specific records terminate inside normalization pipelines.
+- Amazon SP-API and Amazon Ads have typed evidence record/reader interfaces and normalization pipelines, but no production readers are registered.
 - Conversation turns, revisions, and plan-level approval decisions accept validated idempotency keys.
 - `scripts/migrate.ts` provides an ordered, checksum-enforced PostgreSQL migration boundary.
-- No production tenancy, authorization, normalized commerce model, audit policy, queue, observability stack, or AWS resource configuration is implemented.
+- The normalized evidence model is implemented for evidence records; production tenancy and authorization, broader normalized commerce entities, production provider synchronization, audit policy, queueing, observability, and AWS resource configuration remain incomplete.
 
 ## Core domain boundaries
 

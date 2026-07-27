@@ -10,7 +10,7 @@ Vector explains advertising performance, identifies waste and growth opportuniti
 
 ## Current implementation evidence
 
-Vector currently has navigation metadata, `advertising.audit` and `advertising.optimize` capabilities, planning rules, legacy module registration, approval policy scaffolding, and deterministic example output. There is no Vector route, Amazon Ads API client, advertising ingestion model, mutation adapter, or outcome measurement.
+Vector currently has navigation metadata, `advertising.audit` and `advertising.optimize` capabilities, planning rules, legacy module registration, approval policy scaffolding, deterministic example output, and an Amazon Ads reader contract with a provider-neutral normalization pipeline. There is no Vector route, Amazon Ads API client or authorization flow, connected ingestion, mutation adapter, or outcome measurement.
 
 ## In scope
 

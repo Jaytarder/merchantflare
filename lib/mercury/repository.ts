@@ -9,7 +9,10 @@ import type {
   TaskExecutionResult,
 } from "./types";
 import { APPROVAL_POLICY_VERSION } from "./approvals";
-import { NO_EVIDENCE_LIMITATION } from "./evidence";
+import {
+  NO_EVIDENCE_LIMITATION,
+  type MercuryEvidenceCoverage,
+} from "./evidence";
 import {
   MercuryPersistenceUnavailableError,
   MercuryPlanNotFoundError,
@@ -26,6 +29,7 @@ export type PlanPersistenceContext = {
   rootPlanId?: string;
   supersedesPlanId?: string;
   version?: number;
+  evidence?: MercuryEvidenceCoverage;
 };
 
 export type MercuryPlanSummary = {
@@ -79,6 +83,9 @@ export async function persistOrchestrationResult(
   result: OrchestrationResult,
   context: PlanPersistenceContext,
 ) {
+  const evidenceStatus = context.evidence?.status ?? "unavailable";
+  const evidenceLimitation =
+    context.evidence?.limitation ?? NO_EVIDENCE_LIMITATION;
   await tx`
       insert into mercury_plans (
         id,
@@ -109,8 +116,8 @@ export async function persistOrchestrationResult(
         ${context.rootPlanId ?? result.plan.id},
         ${context.supersedesPlanId ?? null},
         ${context.version ?? 1},
-        'unavailable',
-        ${NO_EVIDENCE_LIMITATION},
+        ${evidenceStatus},
+        ${evidenceLimitation},
         ${result.plan.objective},
         ${result.plan.summary},
         ${result.status},
@@ -140,6 +147,28 @@ export async function persistOrchestrationResult(
         payload = excluded.payload,
         updated_at = now()
     `;
+
+  await tx`
+    delete from mercury_plan_evidence
+    where plan_id = ${result.plan.id}
+      and organization_id = ${context.organizationId}
+  `;
+  for (const evidence of context.evidence?.items ?? []) {
+    await tx`
+      insert into mercury_plan_evidence (
+        organization_id,
+        plan_id,
+        evidence_item_id,
+        usage_type
+      ) values (
+        ${context.organizationId},
+        ${result.plan.id},
+        ${evidence.id},
+        'input'
+      )
+      on conflict do nothing
+    `;
+  }
 
   await tx`delete from mercury_tasks where plan_id = ${result.plan.id}`;
   await tx`delete from mercury_events where plan_id = ${result.plan.id}`;

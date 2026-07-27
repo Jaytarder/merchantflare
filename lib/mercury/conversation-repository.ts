@@ -1,5 +1,14 @@
 import { randomUUID } from "crypto";
 import { getDatabase } from "../db";
+import {
+  CachedEvidenceQueryService,
+  classifyEvidenceFreshness,
+  freshnessPolicyFor,
+  PostgresEvidenceCache,
+  PostgresEvidenceReader,
+  type EvidenceDataset,
+  type EvidenceProvenance,
+} from "../evidence";
 import { orchestrate } from "./orchestrator";
 import {
   persistOrchestrationResult,
@@ -23,6 +32,8 @@ import type {
 import type { TaskPriority } from "../domain";
 import {
   summarizeEvidence,
+  evidenceDatasetsForCapabilities,
+  toMercuryEvidenceItem,
   type EvidenceFreshness,
   type MercuryEvidenceItem,
 } from "./evidence";
@@ -68,12 +79,20 @@ function titleFromMessage(message: string) {
     : `${singleLine.slice(0, 69).trimEnd()}…`;
 }
 
-function mercuryResponseContent(plan: ExecutionPlan, version: number) {
+function mercuryResponseContent(
+  plan: ExecutionPlan,
+  version: number,
+  evidenceCount: number,
+) {
   const moduleCount = new Set(plan.tasks.map((task) => task.worker)).size;
   const taskLabel = plan.tasks.length === 1 ? "task" : "tasks";
   const moduleLabel = moduleCount === 1 ? "intelligence module" : "intelligence modules";
 
-  return `Mercury created plan v${version} with ${plan.tasks.length} ${taskLabel} across ${moduleCount} ${moduleLabel}. This plan uses deterministic routing and does not yet include live commerce evidence.`;
+  const evidenceMessage =
+    evidenceCount > 0
+      ? `It references ${evidenceCount} normalized evidence ${evidenceCount === 1 ? "item" : "items"} with source provenance.`
+      : "No normalized commerce evidence matched this plan, so its evidence coverage is unavailable.";
+  return `Mercury created plan v${version} with ${plan.tasks.length} ${taskLabel} across ${moduleCount} ${moduleLabel}. This plan uses deterministic routing. ${evidenceMessage}`;
 }
 
 export async function listMercuryConversations(
@@ -247,6 +266,9 @@ export async function getMercuryConversation(
     source_id: string;
     source_name: string;
     source_type: string;
+    provider: string;
+    dataset: EvidenceDataset;
+    evidence_kind: string;
     source_record_reference: string | null;
     title: string;
     summary: string;
@@ -256,6 +278,7 @@ export async function getMercuryConversation(
     date_range_end: Date | null;
     freshness: EvidenceFreshness;
     limitations: string[];
+    provenance: EvidenceProvenance;
   }>>`
     select
       link.plan_id,
@@ -263,6 +286,9 @@ export async function getMercuryConversation(
       item.source_id,
       source.display_name as source_name,
       source.source_type,
+      item.provider,
+      item.dataset,
+      item.evidence_kind,
       item.source_record_reference,
       item.title,
       item.summary,
@@ -271,7 +297,8 @@ export async function getMercuryConversation(
       item.date_range_start,
       item.date_range_end,
       item.freshness,
-      item.limitations
+      item.limitations,
+      item.provenance
     from mercury_plan_evidence link
     join mercury_plans plan on plan.id = link.plan_id
     join mercury_evidence_items item on item.id = link.evidence_item_id
@@ -337,6 +364,9 @@ export async function getMercuryConversation(
       sourceId: evidence.source_id,
       sourceName: evidence.source_name,
       sourceType: evidence.source_type,
+      provider: evidence.provider,
+      dataset: evidence.dataset,
+      kind: evidence.evidence_kind,
       sourceRecordReference: evidence.source_record_reference ?? undefined,
       title: evidence.title,
       summary: evidence.summary,
@@ -344,8 +374,12 @@ export async function getMercuryConversation(
       ingestedAt: evidence.ingested_at.toISOString(),
       dateRangeStart: evidence.date_range_start?.toISOString(),
       dateRangeEnd: evidence.date_range_end?.toISOString(),
-      freshness: evidence.freshness,
+      freshness: classifyEvidenceFreshness(
+        evidence.observed_at.toISOString(),
+        freshnessPolicyFor(evidence.dataset),
+      ),
       limitations: evidence.limitations ?? [],
+      provenance: evidence.provenance,
     });
     evidenceByPlan.set(evidence.plan_id, items);
   }
@@ -410,6 +444,20 @@ export async function createMercuryConversationTurn(input: {
 
   const sql = requireDatabase();
   const result = await orchestrate(input.message);
+  const evidenceService = new CachedEvidenceQueryService(
+    new PostgresEvidenceReader(sql),
+    new PostgresEvidenceCache(sql, input.principal.organizationId),
+  );
+  const normalizedEvidence = await evidenceService.query({
+    organizationId: input.principal.organizationId,
+    datasets: evidenceDatasetsForCapabilities(
+      result.plan.tasks.map((task) => task.capability),
+    ),
+    limit: 50,
+  });
+  const evidence = summarizeEvidence(
+    normalizedEvidence.map(toMercuryEvidenceItem),
+  );
   let conversationId = input.conversationId ?? createId("conversation");
   const userMessageId = createId("message");
   const responseMessageId = createId("message");
@@ -568,6 +616,7 @@ export async function createMercuryConversationTurn(input: {
       rootPlanId,
       supersedesPlanId: input.supersedesPlanId,
       version,
+      evidence,
     };
     await persistOrchestrationResult(tx, result, context);
 
@@ -602,7 +651,11 @@ export async function createMercuryConversationTurn(input: {
       `;
     }
 
-    const responseContent = mercuryResponseContent(result.plan, version);
+    const responseContent = mercuryResponseContent(
+      result.plan,
+      version,
+      evidence.itemCount,
+    );
     await tx`
       insert into mercury_messages (
         id,
@@ -622,7 +675,8 @@ export async function createMercuryConversationTurn(input: {
         ${responseContent},
         ${tx.json({
           plannerMode: "deterministic",
-          evidenceStatus: "unavailable",
+          evidenceStatus: evidence.status,
+          evidenceItemCount: evidence.itemCount,
           planVersion: version,
         })},
         ${result.plan.id},

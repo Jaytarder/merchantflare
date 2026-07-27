@@ -18,11 +18,12 @@ Mercury is not a persona managing assistants or a workforce.
 - A submitted turn transactionally stores the user message, deterministic plan, routed tasks, events, approval requirements, and Mercury response.
 - Plans are versioned. A revision is submitted as a new conversation turn, preserves its parent and root identifiers, and supersedes the prior pending version.
 - Evidence source, item, freshness, limitation, and plan-link contracts are persisted. The workspace renders citations when present and a truthful unavailable state when no source has populated them.
+- Mercury maps planned capabilities to provider-neutral evidence datasets, reads normalized evidence through a cache-aside query boundary, recalculates freshness, and transactionally links matching evidence to the plan. It does not consume Amazon or other provider payloads.
 - Pending plan-level approvals can be approved or rejected through an authenticated, idempotent API and confirmation UI. The decision records the actor, note, policy version, immutable proposal snapshot, and timestamp without executing the plan.
 - The workspace renders durable messages and reviewable plan details and supports first-use, loading, persistence-unavailable, evidence-unavailable, error, active, and archived states.
 - Deterministic keyword rules produce the current responses and are labeled as limited planning behavior.
 - `POST /api/mercury/plan` remains as an authenticated compatibility endpoint, and `GET /api/mercury/history` returns organization-scoped plan summaries.
-- There is no model-backed reasoning, live evidence ingestion or retrieval, attachments, streaming response, execution control, or outcome measurement. Approval remains plan-level and uses the interim administrator identity.
+- There is no model-backed reasoning, connected provider reader, live synchronization, attachments, streaming response, execution control, or outcome measurement. Approval remains plan-level and uses the interim administrator identity.
 
 ## User outcomes
 
@@ -117,7 +118,7 @@ Mercury Command Center is implemented only when:
 - Canonical URL and whether `/dashboard` remains an alias.
 - Conversation retention and deletion behavior; archive and restore are implemented.
 - Model/provider strategy for conversational reasoning.
-- First live evidence source, retrieval strategy, and citation granularity.
+- First production evidence provider/account/dataset and citation granularity.
 - Whether plan approval is plan-level, task-level, or policy-dependent.
 - Initial supported attachment types.
 

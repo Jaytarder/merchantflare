@@ -14,7 +14,9 @@ Integrations connect MerchantFlare to commerce and business systems through secu
 - `commerce_integrations` stores provider, marketplace, status, credential reference, configuration, and last sync metadata.
 - `lib/amazon/sp-api.ts` implements Login with Amazon refresh-token exchange and a marketplace participation request helper.
 - The helper is not wired to a route or UI and does not demonstrate the complete production authentication/signing lifecycle.
-- Amazon Ads, connection management, secret storage, sync jobs, normalized data models, and live health do not exist.
+- `lib/evidence/` provides provider-neutral contracts for typed readers, versioned normalization, freshness, cache-aside queries, provenance, registry-based adapters, bounded paginated synchronization, idempotent runs, durable cursors, and PostgreSQL persistence.
+- Amazon SP-API and Amazon Ads define typed evidence records/readers and normalization pipelines as the first provider interfaces.
+- No Amazon reader implementation is registered. Amazon Ads authorization/API access, connection management, secret storage, scheduling/queueing, production sync jobs, and live health do not exist.
 
 ## Connection lifecycle
 
@@ -36,7 +38,7 @@ Revoked and expired authorization MUST become `attention` or `disconnected` base
 - Credentials MUST be encrypted through approved secret management; database rows SHOULD store references, not raw secrets.
 - A connection MUST identify organization, provider, account, marketplace, scopes, status, and timestamps.
 - Sync jobs MUST be incremental where supported, idempotent, rate-limit aware, and resumable.
-- Provider payloads MUST map into versioned normalized contracts.
+- Provider payloads MUST terminate inside provider adapters and map into versioned normalized contracts before Mercury or an intelligence module consumes them.
 - Health MUST derive from authorization, recent syncs, error state, and freshness objectives.
 - Disconnect MUST define credential revocation and retained-data behavior.
 - Backfills MUST be bounded and observable.
@@ -83,5 +85,6 @@ Integrations are implemented for a provider only when:
 - Sync scheduler and queue.
 - Raw payload retention and replay policy.
 - Disconnect deletion policy.
+- Whether synchronization orchestration runs in Lambda, a durable queue worker, or another managed runtime.
 
 \n

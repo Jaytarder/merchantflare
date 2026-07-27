@@ -89,9 +89,17 @@ export default function MercuryPlanCard({
               <li key={item.id}>
                 <strong>{item.title}</strong>
                 <span>
-                  {item.sourceName} · {words(item.freshness)}
+                  {item.sourceName} · {words(item.dataset)} ·{" "}
+                  {words(item.freshness)}
                 </span>
                 <p>{item.summary}</p>
+                {item.dateRangeStart && item.dateRangeEnd ? (
+                  <small>
+                    Source period{" "}
+                    {new Date(item.dateRangeStart).toLocaleDateString()}–{" "}
+                    {new Date(item.dateRangeEnd).toLocaleDateString()}
+                  </small>
+                ) : null}
               </li>
             ))}
           </ul>

@@ -10,7 +10,7 @@ Atlas turns catalog and product-detail evidence into prioritized findings and go
 
 ## Current implementation evidence
 
-Atlas currently has navigation metadata, `catalog.audit` and `catalog.optimize` capability types, keyword-planning rules, module registration under legacy worker contracts, and deterministic example output. There is no Atlas route, catalog ingestion pipeline, evidence model, product UI, publishing adapter, or measured outcome flow.
+Atlas currently has navigation metadata, `catalog.audit` and `catalog.optimize` capability types, keyword-planning rules, module registration under legacy worker contracts, deterministic example output, and a provider-neutral evidence contract that can represent catalog records. There is no Atlas route, connected catalog reader or ingestion flow, Atlas-specific catalog model, product UI, publishing adapter, or measured outcome flow.
 
 ## In scope
 

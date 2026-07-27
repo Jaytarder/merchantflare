@@ -34,6 +34,7 @@ This diagram is the target architecture, not a statement that the AWS resources 
 - Root application code lives in `app/`.
 - Shared presentational components live in `app/components/` and `components/`.
 - Core domain and Mercury logic live in `lib/`.
+- Provider-neutral evidence contracts and orchestration live in `lib/evidence/`.
 - PostgreSQL migrations live in `db/migrations/`.
 - The checksum-enforced migration runner lives in `scripts/migrate.ts`.
 - Global brand and shell styling currently live in `app/globals.css`, `app/marketing-brand.css`, `app/components/app-shell.css`, and `styles/design-system.css`.
@@ -92,7 +93,7 @@ Implemented route handlers:
 - `POST /api/mercury/conversations/[conversationId]/messages` appends a durable conversation turn or creates a versioned revision of an existing plan; and
 - `POST /api/mercury/plans/[planId]/approval` records an idempotent plan-level approval or rejection.
 
-The dashboard renders the conversation thread and deterministic plan detail, including modules, dependencies, version history, evidence coverage, and approval requirements. It supports revision and inline plan-level approval decisions and explicitly reports when evidence is unavailable. Model-backed reasoning, live evidence retrieval, and execution controls are not implemented.
+The dashboard renders the conversation thread and deterministic plan detail, including modules, dependencies, version history, normalized evidence coverage, and approval requirements. It supports revision and inline plan-level approval decisions and explicitly reports when evidence is unavailable. Mercury selects normalized evidence by the capabilities in a plan and never reads provider payloads. Model-backed reasoning, a connected evidence provider, and execution controls are not implemented.
 
 ### Mercury domain layer
 
@@ -115,6 +116,22 @@ These are foundations, not the completed Mercury orchestration engine. There are
 
 Legacy internal types use `Worker`, `WorkerKey`, `workerRegistry`, and related names. New user-facing work must use intelligence-module language. Renaming internal contracts should be a deliberate compatibility migration rather than a casual search-and-replace.
 
+### Commerce Evidence layer
+
+`lib/evidence/` is the provider-neutral boundary between external commerce systems and Mercury:
+
+- generic provider reader and adapter contracts keep provider records inside an adapter;
+- versioned normalization pipelines produce a canonical `NormalizedEvidenceRecord`;
+- normalized values use attribute, metric, or status contracts rather than provider payload JSON;
+- provenance records provider, source record, observation/ingestion time, pipeline version, transformations, and content hash;
+- dataset policies classify current, delayed, and stale evidence and set cache windows;
+- memory and PostgreSQL cache adapters implement explicit fresh, stale, and miss semantics;
+- cache-aside query services recalculate freshness at the read boundary;
+- a registry and bounded synchronization coordinator provide idempotency, pagination, cursors, run state, page safety limits, and cache invalidation; and
+- PostgreSQL adapters persist normalized evidence, sync runs, cursors, and normalized cache entries.
+
+The sync coordinator is an invocation boundary, not a scheduler or live job. No production provider reader is registered. `lib/evidence/providers/amazon-sp-api.ts` and `amazon-ads.ts` define the first typed provider record/reader contracts and normalization pipelines only.
+
 ### Data layer
 
 `lib/db.ts` provides an optional PostgreSQL connection through `DATABASE_URL`.
@@ -128,12 +145,15 @@ Migrations currently define:
 - Mercury events;
 - Mercury approvals; and
 - Mercury evidence sources, evidence items, and plan-evidence links;
+- normalized evidence values and provenance;
+- evidence synchronization runs and cursors;
+- normalized evidence cache entries;
 - mutation idempotency records;
 - commerce integration metadata.
 
-Conversation operations require `DATABASE_URL` and the committed migrations through `004_mercury_evidence_and_governance.sql`. `npm run migrate` applies unapplied migrations under a PostgreSQL advisory lock and rejects changed, missing, misnamed, or duplicate-sequence migration files; `npm run migrate:dry-run` validates ordering and checksums without a database. A submitted turn is persisted transactionally with its user message, versioned plan, tasks, events, approval requirements, and Mercury response. When persistence is unavailable, the workspace presents an explicit unavailable state rather than fabricated conversation data. The compatibility plan endpoint can still return an unpersisted deterministic plan.
+Conversation and normalized evidence operations require `DATABASE_URL` and the committed migrations through `005_commerce_evidence_engine.sql`. `npm run migrate` applies unapplied migrations under a PostgreSQL advisory lock and rejects changed, missing, misnamed, or duplicate-sequence migration files; `npm run migrate:dry-run` validates ordering and checksums without a database. A submitted turn queries normalized evidence by capability dataset, then persists its user message, versioned plan, evidence links, tasks, events, approval requirements, and Mercury response transactionally. When persistence is unavailable, the workspace presents an explicit unavailable state rather than fabricated conversation data. The compatibility plan endpoint can still return an unpersisted deterministic plan.
 
-The evidence schema is an implemented storage boundary, not evidence that a source is connected. No live commerce ingestion or retrieval adapter currently populates it.
+The evidence engine and schemas are implemented boundaries, not evidence that a source is connected. No live provider reader currently populates normalized evidence.
 
 Aurora PostgreSQL is the target managed database, but the repository contains no AWS deployment configuration proving an Aurora cluster exists.
 
@@ -146,7 +166,7 @@ Aurora PostgreSQL is the target managed database, but the repository contains no
 - configuration checks; and
 - marketplace participation request types.
 
-This helper is not wired into a route or UI. The repository does not demonstrate a complete live SP-API request-signing and production credential flow, and it has no Amazon Ads API implementation. Do not mark live Amazon integrations complete.
+This helper is not wired into a route, UI, or the Commerce Evidence engine. The repository does not demonstrate a complete live SP-API request-signing and production credential flow. Amazon Ads has a typed evidence interface and normalizer, not an API client. Do not mark live Amazon integrations complete.
 
 ## Planned infrastructure
 
