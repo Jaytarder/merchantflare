@@ -1,0 +1,159 @@
+# Product Modules
+
+## Platform model
+
+Mercury is the Commerce Intelligence Engine and primary conversational workspace. Atlas, Vector, Oracle, Sentinel, Forge, and Pulse are the intelligence modules Mercury draws on.
+
+The canonical hierarchy is:
+
+```text
+MerchantFlare
+├── Mercury — Commerce Intelligence Engine
+└── Intelligence
+    ├── Atlas — Catalog Intelligence
+    ├── Vector — Advertising Intelligence
+    ├── Oracle — Demand Intelligence
+    ├── Sentinel — Compliance Intelligence
+    ├── Forge — Creative Intelligence
+    └── Pulse — Executive Intelligence
+```
+
+The modules are not assistants, workers, employees, or separate AI products.
+
+## Mercury
+
+**Role:** Commerce Intelligence Engine and conversational workspace
+
+Mercury is responsible for:
+
+- interpreting a user’s question or objective;
+- gathering relevant intelligence across modules;
+- maintaining business and conversation context;
+- explaining findings and confidence;
+- building coordinated plans;
+- enforcing approval policies;
+- tracking execution and history; and
+- connecting activity to outcomes.
+
+Current code provides early objective planning, routing, approval, persistence, and execution primitives. The full conversational and orchestration experience is not complete.
+
+## Atlas
+
+**Product name:** Atlas — Catalog Intelligence
+
+Scope:
+
+- catalog structure and item relationships;
+- product content quality;
+- search discoverability;
+- variation integrity;
+- listing completeness;
+- conversion friction; and
+- prioritized catalog recommendations.
+
+Current implementation is limited to navigation metadata, catalog capability types, planning rules, and deterministic example output in the Mercury foundation. There is no Atlas product route.
+
+## Vector
+
+**Product name:** Vector — Advertising Intelligence
+
+Scope:
+
+- campaign and target performance;
+- bids and budgets;
+- search-term quality;
+- advertising efficiency;
+- incremental contribution;
+- wasted spend and scaling opportunities; and
+- governed optimization recommendations.
+
+Current implementation is limited to navigation metadata, advertising capability types, planning rules, and deterministic example output. There is no Vector route or Amazon Ads API integration.
+
+## Oracle
+
+**Product name:** Oracle — Demand Intelligence
+
+Scope:
+
+- demand forecasting;
+- inventory coverage;
+- stockout and excess risk;
+- lead-time and replenishment decisions;
+- seasonal demand;
+- availability impact; and
+- demand-aware commercial planning.
+
+Current implementation is limited to navigation metadata, inventory capability types, planning rules, and deterministic example output. There is no Oracle product route or live demand pipeline.
+
+## Sentinel
+
+**Product name:** Sentinel — Compliance Intelligence
+
+Scope:
+
+- policy and documentation requirements;
+- product suppression risk;
+- case and deadline tracking;
+- account-health exposure;
+- evidence readiness;
+- remediation recommendations; and
+- approval-gated submissions or escalations.
+
+Current implementation is limited to navigation metadata, compliance capability types, planning rules, and deterministic example output. There is no Sentinel product route or live compliance feed.
+
+## Forge
+
+**Product name:** Forge — Creative Intelligence
+
+Scope:
+
+- creative performance insight;
+- asset gaps;
+- messaging hierarchy;
+- image, video, and enhanced-content briefs;
+- channel requirements;
+- production priorities; and
+- learning from measured creative outcomes.
+
+Current implementation is limited to navigation metadata, a creative-brief capability, a planning rule, and deterministic example output. There is no Forge product route or asset workflow.
+
+## Pulse
+
+**Product name:** Pulse — Executive Intelligence
+
+Scope:
+
+- cross-module synthesis;
+- executive summaries;
+- performance drivers;
+- risks and opportunities;
+- business priorities;
+- accountability and owners; and
+- measured outcome reporting.
+
+Current implementation is limited to navigation metadata, a reporting capability, a generated reporting task in Mercury plans, and deterministic example output. There is no Pulse product route.
+
+## Operational surfaces
+
+These are platform surfaces, not intelligence modules:
+
+- **Execution:** approved and running actions, status, retries, and results
+- **Approvals:** governed review and decisions for material actions
+- **History:** conversations, plans, decisions, executions, and outcomes
+- **Knowledge:** business context, definitions, evidence, policies, and sources
+- **Integrations:** connected commerce and business systems
+- **Billing:** subscription, usage, invoices, and entitlements
+- **Settings:** organization, users, policies, preferences, and security
+
+Navigation entries exist for these surfaces, but their page routes are not currently implemented.
+
+## Internal terminology debt
+
+Current source code includes `WorkerKey`, `WorkerDefinition`, `workerRegistry`, task `worker` fields, and a `/workers` page. These names reflect an earlier product model.
+
+Until a dedicated migration is approved:
+
+- keep compatibility where required by persisted data and existing APIs;
+- do not expose the legacy terminology in new UI or documentation;
+- use “module” in new domain concepts; and
+- document schema or API migrations before renaming persisted fields.
