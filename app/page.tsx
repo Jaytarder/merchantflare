@@ -1,4 +1,5 @@
 import Link from "next/link";
+import "./marketing-brand.css";
 
 const capabilities = [
   ["Atlas", "Catalog intelligence", "Audits listings, finds conversion gaps, and prepares optimized content."],
@@ -15,11 +16,19 @@ const plans = [
   { name: "Enterprise", price: "Custom", description: "For multi-brand operators that need security, integrations, and control.", features: ["Unlimited account architecture", "Custom worker workflows", "API and data warehouse integrations", "Dedicated implementation"] },
 ];
 
+function MarketingLogo({ footer = false }: { footer?: boolean }) {
+  return (
+    <Link className={`marketing-brand-logo${footer ? " footer-logo" : ""}`} href="/" aria-label="MerchantFlare home">
+      <img src="/merchantflare-logo.svg" alt="MerchantFlare — The AI Workforce for Commerce" />
+    </Link>
+  );
+}
+
 export default function HomePage() {
   return (
     <main className="marketing-shell">
       <nav className="marketing-nav">
-        <Link className="brand" href="/"><span className="brand-mark">M</span><span>MerchantFlare</span></Link>
+        <MarketingLogo />
         <div className="marketing-links">
           <a href="#product">Product</a><a href="#workers">Workers</a><a href="#pricing">Pricing</a>
         </div>
@@ -69,7 +78,7 @@ export default function HomePage() {
 
       <section className="cta-section" id="contact"><div><div className="eyebrow">MerchantFlare early access</div><h2>See how Mercury would operate your commerce business.</h2><p>We will map your current workflows, identify the highest-value automation opportunities, and show the command center using your operating model.</p></div><a className="btn primary" href="mailto:hello@merchantflare.com">Book a demo</a></section>
 
-      <footer className="marketing-footer"><Link className="brand" href="/"><span className="brand-mark">M</span><span>MerchantFlare</span></Link><p>AI commerce operations with human control.</p><div><Link href="/login">Customer login</Link><a href="#pricing">Pricing</a></div></footer>
+      <footer className="marketing-footer"><MarketingLogo footer /><p>AI commerce operations with human control.</p><div><Link href="/login">Customer login</Link><a href="#pricing">Pricing</a></div></footer>
     </main>
   );
 }
