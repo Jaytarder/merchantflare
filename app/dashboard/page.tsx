@@ -1,8 +1,33 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import AppShell from "../components/AppShell";
 import MetricCard from "../components/MetricCard";
+
+type PlannedTask = {
+  id: string;
+  worker: string;
+  capability: string;
+  title: string;
+  description: string;
+  priority: string;
+  requiresApproval: boolean;
+  dependencies: string[];
+};
+
+type MercuryResult = {
+  plan: {
+    id: string;
+    objective: string;
+    summary: string;
+    confidence: number;
+    requiresApproval: boolean;
+    tasks: PlannedTask[];
+  };
+  status: "ready" | "awaiting_approval" | "running" | "completed" | "failed";
+  approvalReasons: string[];
+  routes: Array<PlannedTask & { routeStatus: string }>;
+};
 
 const metrics = [
   { title: "Ordered revenue", value: "$1.42M", change: "+18.6% vs prior period" },
@@ -50,26 +75,35 @@ const suggestions = [
 
 export default function DashboardPage() {
   const [objective, setObjective] = useState("");
-  const [submittedObjective, setSubmittedObjective] = useState("");
+  const [result, setResult] = useState<MercuryResult | null>(null);
   const [running, setRunning] = useState(false);
+  const [error, setError] = useState("");
+  const [approved, setApproved] = useState(false);
 
-  const plan = useMemo(() => {
-    if (!submittedObjective) return [];
-    return [
-      ["Atlas", "Audit catalog and identify conversion opportunities"],
-      ["Vector", "Evaluate advertising efficiency and budget allocation"],
-      ["Oracle", "Check inventory constraints and demand risk"],
-      ["Sentinel", "Review compliance dependencies and approval gates"],
-      ["Pulse", "Summarize impact, decisions, and next actions"],
-    ];
-  }, [submittedObjective]);
-
-  function runObjective() {
+  async function runObjective() {
     const value = objective.trim();
-    if (!value) return;
+    if (!value || running) return;
+
     setRunning(true);
-    setSubmittedObjective(value);
-    window.setTimeout(() => setRunning(false), 900);
+    setError("");
+    setApproved(false);
+
+    try {
+      const response = await fetch("/api/mercury/plan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ objective: value }),
+      });
+
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || "Mercury could not create a plan.");
+      setResult(payload as MercuryResult);
+    } catch (requestError) {
+      setResult(null);
+      setError(requestError instanceof Error ? requestError.message : "Mercury could not create a plan.");
+    } finally {
+      setRunning(false);
+    }
   }
 
   return (
@@ -80,7 +114,7 @@ export default function DashboardPage() {
           <h1>Good morning, Justin.</h1>
           <p className="muted page-lead">One operating view for catalog, advertising, inventory, compliance, and executive action.</p>
         </div>
-        <div className="status-pill"><span className="dot" />Live preview</div>
+        <div className="status-pill"><span className="dot" />Planning API online</div>
       </header>
 
       <section className="mercury-command" aria-label="Mercury objective planner">
@@ -88,20 +122,19 @@ export default function DashboardPage() {
         <div className="command-copy">
           <span className="command-kicker">Ask Mercury</span>
           <h2>What should we accomplish today?</h2>
-          <p>Describe the outcome. Mercury will create a worker plan, identify approval gates, and stage the execution path.</p>
+          <p>Describe the outcome. Mercury will create a worker plan, identify dependencies, and apply approval policies.</p>
         </div>
         <div className="command-form">
           <input
             aria-label="Command Mercury"
             value={objective}
             onChange={(event) => setObjective(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") runObjective();
-            }}
+            onKeyDown={(event) => { if (event.key === "Enter") runObjective(); }}
             placeholder="Example: Improve ROAS without reducing revenue"
+            maxLength={500}
           />
-          <button className="btn primary" type="button" onClick={runObjective} disabled={running}>
-            {running ? "Planning…" : "Run objective"}
+          <button className="btn primary" type="button" onClick={runObjective} disabled={running || !objective.trim()}>
+            {running ? "Mercury is planning…" : "Run objective"}
           </button>
         </div>
         <div className="command-suggestions">
@@ -109,28 +142,44 @@ export default function DashboardPage() {
             <button key={suggestion} type="button" onClick={() => setObjective(suggestion)}>{suggestion}</button>
           ))}
         </div>
+        {error && <p className="command-error" role="alert">{error}</p>}
       </section>
 
-      {submittedObjective && (
+      {result && (
         <section className="plan-panel" aria-live="polite">
           <div className="plan-heading">
             <div>
-              <div className="eyebrow">Execution plan</div>
-              <h2>{submittedObjective}</h2>
+              <div className="eyebrow">Execution plan · {Math.round(result.plan.confidence * 100)}% confidence</div>
+              <h2>{result.plan.objective}</h2>
+              <p className="muted">{result.plan.summary}</p>
             </div>
-            <span className="plan-state">{running ? "Planning" : "Ready for review"}</span>
+            <span className={`plan-state ${result.status === "awaiting_approval" ? "warning" : ""}`}>
+              {approved ? "Approved for execution" : result.status === "awaiting_approval" ? "Awaiting approval" : "Ready"}
+            </span>
           </div>
+
           <div className="plan-grid">
-            {plan.map(([worker, task], index) => (
-              <div className="plan-step" key={worker}>
+            {result.routes.map((task, index) => (
+              <div className="plan-step" key={task.id}>
                 <span className="step-number">{index + 1}</span>
-                <div><strong>{worker}</strong><p>{task}</p></div>
+                <div>
+                  <strong>{task.worker}</strong>
+                  <p>{task.title}</p>
+                  <span className="route-state">{task.routeStatus.replaceAll("_", " ")}</span>
+                </div>
               </div>
             ))}
           </div>
+
           <div className="approval-bar">
-            <div><strong>Material actions remain approval-gated.</strong><span>No live marketplace changes will be made in preview mode.</span></div>
-            <button className="btn secondary" type="button">Review plan</button>
+            <div>
+              <strong>{result.plan.requiresApproval ? "Material actions are approval-gated." : "No approval is required for this plan."}</strong>
+              <span>{result.approvalReasons[0] || "Mercury can stage this plan without marketplace writes."}</span>
+            </div>
+            {result.plan.requiresApproval && !approved && (
+              <button className="btn primary" type="button" onClick={() => setApproved(true)}>Approve plan</button>
+            )}
+            {approved && <span className="badge live">Approval recorded</span>}
           </div>
         </section>
       )}
@@ -199,8 +248,8 @@ export default function DashboardPage() {
           </article>
 
           <article className="card" id="settings">
-            <div className="section-title"><h2>Environment</h2><span className="badge review">Preview</span></div>
-            <p className="muted">Connected to the GitHub main branch. Marketplace writes and external APIs remain disabled.</p>
+            <div className="section-title"><h2>Environment</h2><span className="badge live">API connected</span></div>
+            <p className="muted">Mercury planning is active. Marketplace writes remain disabled until account integrations and execution controls are configured.</p>
           </article>
         </aside>
       </section>
