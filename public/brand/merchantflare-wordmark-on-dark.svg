@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 590 48" role="img" aria-labelledby="title desc">
+  <title id="title">MerchantFlare</title>
+  <desc id="desc">Merchant in white and Flare in orange.</desc>
+  <defs>
+    <path id="m" d="M0 48V0h8l11 17L30 0h8v48h-8V14L19 31 8 14v34H0Z"/>
+    <path id="e" d="M0 0h38v8H9v11h24v9H9v12h29v8H0V0Z"/>
+    <path id="r" fill-rule="evenodd" d="M0 0h27l11 10v12l-9 8 9 18H28l-8-16H9v16H0V0Zm9 8v16h16l4-4v-8l-4-4H9Z"/>
+    <path id="c" d="M9 0h29v8H13l-4 4v24l4 4h25v8H9L0 39V9l9-9Z"/>
+    <path id="h" d="M0 0h9v19h20V0h9v48h-9V28H9v20H0V0Z"/>
+    <path id="a" fill-rule="evenodd" d="M14 0h10l14 48h-9l-3-11H12L9 48H0L14 0Zm0 29h10l-5-18-5 18Z"/>
+    <path id="n" d="M0 48V0h9l20 31V0h9v48h-9L9 17v31H0Z"/>
+    <path id="t" d="M0 0h38v9H24v39h-9V9H0V0Z"/>
+    <path id="f" d="M0 0h38v8H9v12h24v9H9v19H0V0Z"/>
+    <path id="l" d="M0 0h9v40h29v8H0V0Z"/>
+  </defs>
+  <g fill="#FFFFFF">
+    <use href="#m" x="0"/>
+    <use href="#e" x="46"/>
+    <use href="#r" x="92"/>
+    <use href="#c" x="138"/>
+    <use href="#h" x="184"/>
+    <use href="#a" x="230"/>
+    <use href="#n" x="276"/>
+    <use href="#t" x="322"/>
+  </g>
+  <g fill="#FF6A1A">
+    <use href="#f" x="368"/>
+    <use href="#l" x="414"/>
+    <use href="#a" x="460"/>
+    <use href="#r" x="506"/>
+    <use href="#e" x="552"/>
+  </g>
+</svg>

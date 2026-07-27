@@ -40,7 +40,7 @@ function MercuryPreview() {
           <div className="mf-screen-bar"><i /><i /><i /><strong>Mercury · Commerce Intelligence Engine</strong></div>
           <div className="mf-dashboard">
             <aside className="mf-side">
-              <BrandLogo decorative />
+              <BrandLogo className="mf-preview-logo" decorative variant="monogram" />
               <div className="mf-side-nav"><span /><span /><span /><span /><span /></div>
             </aside>
             <section className="mf-main">
@@ -100,7 +100,7 @@ export function PlatformSection() {
 
 export function IntelligenceSection() {
   return (
-    <section className="mf-section" id="workers">
+    <section className="mf-section" id="intelligence">
       <div className="mf-section-label">Specialized intelligence</div>
       <h2>One intelligence. Six specialists.</h2>
       <p className="mf-section-lead">
@@ -123,7 +123,7 @@ export function EnterpriseSection() {
   return (
     <section className="mf-section center" id="enterprise">
       <div className="mf-section-label">Enterprise by design</div>
-      <h2>AI speed. Human authority.</h2>
+      <h2>Intelligence at speed. Human authority.</h2>
       <p className="mf-section-lead">
         Approval workflows, audit history, secure integrations, role-based access, and executive visibility are built into the platform from the beginning.
       </p>
@@ -141,7 +141,7 @@ export function ClosingSection() {
         <a className="mf-button primary" href="mailto:hello@merchantflare.com">Book a private demo</a>
       </section>
       <footer className="mf-footer">
-        <BrandLogo />
+        <BrandLogo className="mf-footer-logo" />
         <span>© 2026 MerchantFlare. Commerce Intelligence Platform.</span>
         <div className="mf-footer-links"><Link href="/login">Customer login</Link><a href="mailto:hello@merchantflare.com">Contact</a></div>
       </footer>

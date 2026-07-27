@@ -20,6 +20,7 @@ Sprint 1, the application shell, is implemented. The repository also contains an
 - Sidebar footer presentation for platform connection statuses. These values are currently static UI data, not live health checks.
 - Shell integration on `/dashboard` and `/workers`.
 - MerchantFlare black, white, and orange visual treatment, shared CSS tokens, and reusable UI primitives.
+- A production brand system with reusable dark- and light-surface wordmarks and monograms, a shared typed `Logo` component, favicon assets, an app icon, and canonical product metadata.
 
 ### Application and service foundations
 
@@ -41,7 +42,7 @@ Sprint 1, the application shell, is implemented. The repository also contains an
 | Layer | Current implementation |
 | --- | --- |
 | Web application | Next.js App Router application with React and TypeScript |
-| Styling | Global CSS in `app/globals.css` and shell CSS in `app/styles/app-shell.css`; a second `styles/design-system.css` token set exists but is not imported |
+| Styling | Global CSS in `app/globals.css` and shell CSS in `app/components/app-shell.css`; a second `styles/design-system.css` token set exists but is not imported |
 | Pages | `/`, `/login`, `/dashboard`, and `/workers` |
 | API | Next.js route handlers for login, logout, Mercury planning, and Mercury plan history |
 | Authentication | Environment-configured administrator credentials and an HMAC-signed, HTTP-only cookie; `/dashboard` is guarded |
@@ -62,8 +63,9 @@ The documented target uses AWS Amplify Hosting, API Gateway, Lambda, Aurora Post
 | Shell | `AppShell`, `Sidebar`, `SidebarSection`, `SidebarItem`, `Topbar`, `Workspace` | Responsive shell state, drawer behavior, sidebar collapse, and application content framing |
 | Navigation | `navigation.ts` | Central navigation configuration and route matching; most configured destination routes do not exist yet |
 | Topbar tools | `SearchBar`, `UserMenu`, `NotificationBell` | Navigation filtering and routing, logout form, and static empty notification state |
+| Brand | `components/brand/Logo.tsx`, `public/brand/` | Shared wordmark, monogram, and horizontal lockup variants for dark and light surfaces, plus favicon and app-icon assets |
 | Shared UI | `Button`, `Card`, `Badge`, `StatusDot`, `MetricTile` | Reusable styled presentation components |
-| Marketing | Root page plus components under `app/components/marketing/` | Public presentation only; the root page still contains legacy product terminology and does not use all newer marketing components |
+| Marketing | Root page plus components under `components/marketing/` | Public presentation only; the active page uses the shared brand component but does not use all newer marketing components |
 | Login | `/login`, login/logout route handlers, `lib/auth.ts` | Single administrator credential check and cookie lifecycle |
 | Dashboard | `/dashboard` and guarded dashboard layout | Static metrics, recommendations, charts, brief, and activity; objective submission calls the Mercury planning endpoint |
 | Legacy prototype | `/workers` | Static AI-worker-oriented prototype retained as migration debt; it is not a completed intelligence-module experience |
@@ -96,7 +98,7 @@ The documented target uses AWS Amplify Hosting, API Gateway, Lambda, Aurora Post
 - Approval-decision and execution repository functions exist without corresponding application routes or user interfaces.
 - No automated database migration command is defined.
 - No lint or test scripts are defined, and no automated test files were found.
-- The active marketing page and some domain/code identifiers still use legacy worker terminology that conflicts with the current product definition.
+- The legacy `/workers` surface, dashboard copy, shell navigation/search copy, and some domain/code identifiers still use worker terminology that conflicts with the current product definition.
 
 ## Next sprint
 
@@ -141,6 +143,7 @@ Validation was run against this repository state on 2026-07-27.
 
 | Date | Change |
 | --- | --- |
+| 2026-07-27 | Implemented the reusable MerchantFlare SVG brand system across marketing, login, the application shell, metadata, favicons, and the web app manifest. |
 | 2026-07-27 | Added this code-verified project status baseline. |
 | 2026-07-27 | Added MerchantFlare module and platform specifications. |
 | 2026-07-27 | Added permanent MerchantFlare product and engineering documentation (`9886941`). |

@@ -12,6 +12,19 @@ MerchantFlare uses a black, white, and orange visual system with an enterprise a
 
 The interface should feel precise, controlled, and operational. Avoid playful assistant visuals, novelty gradients, excessive glow, or decorative animation that weakens information hierarchy.
 
+## Logo system
+
+The production logo system is implemented by `components/brand/Logo.tsx` with source assets under `public/brand/`.
+
+- `wordmark` uses the MERCHANTFLARE name with **MERCHANT** in the surface-appropriate high-contrast color and **FLARE** in orange.
+- `monogram` uses the compact MF mark with an orange upward flare.
+- `horizontal` combines the monogram and wordmark without duplicating SVG markup.
+- `surface="dark"` and `surface="light"` select the matching flat SVG assets.
+- The “Commerce Intelligence Platform” tagline is optional and should appear only where space and hierarchy support it.
+- Favicons use the simplified monogram; the web app icon uses the same geometry at a larger square size.
+
+Keep the artwork flat. Do not add gradients, glow, shadows, embedded brand-board imagery, or unrelated decorative effects to production logo assets. Preserve the supplied aspect ratio and use accessible alternative text unless a repeated mark is explicitly decorative.
+
 ## Current tokens
 
 The active global theme in `app/globals.css` defines:
@@ -78,8 +91,9 @@ Current reusable areas:
 - shell components in `app/components/layout/`;
 - general primitives in `components/ui/index.tsx`;
 - form primitives in `components/ui/Forms.tsx`;
-- brand components in `components/marketing/`; and
-- the logo asset at `public/merchantflare-logo.svg`.
+- the shared logo component in `components/brand/Logo.tsx`;
+- marketing composition in `components/marketing/`; and
+- production logo, favicon, and app-icon assets in `public/brand/`.
 
 Some reusable components and `styles/design-system.css` are not wired into active pages. Confirm actual imports before assuming a component is in production or deleting it.
 
@@ -130,4 +144,4 @@ In particular:
 - call them intelligence modules or use their full intelligence names; and
 - do not add new “worker,” “assistant,” or “AI workforce” labels.
 
-Legacy copy remains in the marketing page, `/workers`, source types, and logo metadata. Migrate it deliberately without obscuring whether the underlying feature exists.
+Legacy copy remains in `/workers`, the dashboard, shell navigation and search, and source types. Migrate it deliberately without obscuring whether the underlying feature exists.

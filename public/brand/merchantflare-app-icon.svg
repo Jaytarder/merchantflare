@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-labelledby="title desc">
+  <title id="title">MerchantFlare app icon</title>
+  <desc id="desc">White MF monogram with an orange upward flare on black.</desc>
+  <rect width="1024" height="1024" rx="184" fill="#0B0B0D"/>
+  <g transform="translate(128 128) scale(6)">
+    <path fill="#FFFFFF" d="M12 104V31l34 31 31-31v20L46 82 29 66v38H12Z"/>
+    <path fill="#FFFFFF" d="M64 108V59h49l-10 17H82v9h17l-9 16h-8v7H64Z"/>
+    <path fill="#FF6A1A" d="M72 25 118 14l-16 25-30 7V25Z"/>
+  </g>
+</svg>

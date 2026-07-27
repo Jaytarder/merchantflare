@@ -1,7 +1,9 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Logo } from "../../components/brand/Logo";
 import "./login.css";
 
 export default function LoginPage() {
@@ -38,15 +40,15 @@ export default function LoginPage() {
   return (
     <main className="login-page">
       <section className="login-brand-panel">
-        <a className="login-logo" href="/" aria-label="MerchantFlare home">
-          <img src="/merchantflare-logo.svg" alt="MerchantFlare" />
-        </a>
+        <Link className="login-logo" href="/" aria-label="MerchantFlare home">
+          <Logo variant="horizontal" surface="dark" tagline priority />
+        </Link>
         <div className="login-hero-copy">
           <span>MERCURY COMMAND</span>
-          <h1>Your AI operating system for commerce.</h1>
-          <p>Coordinate advertising, catalog, inventory, compliance, creative, and executive reporting from one command center.</p>
+          <h1>Commerce intelligence, under your control.</h1>
+          <p>Connect catalog, advertising, demand, compliance, creative, and executive intelligence through one governed command center.</p>
         </div>
-        <div className="login-system-status"><i /> Mercury systems operational</div>
+        <div className="login-system-status">Mercury · Commerce Intelligence Engine</div>
       </section>
 
       <section className="login-form-panel">

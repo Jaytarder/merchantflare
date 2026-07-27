@@ -1,8 +1,8 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Logo } from "../../../components/brand/Logo";
 import SidebarSection from "./SidebarSection";
 import { connections, navigation } from "./navigation";
 
@@ -32,15 +32,18 @@ export default function Sidebar({ drawerOpen, tabletCollapsed, onClose }: Sideba
       >
         <div className="platform-brand">
           <Link href="/dashboard" aria-label="MerchantFlare Mercury command center" onClick={onClose}>
-            <Image
+            <Logo
               className="platform-brand-logo"
-              src="/merchantflare-logo.svg"
-              alt="MerchantFlare"
-              width={180}
-              height={53}
+              variant="horizontal"
+              surface="dark"
               priority
             />
-            <span className="platform-brand-mark" aria-hidden="true">MF</span>
+            <Logo
+              className="platform-brand-mark"
+              variant="monogram"
+              surface="dark"
+              decorative
+            />
           </Link>
           <button className="platform-drawer-close" type="button" aria-label="Close navigation" onClick={onClose}>
             <span aria-hidden="true">×</span>

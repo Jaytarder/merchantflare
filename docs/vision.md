@@ -105,4 +105,4 @@ Avoid:
 - collection of AI tools
 - “replace your team” positioning
 
-Some existing source files and the logo metadata still contain legacy workforce language. That copy is not the product direction and should be migrated during an appropriately scoped product-language or surface sprint.
+Some existing source files and application surfaces still contain legacy workforce language. That copy is not the product direction and should be migrated during an appropriately scoped product-language or surface sprint.

@@ -1,47 +1,31 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 846 249" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 128" role="img" aria-labelledby="title desc">
   <title id="title">MerchantFlare</title>
-  <desc id="desc">MerchantFlare logo with a silver angular M, orange growth arrow, and the tagline The AI Workforce for Commerce.</desc>
+  <desc id="desc">White and orange MerchantFlare horizontal logo for dark backgrounds.</desc>
   <defs>
-    <linearGradient id="metal" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#ffffff"/>
-      <stop offset="0.42" stop-color="#f4f4f5"/>
-      <stop offset="0.72" stop-color="#c8c9cc"/>
-      <stop offset="1" stop-color="#ffffff"/>
-    </linearGradient>
-    <linearGradient id="flare" x1="0" y1="1" x2="1" y2="0">
-      <stop offset="0" stop-color="#ff6a00"/>
-      <stop offset="0.55" stop-color="#ff8a16"/>
-      <stop offset="1" stop-color="#ff9f31"/>
-    </linearGradient>
-    <radialGradient id="backGlow" cx="24%" cy="40%" r="75%">
-      <stop offset="0" stop-color="#131417"/>
-      <stop offset="0.55" stop-color="#090a0c"/>
-      <stop offset="1" stop-color="#030405"/>
-    </radialGradient>
-    <filter id="softGlow" x="-30%" y="-30%" width="160%" height="160%">
-      <feGaussianBlur stdDeviation="1.7" result="blur"/>
-      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-    </filter>
-    <filter id="grain" x="0" y="0" width="100%" height="100%">
-      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="7" result="noise"/>
-      <feColorMatrix in="noise" type="saturate" values="0" result="mono"/>
-      <feComponentTransfer in="mono" result="faint"><feFuncA type="table" tableValues="0 0.035"/></feComponentTransfer>
-      <feBlend in="SourceGraphic" in2="faint" mode="screen"/>
-    </filter>
+    <path id="m" d="M0 48V0h8l11 17L30 0h8v48h-8V14L19 31 8 14v34H0Z"/>
+    <path id="e" d="M0 0h38v8H9v11h24v9H9v12h29v8H0V0Z"/>
+    <path id="r" fill-rule="evenodd" d="M0 0h27l11 10v12l-9 8 9 18H28l-8-16H9v16H0V0Zm9 8v16h16l4-4v-8l-4-4H9Z"/>
+    <path id="c" d="M9 0h29v8H13l-4 4v24l4 4h25v8H9L0 39V9l9-9Z"/>
+    <path id="h" d="M0 0h9v19h20V0h9v48h-9V28H9v20H0V0Z"/>
+    <path id="a" fill-rule="evenodd" d="M14 0h10l14 48h-9l-3-11H12L9 48H0L14 0Zm0 29h10l-5-18-5 18Z"/>
+    <path id="n" d="M0 48V0h9l20 31V0h9v48h-9L9 17v31H0Z"/>
+    <path id="t" d="M0 0h38v9H24v39h-9V9H0V0Z"/>
+    <path id="f" d="M0 0h38v8H9v12h24v9H9v19H0V0Z"/>
+    <path id="l" d="M0 0h9v40h29v8H0V0Z"/>
   </defs>
-
-  <rect width="846" height="249" rx="2" fill="url(#backGlow)"/>
-  <rect width="846" height="249" rx="2" fill="transparent" filter="url(#grain)"/>
-
-  <g transform="translate(27 41)">
-    <path d="M5 133V25L70 93L136 25V133" fill="none" stroke="url(#metal)" stroke-width="13" stroke-linecap="square" stroke-linejoin="miter" filter="url(#softGlow)"/>
-    <path d="M38 133L145 9" fill="none" stroke="url(#flare)" stroke-width="12" stroke-linecap="square" filter="url(#softGlow)"/>
-    <path d="M139 10L169 0L158 30Z" fill="url(#flare)" filter="url(#softGlow)"/>
-    <rect x="188" y="18" width="2.5" height="116" fill="url(#flare)"/>
-
-    <g transform="translate(230 27)" font-family="Montserrat, Avenir Next, Arial, Helvetica, sans-serif">
-      <text x="0" y="51" fill="url(#metal)" font-size="43" font-weight="600" letter-spacing="8.1">MERCHANT<tspan fill="url(#flare)">FLARE</tspan></text>
-      <text x="2" y="88" fill="#f0f0f2" font-size="19" font-weight="500" letter-spacing="5.15">THE AI WORKFORCE FOR COMMERCE</text>
+  <g transform="translate(0 0)">
+    <path fill="#FFFFFF" d="M12 104V31l34 31 31-31v20L46 82 29 66v38H12Z"/>
+    <path fill="#FFFFFF" d="M64 108V59h49l-10 17H82v9h17l-9 16h-8v7H64Z"/>
+    <path fill="#FF6A1A" d="M72 25 118 14l-16 25-30 7V25Z"/>
+  </g>
+  <path d="M140 24v80" stroke="#8A9099" stroke-width="2"/>
+  <g transform="translate(164 40)">
+    <g fill="#FFFFFF">
+      <use href="#m" x="0"/><use href="#e" x="46"/><use href="#r" x="92"/><use href="#c" x="138"/>
+      <use href="#h" x="184"/><use href="#a" x="230"/><use href="#n" x="276"/><use href="#t" x="322"/>
+    </g>
+    <g fill="#FF6A1A">
+      <use href="#f" x="368"/><use href="#l" x="414"/><use href="#a" x="460"/><use href="#r" x="506"/><use href="#e" x="552"/>
     </g>
   </g>
 </svg>

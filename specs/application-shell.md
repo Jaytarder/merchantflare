@@ -20,7 +20,9 @@ The current shell implements:
 - navigation search with `Ctrl+K`;
 - notification and user-menu surfaces;
 - static platform-status presentation; and
-- a responsive workspace boundary.
+- a responsive workspace boundary;
+- a reusable MerchantFlare horizontal wordmark and compact monogram; and
+- canonical application metadata, favicon, and app-icon references.
 
 The shell is composed from `app/components/layout/` and styled by `app/components/app-shell.css`. It is used by `/dashboard` and directly by the legacy `/workers` page.
 
@@ -66,7 +68,6 @@ The shell is composed from `app/components/layout/` and styled by `app/component
 - Notifications are a static empty state.
 - Search placeholder text includes legacy worker language.
 - `/workers` bypasses the dashboard authentication layout.
-- The existing logo metadata contains legacy product language.
 
 ## Acceptance criteria
 

@@ -37,22 +37,13 @@
 }
 
 .platform-brand-logo {
-  width: 180px;
-  height: auto;
+  width: 192px;
 }
 
-.platform-brand-mark {
+.platform-brand .platform-brand-mark {
   display: none;
-  width: 42px;
-  height: 42px;
-  place-items: center;
-  border: 1px solid rgba(255, 106, 0, 0.3);
-  border-radius: 13px;
-  background: linear-gradient(135deg, rgba(255, 106, 0, 0.2), rgba(255, 155, 61, 0.08));
-  color: var(--accent-2, #ff9b3d);
-  font-size: 12px;
-  font-weight: 900;
-  letter-spacing: -0.04em;
+  width: 44px;
+  height: 44px;
 }
 
 .platform-drawer-close {
@@ -647,7 +638,7 @@
   }
 
   .platform-shell.is-tablet-collapsed .platform-brand-mark {
-    display: grid;
+    display: inline-flex;
   }
 
   .platform-shell.is-tablet-collapsed .platform-nav {

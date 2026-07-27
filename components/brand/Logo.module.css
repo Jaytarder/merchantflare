@@ -1,0 +1,59 @@
+.logo {
+  display: inline-flex;
+  max-width: 100%;
+  flex-direction: column;
+  color: #8a9099;
+  line-height: 1;
+}
+
+.lockup {
+  display: flex;
+  width: 100%;
+  align-items: center;
+}
+
+.monogram,
+.wordmark {
+  display: block;
+  height: auto;
+  flex: 0 0 auto;
+}
+
+.horizontal .monogram {
+  width: 16.8%;
+}
+
+.horizontal .divider {
+  width: 1px;
+  height: 52%;
+  min-height: 22px;
+  margin-inline: 3.1%;
+  flex: 0 0 auto;
+  background: #8a9099;
+  opacity: 0.65;
+}
+
+.horizontal .wordmark {
+  width: 76.9%;
+}
+
+.wordmarkOnly .wordmark,
+.monogramOnly .monogram {
+  width: 100%;
+}
+
+.tagline {
+  margin-top: 0.58rem;
+  align-self: flex-end;
+  color: currentColor;
+  font-size: clamp(0.52rem, 1.2vw, 0.72rem);
+  font-weight: 650;
+  letter-spacing: 0.24em;
+  line-height: 1.35;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.logo[data-surface="light"] {
+  color: #5f646d;
+}
