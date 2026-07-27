@@ -4,6 +4,7 @@ import type {
   OrchestrationStatus,
   RouteStatus,
 } from "./types";
+import type { MercuryEvidenceCoverage } from "./evidence";
 
 export type ConversationStatus = "active" | "archived";
 export type ConversationAuthor = "user" | "mercury" | "system";
@@ -32,6 +33,9 @@ export type ConversationPlanTask = {
 
 export type ConversationPlan = {
   id: string;
+  rootPlanId: string;
+  supersedesPlanId?: string;
+  version: number;
   summary: string;
   status: OrchestrationStatus;
   confidence: number;
@@ -39,7 +43,15 @@ export type ConversationPlan = {
   approvalReasons: string[];
   tasks: ConversationPlanTask[];
   plannerMode: "deterministic";
-  evidenceStatus: "unavailable";
+  evidence: MercuryEvidenceCoverage;
+  approval?: {
+    id: string;
+    status: "pending" | "approved" | "rejected" | "superseded";
+    policyVersion: string;
+    decidedBy?: string;
+    decisionNote?: string;
+    decidedAt?: string;
+  };
   createdAt: string;
 };
 

@@ -1,5 +1,7 @@
 import type { MercuryCapability, PlannedTask } from "./types";
 
+export const APPROVAL_POLICY_VERSION = "2026-07-27.v1";
+
 export type ApprovalPolicy = {
   capability: MercuryCapability;
   reason: string;
@@ -27,14 +29,19 @@ const approvalPolicies: ApprovalPolicy[] = [
 export type ApprovalDecision = {
   required: boolean;
   reason?: string;
+  policyVersion: string;
 };
 
 export function evaluateApproval(capability: MercuryCapability): ApprovalDecision {
   const policy = approvalPolicies.find((candidate) => candidate.capability === capability);
 
   return policy
-    ? { required: true, reason: policy.reason }
-    : { required: false };
+    ? {
+        required: true,
+        reason: policy.reason,
+        policyVersion: APPROVAL_POLICY_VERSION,
+      }
+    : { required: false, policyVersion: APPROVAL_POLICY_VERSION };
 }
 
 export function applyApprovalPolicies(tasks: PlannedTask[]): PlannedTask[] {

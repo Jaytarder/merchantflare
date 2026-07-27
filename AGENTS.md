@@ -49,7 +49,7 @@ Before declaring work complete:
 - review the final Git diff for accidental or unrelated changes; and
 - never claim a command passed unless it was actually run successfully.
 
-The current package scripts include `typecheck` and `build`. There is currently no lint or test script; do not claim those checks ran unless scripts are added and executed.
+The current package scripts include `typecheck`, `test`, `build`, `migrate`, and `migrate:dry-run`. There is currently no lint script. Run the available checks that match the change, and do not claim unavailable or unexecuted checks passed.
 
 ## Git
 

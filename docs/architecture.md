@@ -35,6 +35,7 @@ This diagram is the target architecture, not a statement that the AWS resources 
 - Shared presentational components live in `app/components/` and `components/`.
 - Core domain and Mercury logic live in `lib/`.
 - PostgreSQL migrations live in `db/migrations/`.
+- The checksum-enforced migration runner lives in `scripts/migrate.ts`.
 - Global brand and shell styling currently live in `app/globals.css`, `app/marketing-brand.css`, `app/components/app-shell.css`, and `styles/design-system.css`.
 
 ### Implemented page routes
@@ -88,9 +89,10 @@ Implemented route handlers:
 - `GET /api/mercury/history` returns organization-scoped persisted plan summaries;
 - `GET` and `POST /api/mercury/conversations` list conversations and create the first durable turn;
 - `GET` and `PATCH /api/mercury/conversations/[conversationId]` load, rename, archive, or restore a conversation; and
-- `POST /api/mercury/conversations/[conversationId]/messages` appends a durable conversation turn.
+- `POST /api/mercury/conversations/[conversationId]/messages` appends a durable conversation turn or creates a versioned revision of an existing plan; and
+- `POST /api/mercury/plans/[planId]/approval` records an idempotent plan-level approval or rejection.
 
-The dashboard renders the conversation thread and deterministic plan detail, including modules, dependencies, and approval requirements. It explicitly reports that live evidence is unavailable. Model-backed reasoning, citations, plan revision, approval decisions, and execution controls are not implemented.
+The dashboard renders the conversation thread and deterministic plan detail, including modules, dependencies, version history, evidence coverage, and approval requirements. It supports revision and inline plan-level approval decisions and explicitly reports when evidence is unavailable. Model-backed reasoning, live evidence retrieval, and execution controls are not implemented.
 
 ### Mercury domain layer
 
@@ -102,7 +104,9 @@ The repository contains an early Mercury foundation:
 - dependency routing;
 - timeline events;
 - plan and task persistence;
-- approval decision functions;
+- versioned plan supersession;
+- evidence-source, evidence-item, and plan-evidence contracts;
+- idempotent plan-level approval decisions with immutable proposal and policy versions;
 - execution result types;
 - a generic executor with a mock fallback; and
 - a database-backed runtime with deterministic module output builders.
@@ -123,9 +127,13 @@ Migrations currently define:
 - Mercury tasks;
 - Mercury events;
 - Mercury approvals; and
+- Mercury evidence sources, evidence items, and plan-evidence links;
+- mutation idempotency records;
 - commerce integration metadata.
 
-Conversation operations require `DATABASE_URL` and the committed migrations. A submitted turn is persisted transactionally with its user message, plan, tasks, events, approval requirements, and Mercury response. When persistence is unavailable, the workspace presents an explicit unavailable state rather than fabricated conversation data. The compatibility plan endpoint can still return an unpersisted deterministic plan.
+Conversation operations require `DATABASE_URL` and the committed migrations through `004_mercury_evidence_and_governance.sql`. `npm run migrate` applies unapplied migrations under a PostgreSQL advisory lock and rejects changed, missing, misnamed, or duplicate-sequence migration files; `npm run migrate:dry-run` validates ordering and checksums without a database. A submitted turn is persisted transactionally with its user message, versioned plan, tasks, events, approval requirements, and Mercury response. When persistence is unavailable, the workspace presents an explicit unavailable state rather than fabricated conversation data. The compatibility plan endpoint can still return an unpersisted deterministic plan.
+
+The evidence schema is an implemented storage boundary, not evidence that a source is connected. No live commerce ingestion or retrieval adapter currently populates it.
 
 Aurora PostgreSQL is the target managed database, but the repository contains no AWS deployment configuration proving an Aurora cluster exists.
 

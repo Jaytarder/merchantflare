@@ -15,13 +15,14 @@ The repository contains:
 - capability-to-module routing using legacy `worker` identifiers;
 - dependency and approval flags;
 - timeline event generation;
-- PostgreSQL persistence for plans, tasks, approvals, and events;
-- approval-decision repository functions;
+- PostgreSQL persistence for versioned plans, tasks, approvals, evidence, idempotency records, and events;
+- parent/root plan references and supersession for plan revisions;
+- authenticated idempotent plan-level approval decisions bound to policy and plan versions;
 - a generic in-memory executor with a mock fallback;
 - a database-backed sequential runtime with deterministic module outputs; and
 - execution-state columns and event writes.
 
-There are two execution paths. Neither is exposed through a complete authenticated API, queue, recovery process, or production module adapter.
+There are two execution paths. Neither is exposed through a complete authenticated API, queue, recovery process, or production module adapter. Approval changes eligible plan/task state but deliberately does not start either path.
 
 ## Canonical lifecycle
 

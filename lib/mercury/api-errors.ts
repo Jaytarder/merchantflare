@@ -2,8 +2,12 @@ import { apiError } from "../api-response";
 import {
   MercuryConversationConflictError,
   MercuryConversationNotFoundError,
-  MercuryPersistenceUnavailableError,
 } from "./conversation-repository";
+import {
+  MercuryPersistenceUnavailableError,
+  MercuryPlanNotFoundError,
+  MercuryWorkflowConflictError,
+} from "./workflow-errors";
 
 export function mercuryApiError(error: unknown) {
   if (error instanceof MercuryPersistenceUnavailableError) {
@@ -19,6 +23,14 @@ export function mercuryApiError(error: unknown) {
   }
 
   if (error instanceof MercuryConversationConflictError) {
+    return apiError("conflict", error.message, 409);
+  }
+
+  if (error instanceof MercuryPlanNotFoundError) {
+    return apiError("not_found", error.message, 404);
+  }
+
+  if (error instanceof MercuryWorkflowConflictError) {
     return apiError("conflict", error.message, 409);
   }
 

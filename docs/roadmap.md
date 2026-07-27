@@ -39,21 +39,25 @@ Implemented:
 - transactional conversation turns linked to generated plans;
 - rule-based planning, routing, approvals, and timeline generation;
 - reviewable deterministic plan details and approval requirements;
+- immutable plan versioning and superseding revisions;
+- plan-level approval and rejection with idempotency, policy version, proposal snapshot, and audit identity;
+- evidence-source, evidence-item, freshness, limitation, and plan-citation storage contracts;
 - explicit persistence-unavailable and evidence-unavailable states; and
+- checksum-enforced database migration tooling and initial domain tests;
 - authenticated organization-scoped plan history.
 
 Still required:
 
 - model-backed conversational reasoning;
-- commerce evidence, citations, freshness, and limitations;
-- plan revision and version history;
-- approval decision interaction;
+- live commerce evidence ingestion and retrieval;
+- evidence-grounded model responses and confidence explanations;
+- a dedicated approval queue, multi-user reviewer authorization, expiry, and delegation;
 - execution controls and live progress;
 - history UI;
 - knowledge context;
 - measured outcome reporting;
 - attachments and optional response streaming; and
-- automated migration and test infrastructure.
+- PostgreSQL integration, API, browser, and broader domain test coverage.
 
 ## 3. Atlas — Not started
 
@@ -99,14 +103,14 @@ Still required:
 
 ## 10. Mercury orchestration engine — Foundation only
 
-The repository contains planning, routing, approval, persistence, and execution primitives.
+The repository contains deterministic planning, versioned plans, routing, idempotent plan-level approval, evidence/provenance storage, persistence, and execution primitives.
 
 Still required:
 
 - one canonical execution architecture;
 - production module adapters;
 - durable queues and idempotency;
-- approval release and rejection APIs;
+- a dedicated approval queue and task-level or hybrid policy if selected;
 - retries, cancellation, and recovery;
 - execution status streaming or polling;
 - evidence and artifact storage;

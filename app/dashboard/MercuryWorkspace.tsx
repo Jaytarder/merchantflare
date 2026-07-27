@@ -8,6 +8,7 @@ import {
   type FormEvent,
 } from "react";
 import type {
+  ConversationPlan,
   ConversationStatus,
   MercuryConversation,
   MercuryConversationSummary,
@@ -69,6 +70,11 @@ export default function MercuryWorkspace() {
   const [error, setError] = useState("");
   const [renaming, setRenaming] = useState(false);
   const [titleDraft, setTitleDraft] = useState("");
+  const [actionPlanId, setActionPlanId] = useState<string | null>(null);
+  const [revisionTarget, setRevisionTarget] = useState<{
+    planId: string;
+    version: number;
+  } | null>(null);
 
   const loadConversations = useCallback(
     async (status: ConversationStatus, preferredId?: string) => {
@@ -167,6 +173,12 @@ export default function MercuryWorkspace() {
     setDraft("");
     setError("");
     setRenaming(false);
+    setRevisionTarget(null);
+  }
+
+  function selectConversation(conversationId: string) {
+    setRevisionTarget(null);
+    setSelectedId(conversationId);
   }
 
   async function submitMessage(event: FormEvent<HTMLFormElement>) {
@@ -183,8 +195,14 @@ export default function MercuryWorkspace() {
         : "/api/mercury/conversations";
       const response = await fetch(endpoint, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message }),
+        headers: {
+          "Content-Type": "application/json",
+          "Idempotency-Key": crypto.randomUUID(),
+        },
+        body: JSON.stringify({
+          message,
+          supersedesPlanId: revisionTarget?.planId,
+        }),
       });
       const payload = await responsePayload<{
         conversation: MercuryConversation;
@@ -196,6 +214,7 @@ export default function MercuryWorkspace() {
       setTitleDraft(payload.conversation.title);
       upsertSummary(payload.conversation);
       setDraft("");
+      setRevisionTarget(null);
     } catch (requestError) {
       setError(
         requestError instanceof Error
@@ -205,6 +224,52 @@ export default function MercuryWorkspace() {
     } finally {
       setSending(false);
     }
+  }
+
+  async function decideApproval(
+    planId: string,
+    decision: "approved" | "rejected",
+    note?: string,
+  ) {
+    if (actionPlanId) return;
+    setActionPlanId(planId);
+    setError("");
+
+    try {
+      const response = await fetch(`/api/mercury/plans/${planId}/approval`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Idempotency-Key": crypto.randomUUID(),
+        },
+        body: JSON.stringify({ decision, note }),
+      });
+      const payload = await responsePayload<{
+        conversation: MercuryConversation | null;
+      }>(response);
+      if (!payload.conversation) {
+        throw new Error("Mercury could not reload the decided plan.");
+      }
+      setConversation(payload.conversation);
+      upsertSummary(payload.conversation);
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Mercury could not record the approval decision.",
+      );
+      throw requestError;
+    } finally {
+      setActionPlanId(null);
+    }
+  }
+
+  function startRevision(plan: ConversationPlan) {
+    setRevisionTarget({ planId: plan.id, version: plan.version });
+    setDraft("");
+    requestAnimationFrame(() => {
+      document.querySelector<HTMLTextAreaElement>("#mercury-message")?.focus();
+    });
   }
 
   async function updateConversation(input: {
@@ -232,6 +297,7 @@ export default function MercuryWorkspace() {
       setRenaming(false);
 
       if (input.status) {
+        setRevisionTarget(null);
         setConversationStatus(input.status);
         await loadConversations(input.status, payload.conversation.id);
       } else {
@@ -259,9 +325,12 @@ export default function MercuryWorkspace() {
         status={conversationStatus}
         loading={loadState === "loading"}
         disabled={unavailable || sending}
-        onSelect={setSelectedId}
+        onSelect={selectConversation}
         onNew={startNewConversation}
-        onStatusChange={setConversationStatus}
+        onStatusChange={(status) => {
+          setRevisionTarget(null);
+          setConversationStatus(status);
+        }}
       />
 
       <section className="mercury-thread" aria-label="Mercury workspace">
@@ -324,8 +393,9 @@ export default function MercuryWorkspace() {
             <span>Database required</span>
             <h2>Connect PostgreSQL to enable durable Mercury conversations.</h2>
             <p>
-              Configure <code>DATABASE_URL</code> and apply migrations
-              <code>001</code> through <code>003</code>. Mercury will not
+              Configure <code>DATABASE_URL</code> and run{" "}
+              <code>npm run migrate</code> to apply migrations through{" "}
+              <code>004</code>. Mercury will not
               simulate conversation persistence or claim that unsaved plans are
               durable.
             </p>
@@ -367,7 +437,12 @@ export default function MercuryWorkspace() {
                     </div>
                     <p>{message.content}</p>
                     {message.plan ? (
-                      <MercuryPlanCard plan={message.plan} />
+                      <MercuryPlanCard
+                        plan={message.plan}
+                        busy={archived || actionPlanId !== null}
+                        onDecision={decideApproval}
+                        onRevise={startRevision}
+                      />
                     ) : null}
                   </article>
                 ))
@@ -408,14 +483,34 @@ export default function MercuryWorkspace() {
 
             {!archived ? (
               <form className="mercury-composer" onSubmit={submitMessage}>
+                {revisionTarget ? (
+                  <div className="mercury-revision-context">
+                    <span>
+                      Creating revision v{revisionTarget.version + 1}
+                    </span>
+                    <button
+                      type="button"
+                      disabled={sending}
+                      onClick={() => setRevisionTarget(null)}
+                    >
+                      Cancel revision
+                    </button>
+                  </div>
+                ) : null}
                 <label htmlFor="mercury-message">Message Mercury</label>
                 <textarea
                   id="mercury-message"
                   value={draft}
                   maxLength={500}
                   rows={3}
-                  placeholder="Describe the commerce question or outcome…"
-                  disabled={sending || loadState !== "ready"}
+                  placeholder={
+                    revisionTarget
+                      ? "Describe the revised objective or constraints…"
+                      : "Describe the commerce question or outcome…"
+                  }
+                  disabled={
+                    sending || actionPlanId !== null || loadState !== "ready"
+                  }
                   onChange={(event) => setDraft(event.target.value)}
                   onKeyDown={(event) => {
                     if (
@@ -433,6 +528,7 @@ export default function MercuryWorkspace() {
                     type="submit"
                     disabled={
                       sending ||
+                      actionPlanId !== null ||
                       draft.trim().length < 5 ||
                       loadState !== "ready"
                     }

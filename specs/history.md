@@ -9,7 +9,7 @@ History provides an auditable, searchable record of conversations, plans, eviden
 
 ## Current implementation evidence
 
-History navigation exists. Authenticated, organization-scoped `GET /api/mercury/history` returns bounded plan summaries from PostgreSQL, repository code can load plan detail with tasks, events, and approvals, and the Mercury workspace retrieves organization-scoped conversation history with linked plan detail. There is no `/history` route, unified history endpoint, cursor pagination, search/filter UI, unified audit model, export, or retention policy.
+History navigation exists. Authenticated, organization-scoped `GET /api/mercury/history` returns bounded plan summaries from PostgreSQL, repository code can load plan detail with tasks, events, and approvals, and the Mercury workspace retrieves organization-scoped conversation history with linked, immutable plan versions, evidence coverage, supersession, and approval decisions. There is no `/history` route, unified history endpoint, cursor pagination, search/filter UI, unified audit model, export, or retention policy.
 
 ## Functional requirements
 

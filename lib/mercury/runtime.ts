@@ -19,11 +19,13 @@ function toJsonValue(value: unknown): JSONValue {
 export async function executeMercuryPlan(planId: string): Promise<ExecutionRun> {
   const plan = await getMercuryPlan(planId);
   if (!plan) throw new Error("Mercury plan not found.");
-  if (plan.status === "awaiting_approval") {
-    throw new Error("Mercury plan requires approval before execution.");
-  }
   if (plan.status === "running") {
     throw new Error("Mercury plan is already running.");
+  }
+  if (plan.status !== "ready") {
+    throw new Error(
+      `Mercury plan cannot execute while its status is ${plan.status}.`,
+    );
   }
 
   await updatePlanStatus(planId, "running");

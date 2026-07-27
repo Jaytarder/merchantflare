@@ -21,13 +21,16 @@ import type {
   RouteStatus,
 } from "./types";
 import type { TaskPriority } from "../domain";
-
-export class MercuryPersistenceUnavailableError extends Error {
-  constructor() {
-    super("Mercury conversation persistence requires DATABASE_URL.");
-    this.name = "MercuryPersistenceUnavailableError";
-  }
-}
+import {
+  summarizeEvidence,
+  type EvidenceFreshness,
+  type MercuryEvidenceItem,
+} from "./evidence";
+import {
+  MercuryPersistenceUnavailableError,
+  MercuryPlanNotFoundError,
+  MercuryWorkflowConflictError,
+} from "./workflow-errors";
 
 export class MercuryConversationNotFoundError extends Error {
   constructor() {
@@ -65,12 +68,12 @@ function titleFromMessage(message: string) {
     : `${singleLine.slice(0, 69).trimEnd()}…`;
 }
 
-function mercuryResponseContent(plan: ExecutionPlan) {
+function mercuryResponseContent(plan: ExecutionPlan, version: number) {
   const moduleCount = new Set(plan.tasks.map((task) => task.worker)).size;
   const taskLabel = plan.tasks.length === 1 ? "task" : "tasks";
   const moduleLabel = moduleCount === 1 ? "intelligence module" : "intelligence modules";
 
-  return `Mercury created a ${plan.tasks.length}-${taskLabel} plan across ${moduleCount} ${moduleLabel}. This plan uses deterministic routing and does not yet include live commerce evidence.`;
+  return `Mercury created plan v${version} with ${plan.tasks.length} ${taskLabel} across ${moduleCount} ${moduleLabel}. This plan uses deterministic routing and does not yet include live commerce evidence.`;
 }
 
 export async function listMercuryConversations(
@@ -153,21 +156,29 @@ export async function getMercuryConversation(
 
   const planRows = await sql<Array<{
     id: string;
+    root_plan_id: string;
+    supersedes_plan_id: string | null;
+    version: number;
     summary: string;
     status: OrchestrationStatus;
     confidence: string | number;
     requires_approval: boolean;
     approval_reasons: string[];
+    evidence_limitation: string;
     payload: ExecutionPlan;
     created_at: Date;
   }>>`
     select
       id,
+      root_plan_id,
+      supersedes_plan_id,
+      version,
       summary,
       status,
       confidence,
       requires_approval,
       approval_reasons,
+      evidence_limitation,
       payload,
       created_at
     from mercury_plans
@@ -206,6 +217,72 @@ export async function getMercuryConversation(
     order by task.created_at asc
   `;
 
+  const approvalRows = await sql<Array<{
+    id: string;
+    plan_id: string;
+    status: NonNullable<ConversationPlan["approval"]>["status"];
+    policy_version: string;
+    decided_by: string | null;
+    decision_note: string | null;
+    decided_at: Date | null;
+  }>>`
+    select
+      approval.id,
+      approval.plan_id,
+      approval.status,
+      approval.policy_version,
+      approval.decided_by,
+      approval.decision_note,
+      approval.decided_at
+    from mercury_approvals approval
+    join mercury_plans plan on plan.id = approval.plan_id
+    where plan.conversation_id = ${conversationId}
+      and plan.organization_id = ${principal.organizationId}
+    order by approval.created_at desc
+  `;
+
+  const evidenceRows = await sql<Array<{
+    plan_id: string;
+    id: string;
+    source_id: string;
+    source_name: string;
+    source_type: string;
+    source_record_reference: string | null;
+    title: string;
+    summary: string;
+    observed_at: Date;
+    ingested_at: Date;
+    date_range_start: Date | null;
+    date_range_end: Date | null;
+    freshness: EvidenceFreshness;
+    limitations: string[];
+  }>>`
+    select
+      link.plan_id,
+      item.id,
+      item.source_id,
+      source.display_name as source_name,
+      source.source_type,
+      item.source_record_reference,
+      item.title,
+      item.summary,
+      item.observed_at,
+      item.ingested_at,
+      item.date_range_start,
+      item.date_range_end,
+      item.freshness,
+      item.limitations
+    from mercury_plan_evidence link
+    join mercury_plans plan on plan.id = link.plan_id
+    join mercury_evidence_items item on item.id = link.evidence_item_id
+    join mercury_evidence_sources source on source.id = item.source_id
+    where plan.conversation_id = ${conversationId}
+      and plan.organization_id = ${principal.organizationId}
+      and item.organization_id = ${principal.organizationId}
+      and source.organization_id = ${principal.organizationId}
+    order by item.observed_at desc
+  `;
+
   const tasksByPlan = new Map<string, ConversationPlanTask[]>();
   for (const task of taskRows) {
     const tasks = tasksByPlan.get(task.plan_id) ?? [];
@@ -238,11 +315,50 @@ export async function getMercuryConversation(
     );
   }
 
-  const plans = new Map<string, ConversationPlan>(
-    planRows.map((plan) => [
-      plan.id,
-      {
+  const approvalsByPlan = new Map<string, ConversationPlan["approval"]>();
+  for (const approval of approvalRows) {
+    if (!approvalsByPlan.has(approval.plan_id)) {
+      approvalsByPlan.set(approval.plan_id, {
+        id: approval.id,
+        status: approval.status,
+        policyVersion: approval.policy_version,
+        decidedBy: approval.decided_by ?? undefined,
+        decisionNote: approval.decision_note ?? undefined,
+        decidedAt: approval.decided_at?.toISOString(),
+      });
+    }
+  }
+
+  const evidenceByPlan = new Map<string, MercuryEvidenceItem[]>();
+  for (const evidence of evidenceRows) {
+    const items = evidenceByPlan.get(evidence.plan_id) ?? [];
+    items.push({
+      id: evidence.id,
+      sourceId: evidence.source_id,
+      sourceName: evidence.source_name,
+      sourceType: evidence.source_type,
+      sourceRecordReference: evidence.source_record_reference ?? undefined,
+      title: evidence.title,
+      summary: evidence.summary,
+      observedAt: evidence.observed_at.toISOString(),
+      ingestedAt: evidence.ingested_at.toISOString(),
+      dateRangeStart: evidence.date_range_start?.toISOString(),
+      dateRangeEnd: evidence.date_range_end?.toISOString(),
+      freshness: evidence.freshness,
+      limitations: evidence.limitations ?? [],
+    });
+    evidenceByPlan.set(evidence.plan_id, items);
+  }
+
+  const plans = new Map<string, ConversationPlan>();
+  for (const plan of planRows) {
+    const evidenceItems = evidenceByPlan.get(plan.id) ?? [];
+    const evidence = summarizeEvidence(evidenceItems);
+    plans.set(plan.id, {
         id: plan.id,
+        rootPlanId: plan.root_plan_id,
+        supersedesPlanId: plan.supersedes_plan_id ?? undefined,
+        version: plan.version,
         summary: plan.summary,
         status: plan.status,
         confidence: Number(plan.confidence),
@@ -250,11 +366,17 @@ export async function getMercuryConversation(
         approvalReasons: plan.approval_reasons ?? [],
         tasks: tasksByPlan.get(plan.id) ?? [],
         plannerMode: "deterministic",
-        evidenceStatus: "unavailable",
+        evidence: {
+          ...evidence,
+          limitation:
+            evidenceItems.length > 0
+              ? evidence.limitation
+              : plan.evidence_limitation,
+        },
+        approval: approvalsByPlan.get(plan.id),
         createdAt: plan.created_at.toISOString(),
-      },
-    ]),
-  );
+      });
+  }
 
   return {
     id: conversation.id,
@@ -277,15 +399,68 @@ export async function createMercuryConversationTurn(input: {
   conversationId?: string;
   message: string;
   principal: ConversationPrincipal;
+  requestKey?: string;
+  supersedesPlanId?: string;
 }): Promise<MercuryConversation> {
+  if (input.supersedesPlanId && !input.conversationId) {
+    throw new MercuryWorkflowConflictError(
+      "A plan revision must belong to an existing conversation.",
+    );
+  }
+
   const sql = requireDatabase();
   const result = await orchestrate(input.message);
-  const conversationId = input.conversationId ?? createId("conversation");
+  let conversationId = input.conversationId ?? createId("conversation");
   const userMessageId = createId("message");
   const responseMessageId = createId("message");
-  const responseContent = mercuryResponseContent(result.plan);
 
-  await sql.begin(async (tx) => {
+  const transactionResult = await sql.begin(async (tx) => {
+    if (input.requestKey) {
+      const insertedKeys = await tx<Array<{ resource_id: string }>>`
+        insert into mercury_request_keys (
+          organization_id,
+          request_key,
+          operation,
+          resource_id
+        ) values (
+          ${input.principal.organizationId},
+          ${input.requestKey},
+          'mercury.turn',
+          ${conversationId}
+        )
+        on conflict do nothing
+        returning resource_id
+      `;
+
+      if (!insertedKeys[0]) {
+        const existingKeys = await tx<Array<{
+          operation: string;
+          resource_id: string;
+        }>>`
+          select operation, resource_id
+          from mercury_request_keys
+          where organization_id = ${input.principal.organizationId}
+            and request_key = ${input.requestKey}
+          limit 1
+        `;
+        const existingKey = existingKeys[0];
+        if (
+          !existingKey ||
+          existingKey.operation !== "mercury.turn" ||
+          (input.conversationId &&
+            existingKey.resource_id !== input.conversationId)
+        ) {
+          throw new MercuryWorkflowConflictError(
+            "This request key was already used for another operation.",
+          );
+        }
+        return {
+          duplicate: true,
+          conversationId: existingKey.resource_id,
+        };
+      }
+    }
+
     if (input.conversationId) {
       const conversations = await tx<Array<{ status: ConversationStatus }>>`
         select status
@@ -323,6 +498,39 @@ export async function createMercuryConversationTurn(input: {
       `;
     }
 
+    let rootPlanId = result.plan.id;
+    let version = 1;
+
+    if (input.supersedesPlanId) {
+      const parentPlans = await tx<Array<{
+        id: string;
+        root_plan_id: string;
+        version: number;
+        status: OrchestrationStatus;
+      }>>`
+        select id, root_plan_id, version, status
+        from mercury_plans
+        where id = ${input.supersedesPlanId}
+          and conversation_id = ${conversationId}
+          and organization_id = ${input.principal.organizationId}
+        limit 1
+        for update
+      `;
+      const parentPlan = parentPlans[0];
+      if (!parentPlan) throw new MercuryPlanNotFoundError();
+      if (
+        parentPlan.status === "running" ||
+        parentPlan.status === "completed" ||
+        parentPlan.status === "superseded"
+      ) {
+        throw new MercuryWorkflowConflictError(
+          `Plan v${parentPlan.version} can no longer be revised.`,
+        );
+      }
+      rootPlanId = parentPlan.root_plan_id;
+      version = parentPlan.version + 1;
+    }
+
     const sequenceRows = await tx<Array<{ last_sequence: string | number }>>`
       select coalesce(max(sequence_number), 0) as last_sequence
       from mercury_messages
@@ -338,6 +546,7 @@ export async function createMercuryConversationTurn(input: {
         organization_id,
         author_type,
         content,
+        request_key,
         sequence_number,
         created_at
       ) values (
@@ -346,6 +555,7 @@ export async function createMercuryConversationTurn(input: {
         ${input.principal.organizationId},
         'user',
         ${input.message},
+        ${input.requestKey ?? null},
         ${userSequence},
         now()
       )
@@ -355,9 +565,44 @@ export async function createMercuryConversationTurn(input: {
       organizationId: input.principal.organizationId,
       conversationId,
       sourceMessageId: userMessageId,
+      rootPlanId,
+      supersedesPlanId: input.supersedesPlanId,
+      version,
     };
     await persistOrchestrationResult(tx, result, context);
 
+    if (input.supersedesPlanId) {
+      await tx`
+        update mercury_plans
+        set status = 'superseded', superseded_at = now(), updated_at = now()
+        where id = ${input.supersedesPlanId}
+          and organization_id = ${input.principal.organizationId}
+      `;
+      await tx`
+        update mercury_approvals
+        set status = 'superseded'
+        where plan_id = ${input.supersedesPlanId}
+          and organization_id = ${input.principal.organizationId}
+          and status = 'pending'
+      `;
+      await tx`
+        insert into mercury_events (
+          id,
+          plan_id,
+          event_type,
+          message,
+          created_at
+        ) values (
+          ${createId("event")},
+          ${input.supersedesPlanId},
+          'plan.superseded',
+          ${`Plan superseded by version ${version}. No action was executed.`},
+          now()
+        )
+      `;
+    }
+
+    const responseContent = mercuryResponseContent(result.plan, version);
     await tx`
       insert into mercury_messages (
         id,
@@ -378,6 +623,7 @@ export async function createMercuryConversationTurn(input: {
         ${tx.json({
           plannerMode: "deterministic",
           evidenceStatus: "unavailable",
+          planVersion: version,
         })},
         ${result.plan.id},
         ${responseSequence},
@@ -398,7 +644,10 @@ export async function createMercuryConversationTurn(input: {
       where id = ${conversationId}
         and organization_id = ${input.principal.organizationId}
     `;
+    return { duplicate: false, conversationId };
   });
+
+  conversationId = transactionResult.conversationId;
 
   const conversation = await getMercuryConversation(
     conversationId,

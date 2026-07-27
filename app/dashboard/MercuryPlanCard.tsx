@@ -1,7 +1,21 @@
+"use client";
+
+import { useState, type FormEvent } from "react";
 import type {
   ConversationPlan,
   ConversationPlanTask,
 } from "../../lib/mercury/conversation-types";
+
+type MercuryPlanCardProps = {
+  plan: ConversationPlan;
+  busy: boolean;
+  onDecision: (
+    planId: string,
+    decision: "approved" | "rejected",
+    note?: string,
+  ) => Promise<void>;
+  onRevise: (plan: ConversationPlan) => void;
+};
 
 function words(value: string) {
   return value.replaceAll("_", " ");
@@ -13,12 +27,46 @@ function routeLabel(task: ConversationPlanTask) {
   return "Ready for review";
 }
 
-export default function MercuryPlanCard({ plan }: { plan: ConversationPlan }) {
+export default function MercuryPlanCard({
+  plan,
+  busy,
+  onDecision,
+  onRevise,
+}: MercuryPlanCardProps) {
+  const [decisionMode, setDecisionMode] = useState<
+    "approved" | "rejected" | null
+  >(null);
+  const [decisionNote, setDecisionNote] = useState("");
+  const pendingApproval = plan.approval?.status === "pending";
+  const canRevise = !["running", "completed", "superseded"].includes(
+    plan.status,
+  );
+
+  async function submitDecision(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!decisionMode || busy) return;
+    if (decisionMode === "rejected" && decisionNote.trim().length < 5) {
+      return;
+    }
+
+    try {
+      await onDecision(
+        plan.id,
+        decisionMode,
+        decisionNote.trim() || undefined,
+      );
+      setDecisionMode(null);
+      setDecisionNote("");
+    } catch {
+      // The workspace renders the safe API error and preserves this form.
+    }
+  }
+
   return (
-    <section className="mercury-plan" aria-label="Mercury plan">
+    <section className="mercury-plan" aria-label={`Mercury plan version ${plan.version}`}>
       <header className="mercury-plan-heading">
         <div>
-          <span>Deterministic plan</span>
+          <span>Deterministic plan · v{plan.version}</span>
           <h3>{plan.tasks.length} coordinated tasks</h3>
         </div>
         <div className={`mercury-plan-status is-${plan.status}`}>
@@ -26,12 +74,28 @@ export default function MercuryPlanCard({ plan }: { plan: ConversationPlan }) {
         </div>
       </header>
 
-      <div className="mercury-evidence-notice">
-        <strong>Evidence unavailable</strong>
-        <p>
-          Live commerce sources are not connected to this plan. Task routing is
-          based only on objective keywords and configured capability rules.
-        </p>
+      <div
+        className={`mercury-evidence-notice is-${plan.evidence.status}`}
+      >
+        <strong>
+          {plan.evidence.status === "unavailable"
+            ? "Evidence unavailable"
+            : `${plan.evidence.itemCount} evidence items`}
+        </strong>
+        <p>{plan.evidence.limitation}</p>
+        {plan.evidence.items.length ? (
+          <ul className="mercury-evidence-list">
+            {plan.evidence.items.map((item) => (
+              <li key={item.id}>
+                <strong>{item.title}</strong>
+                <span>
+                  {item.sourceName} · {words(item.freshness)}
+                </span>
+                <p>{item.summary}</p>
+              </li>
+            ))}
+          </ul>
+        ) : null}
       </div>
 
       <div className="mercury-plan-tasks">
@@ -51,21 +115,104 @@ export default function MercuryPlanCard({ plan }: { plan: ConversationPlan }) {
         ))}
       </div>
 
-      {plan.requiresApproval ? (
+      {pendingApproval ? (
         <div className="mercury-approval-notice">
           <div>
-            <strong>Approval required before execution</strong>
+            <strong>Approval required before any future execution</strong>
             <p>
-              This foundation provides plan review only. No commerce action has
-              been executed.
+              Review the deterministic proposal and its evidence limitation.
+              A decision records authority but does not execute commerce work.
             </p>
           </div>
           <span>{plan.approvalReasons.length} policy checks</span>
+        </div>
+      ) : plan.approval ? (
+        <div className={`mercury-approval-result is-${plan.approval.status}`}>
+          <strong>Approval {plan.approval.status}</strong>
+          <span>Policy {plan.approval.policyVersion}</span>
+          {plan.approval.decisionNote ? (
+            <p>{plan.approval.decisionNote}</p>
+          ) : null}
         </div>
       ) : (
         <div className="mercury-review-notice">
           Plan ready for review. Execution controls are not enabled in this
           milestone.
+        </div>
+      )}
+
+      {decisionMode ? (
+        <form className="mercury-decision-form" onSubmit={submitDecision}>
+          <strong>
+            {decisionMode === "approved"
+              ? "Confirm plan approval"
+              : "Record plan rejection"}
+          </strong>
+          <p>
+            {decisionMode === "approved"
+              ? "Approval makes eligible tasks ready for a future execution workflow. Nothing will execute now."
+              : "Rejection blocks this plan. Explain why so the decision remains auditable."}
+          </p>
+          <label htmlFor={`decision-note-${plan.id}`}>
+            {decisionMode === "rejected" ? "Rejection note" : "Decision note (optional)"}
+          </label>
+          <textarea
+            id={`decision-note-${plan.id}`}
+            value={decisionNote}
+            maxLength={500}
+            rows={2}
+            disabled={busy}
+            onChange={(event) => setDecisionNote(event.target.value)}
+          />
+          <div>
+            <button
+              type="submit"
+              disabled={
+                busy ||
+                (decisionMode === "rejected" &&
+                  decisionNote.trim().length < 5)
+              }
+            >
+              {busy
+                ? "Recording…"
+                : decisionMode === "approved"
+                  ? "Confirm approval"
+                  : "Confirm rejection"}
+            </button>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => setDecisionMode(null)}
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      ) : (
+        <div className="mercury-plan-actions">
+          {pendingApproval ? (
+            <>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => setDecisionMode("approved")}
+              >
+                Review approval
+              </button>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => setDecisionMode("rejected")}
+              >
+                Reject
+              </button>
+            </>
+          ) : null}
+          {canRevise ? (
+            <button type="button" disabled={busy} onClick={() => onRevise(plan)}>
+              Revise plan
+            </button>
+          ) : null}
         </div>
       )}
     </section>

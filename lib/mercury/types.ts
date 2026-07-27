@@ -40,7 +40,10 @@ export type OrchestrationEventType =
   | "task.started"
   | "task.succeeded"
   | "task.failed"
-  | "task.retrying";
+  | "task.retrying"
+  | "approval.approved"
+  | "approval.rejected"
+  | "plan.superseded";
 
 export type OrchestrationEvent = {
   id: string;
@@ -56,7 +59,9 @@ export type OrchestrationStatus =
   | "awaiting_approval"
   | "running"
   | "completed"
-  | "failed";
+  | "failed"
+  | "rejected"
+  | "superseded";
 
 export type RouteStatus =
   | "ready"

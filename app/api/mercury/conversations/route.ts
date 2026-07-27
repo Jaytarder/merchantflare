@@ -6,6 +6,10 @@ import {
 } from "../../../../lib/mercury/conversation-repository";
 import { mercuryApiError } from "../../../../lib/mercury/api-errors";
 import { getAuthenticatedAdmin } from "../../../../lib/server-auth";
+import {
+  isValidIdempotencyKey,
+  readIdempotencyKey,
+} from "../../../../lib/idempotency";
 
 export async function GET(request: Request) {
   const session = await getAuthenticatedAdmin();
@@ -57,6 +61,14 @@ export async function POST(request: Request) {
   }
 
   try {
+    const requestKey = readIdempotencyKey(request);
+    if (!isValidIdempotencyKey(requestKey)) {
+      return apiError(
+        "invalid_request",
+        "Idempotency-Key must contain between 8 and 128 safe characters.",
+        400,
+      );
+    }
     const body = (await request.json()) as { message?: unknown };
     const message =
       typeof body.message === "string" ? body.message.trim() : "";
@@ -72,6 +84,7 @@ export async function POST(request: Request) {
     const conversation = await createMercuryConversationTurn({
       message,
       principal: session,
+      requestKey,
     });
 
     return NextResponse.json({ conversation }, { status: 201 });

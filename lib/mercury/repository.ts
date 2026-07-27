@@ -8,6 +8,13 @@ import type {
   OrchestrationStatus,
   TaskExecutionResult,
 } from "./types";
+import { APPROVAL_POLICY_VERSION } from "./approvals";
+import { NO_EVIDENCE_LIMITATION } from "./evidence";
+import {
+  MercuryPersistenceUnavailableError,
+  MercuryPlanNotFoundError,
+  MercuryWorkflowConflictError,
+} from "./workflow-errors";
 
 type MercuryTransaction = postgres.TransactionSql;
 
@@ -16,6 +23,9 @@ export type PlanPersistenceContext = {
   conversationId?: string;
   sourceMessageId?: string;
   responseMessageId?: string;
+  rootPlanId?: string;
+  supersedesPlanId?: string;
+  version?: number;
 };
 
 export type MercuryPlanSummary = {
@@ -32,7 +42,9 @@ export type MercuryPlanSummary = {
 export type MercuryApproval = {
   id: string;
   planId: string;
-  status: "pending" | "approved" | "rejected";
+  status: "pending" | "approved" | "rejected" | "superseded";
+  planVersion: number;
+  policyVersion: string;
   decidedBy?: string;
   decisionNote?: string;
   decidedAt?: string;
@@ -74,6 +86,11 @@ export async function persistOrchestrationResult(
         conversation_id,
         source_message_id,
         response_message_id,
+        root_plan_id,
+        supersedes_plan_id,
+        version,
+        evidence_status,
+        evidence_limitation,
         objective,
         summary,
         status,
@@ -89,6 +106,11 @@ export async function persistOrchestrationResult(
         ${context.conversationId ?? null},
         ${context.sourceMessageId ?? null},
         ${context.responseMessageId ?? null},
+        ${context.rootPlanId ?? result.plan.id},
+        ${context.supersedesPlanId ?? null},
+        ${context.version ?? 1},
+        'unavailable',
+        ${NO_EVIDENCE_LIMITATION},
         ${result.plan.objective},
         ${result.plan.summary},
         ${result.status},
@@ -104,6 +126,11 @@ export async function persistOrchestrationResult(
         conversation_id = excluded.conversation_id,
         source_message_id = excluded.source_message_id,
         response_message_id = excluded.response_message_id,
+        root_plan_id = excluded.root_plan_id,
+        supersedes_plan_id = excluded.supersedes_plan_id,
+        version = excluded.version,
+        evidence_status = excluded.evidence_status,
+        evidence_limitation = excluded.evidence_limitation,
         objective = excluded.objective,
         summary = excluded.summary,
         status = excluded.status,
@@ -171,8 +198,23 @@ export async function persistOrchestrationResult(
 
   if (result.plan.requiresApproval) {
     await tx`
-        insert into mercury_approvals (plan_id)
-        values (${result.plan.id})
+        insert into mercury_approvals (
+          plan_id,
+          organization_id,
+          plan_version,
+          policy_version,
+          proposal_snapshot
+        )
+        values (
+          ${result.plan.id},
+          ${context.organizationId},
+          ${context.version ?? 1},
+          ${APPROVAL_POLICY_VERSION},
+          ${tx.json({
+            plan: result.plan,
+            approvalReasons: result.approvalReasons,
+          })}
+        )
         on conflict do nothing
       `;
   }
@@ -293,6 +335,8 @@ export async function getMercuryPlan(
     id: string;
     plan_id: string;
     status: MercuryApproval["status"];
+    plan_version: number;
+    policy_version: string;
     decided_by: string | null;
     decision_note: string | null;
     decided_at: Date | null;
@@ -342,6 +386,8 @@ export async function getMercuryPlan(
       id: approval.id,
       planId: approval.plan_id,
       status: approval.status,
+      planVersion: approval.plan_version,
+      policyVersion: approval.policy_version,
       decidedBy: approval.decided_by ?? undefined,
       decisionNote: approval.decision_note ?? undefined,
       decidedAt: approval.decided_at?.toISOString(),
@@ -353,42 +399,136 @@ export async function getMercuryPlan(
 export async function decideMercuryApproval(input: {
   planId: string;
   decision: "approved" | "rejected";
+  organizationId: string;
   decidedBy: string;
+  decisionKey: string;
   note?: string;
 }) {
   const sql = getDatabase();
-  if (!sql) throw new Error("DATABASE_URL is not configured.");
+  if (!sql) throw new MercuryPersistenceUnavailableError();
 
   return sql.begin(async (tx) => {
-    const approvals = await tx<Array<{ id: string }>>`
+    const repeated = await tx<Array<{
+      id: string;
+      plan_id: string;
+      status: MercuryApproval["status"];
+      conversation_id: string | null;
+      plan_status: OrchestrationStatus;
+    }>>`
+      select
+        approval.id,
+        approval.plan_id,
+        approval.status,
+        plan.conversation_id,
+        plan.status as plan_status
+      from mercury_approvals approval
+      join mercury_plans plan on plan.id = approval.plan_id
+      where approval.organization_id = ${input.organizationId}
+        and approval.decision_key = ${input.decisionKey}
+      limit 1
+    `;
+
+    if (repeated[0]) {
+      if (
+        repeated[0].plan_id === input.planId &&
+        repeated[0].status === input.decision
+      ) {
+        return {
+          approvalId: repeated[0].id,
+          status: repeated[0].plan_status,
+          conversationId: repeated[0].conversation_id,
+          repeated: true,
+        };
+      }
+      throw new MercuryWorkflowConflictError(
+        "This approval decision key was already used for another decision.",
+      );
+    }
+
+    const approvalRows = await tx<Array<{
+      approval_id: string | null;
+      approval_status: MercuryApproval["status"] | null;
+      plan_status: OrchestrationStatus;
+      conversation_id: string | null;
+    }>>`
+      select
+        approval.id as approval_id,
+        approval.status as approval_status,
+        plan.status as plan_status,
+        plan.conversation_id
+      from mercury_plans plan
+      left join mercury_approvals approval
+        on approval.plan_id = plan.id
+      where plan.id = ${input.planId}
+        and plan.organization_id = ${input.organizationId}
+      order by approval.created_at desc nulls last
+      limit 1
+      for update of plan
+    `;
+
+    const approval = approvalRows[0];
+    if (!approval) throw new MercuryPlanNotFoundError();
+    if (!approval.approval_id) {
+      throw new MercuryWorkflowConflictError(
+        "This plan does not require an approval decision.",
+      );
+    }
+    if (
+      approval.approval_status !== "pending" ||
+      approval.plan_status !== "awaiting_approval"
+    ) {
+      throw new MercuryWorkflowConflictError(
+        "This approval request is no longer pending.",
+      );
+    }
+
+    const updated = await tx<Array<{ id: string }>>`
       update mercury_approvals
       set
         status = ${input.decision},
         decided_by = ${input.decidedBy},
         decision_note = ${input.note ?? null},
+        decision_key = ${input.decisionKey},
         decided_at = now()
-      where plan_id = ${input.planId} and status = 'pending'
+      where id = ${approval.approval_id}
+        and organization_id = ${input.organizationId}
+        and status = 'pending'
       returning id
     `;
 
-    if (!approvals[0]) return null;
+    if (!updated[0]) {
+      throw new MercuryWorkflowConflictError(
+        "This approval request was decided by another request.",
+      );
+    }
 
-    const nextStatus: OrchestrationStatus = input.decision === "approved" ? "ready" : "failed";
+    const nextStatus: OrchestrationStatus =
+      input.decision === "approved" ? "ready" : "rejected";
     await tx`
       update mercury_plans
       set status = ${nextStatus}, updated_at = now()
       where id = ${input.planId}
+        and organization_id = ${input.organizationId}
     `;
 
     await tx`
       update mercury_tasks
       set
         route_status = case
-          when ${input.decision} = 'approved' and route_status = 'blocked_by_approval' then 'ready'
+          when ${input.decision} = 'approved'
+            and route_status = 'blocked_by_approval'
+            and jsonb_array_length(dependencies) > 0
+            then 'blocked_by_dependency'
+          when ${input.decision} = 'approved'
+            and route_status = 'blocked_by_approval'
+            then 'ready'
           else route_status
         end,
         execution_status = case
-          when ${input.decision} = 'approved' and route_status = 'blocked_by_approval' then 'pending'
+          when ${input.decision} = 'approved'
+            and route_status = 'blocked_by_approval'
+            and jsonb_array_length(dependencies) = 0
+            then 'pending'
           when ${input.decision} = 'rejected' then 'blocked'
           else execution_status
         end,
@@ -401,13 +541,18 @@ export async function decideMercuryApproval(input: {
       values (
         ${randomUUID()},
         ${input.planId},
-        ${input.decision === "approved" ? "task.queued" : "task.failed"},
-        ${input.decision === "approved" ? "Plan approved and released for execution." : "Plan rejected. Execution has been stopped."},
+        ${input.decision === "approved" ? "approval.approved" : "approval.rejected"},
+        ${input.decision === "approved" ? "Plan approved for a future execution workflow. No action has been executed." : "Plan rejected. No action has been executed."},
         now()
       )
     `;
 
-    return { approvalId: approvals[0].id, status: nextStatus };
+    return {
+      approvalId: updated[0].id,
+      status: nextStatus,
+      conversationId: approval.conversation_id,
+      repeated: false,
+    };
   });
 }
 

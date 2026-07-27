@@ -13,7 +13,10 @@ This specification defines cross-cutting contracts that feature specifications i
 - `lib/domain.ts` contains early organization, user, account, objective, task, alert, metric, and event types.
 - `lib/auth.ts` provides a single administrator session with development fallbacks and an organization identifier.
 - `lib/db.ts` provides an optional PostgreSQL connection.
-- Mercury migrations establish organization-scoped conversations, messages, plans, tasks, events, approvals, execution fields, and integration metadata.
+- Mercury migrations establish organization-scoped conversations, messages, versioned plans, tasks, events, approvals, evidence/provenance records, mutation idempotency records, execution fields, and integration metadata.
+- `lib/mercury/evidence.ts` defines typed evidence coverage and freshness summaries; without ingested records it returns an explicit unavailable limitation.
+- Conversation turns, revisions, and plan-level approval decisions accept validated idempotency keys.
+- `scripts/migrate.ts` provides an ordered, checksum-enforced PostgreSQL migration boundary.
 - No production tenancy, authorization, normalized commerce model, audit policy, queue, observability stack, or AWS resource configuration is implemented.
 
 ## Core domain boundaries

@@ -9,7 +9,7 @@ Approvals provide human authority over material commerce actions. An approval mu
 
 ## Current implementation evidence
 
-Approval navigation, capability policy rules, a `mercury_approvals` table, pending approval creation, and a repository decision function exist. Approval is currently modeled primarily at plan level. There is no route, API, reviewer authorization, immutable proposal snapshot, expiry, delegation, or user-facing workflow.
+Approval navigation, capability policy rules, versioned policy decisions, and plan-level approval persistence exist. Pending requests bind an immutable proposal snapshot and plan version. An authenticated, organization-scoped, idempotent API and inline Mercury confirmation UI approve or reject a pending request, record the interim administrator identity, note, policy version, and timestamp, and do not execute the plan. Superseding a pending plan supersedes its approval. There is no `/approvals` route, multi-user reviewer authorization, separation of duties, expiry, delegation, bulk workflow, or task-level approval.
 
 ## Functional requirements
 
