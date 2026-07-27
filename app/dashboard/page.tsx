@@ -1,160 +1,55 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import AppShell from "../components/AppShell";
-import MetricCard from "../components/MetricCard";
-
-type PlannedTask = {
-  id: string;
-  worker: string;
-  capability: string;
-  title: string;
-  description: string;
-  priority: string;
-  requiresApproval: boolean;
-  dependencies: string[];
-};
-
-type MercuryResult = {
-  plan: {
-    id: string;
-    objective: string;
-    summary: string;
-    confidence: number;
-    requiresApproval: boolean;
-    tasks: PlannedTask[];
-  };
-  status: "ready" | "awaiting_approval" | "running" | "completed" | "failed";
-  approvalReasons: string[];
-  routes: Array<PlannedTask & { routeStatus: string }>;
-};
-
-type MercuryPlanSummary = {
-  id: string;
-  objective: string;
-  summary: string;
-  status: MercuryResult["status"];
-  confidence: number;
-  requiresApproval: boolean;
-  createdAt: string;
-  updatedAt: string;
-};
 
 const metrics = [
-  { title: "Ordered revenue", value: "$1.42M", change: "+18.6% vs prior period" },
-  { title: "Contribution profit", value: "$312.4K", change: "+11.2% vs prior period" },
-  { title: "TACoS", value: "8.9%", change: "0.7 pts below target" },
-  { title: "Commerce health", value: "86 / 100", change: "+4 points this week" },
+  ["Ordered Revenue", "$2.48M", "+12.4%", "up"],
+  ["Shipped Revenue", "$2.31M", "+9.7%", "up"],
+  ["Ad Sales", "$603K", "+15.2%", "up"],
+  ["Ad Spend", "$118K", "+8.3%", "up"],
+  ["ACoS", "19.6%", "+1.8pp", "down"],
+  ["TACoS", "8.8%", "+0.6pp", "down"],
 ];
 
-const priorities = [
-  { severity: "Critical", title: "Compliance exposure", detail: "5 ASINs are missing required documentation.", owner: "Sentinel", impact: "$225.6K at risk" },
-  { severity: "High", title: "Inventory risk", detail: "12 top-selling ASINs are projected to stock out within 21 days.", owner: "Oracle", impact: "$142.8K protected" },
-  { severity: "High", title: "Advertising inefficiency", detail: "47 campaigns are spending above their profitability threshold.", owner: "Vector", impact: "$31.6K opportunity" },
+const recommendations = [
+  ["Increase budget for Minecraft Interactive Watch", "Campaign is hitting its budget limit with 16.8% ACoS", "High", "+$2K–$3K weekly sales", "Vector"],
+  ["Restock Spider-Man Kids Watch", "Stockout risk in 9 days", "High", "Avoid $45K+ lost sales", "Oracle"],
+  ["Optimize Bluey Watch Listing", "Low conversion rate vs. category benchmark", "Medium", "+8%–12% conversion", "Atlas"],
+  ["Add exact match for ‘minecraft camera watch’", "Top converting search term not fully covered", "Medium", "+10%–15% ad sales", "Vector"],
+  ["Renew GCC certificate for AC-MINE-01", "Expires in 21 days", "Medium", "Avoid suppression", "Sentinel"],
 ];
 
 const workers = [
-  { name: "Atlas", task: "Auditing 684 listings", progress: 78, status: "Running" },
-  { name: "Vector", task: "Rebalancing 47 campaigns", progress: 62, status: "Running" },
-  { name: "Sentinel", task: "Escalating 5 compliance gaps", progress: 44, status: "Review" },
-  { name: "Oracle", task: "Updating 8-week forecast", progress: 91, status: "Running" },
-  { name: "Forge", task: "Drafting creative briefs", progress: 36, status: "Running" },
-  { name: "Pulse", task: "Preparing executive report", progress: 84, status: "Running" },
+  ["Atlas", "Listing Manager", "Running", "3m ago"],
+  ["Vector", "Advertising Manager", "Running", "Just now"],
+  ["Oracle", "Inventory Planner", "Completed", "1h ago"],
+  ["Sentinel", "Compliance Manager", "Completed", "2h ago"],
+  ["Forge", "Creative Director", "Queued", "15m ago"],
+  ["Pulse", "Executive Analyst", "Completed", "2h ago"],
 ];
-
-const signals = [
-  ["Revenue velocity", "+18.6%", "positive"],
-  ["Organic sales share", "55.1%", "positive"],
-  ["Return rate", "4.7%", "warning"],
-  ["In-stock rate", "93.4%", "warning"],
-  ["Advertising ROAS", "5.2x", "positive"],
-];
-
-const activity = [
-  ["Vector reduced bids on 14 inefficient targets", "8 min ago"],
-  ["Atlas found 32 high-value listing opportunities", "24 min ago"],
-  ["Sentinel opened 5 compliance escalations", "41 min ago"],
-  ["Oracle refreshed demand forecasts", "1 hr ago"],
-];
-
-const suggestions = [
-  "Protect Q4 inventory",
-  "Optimize Pokémon listings",
-  "Improve ROAS without reducing revenue",
-  "Prepare executive report",
-];
-
-function formatConfidence(confidence: number) {
-  const normalized = confidence <= 1 ? confidence * 100 : confidence;
-  return `${Math.round(normalized)}%`;
-}
-
-function formatCreatedAt(value: string) {
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(new Date(value));
-}
-
-function formatStatus(status: MercuryResult["status"]) {
-  return status.replaceAll("_", " ");
-}
 
 export default function DashboardPage() {
   const [objective, setObjective] = useState("");
-  const [result, setResult] = useState<MercuryResult | null>(null);
   const [running, setRunning] = useState(false);
-  const [error, setError] = useState("");
-  const [approved, setApproved] = useState(false);
-  const [history, setHistory] = useState<MercuryPlanSummary[]>([]);
-  const [historyLoading, setHistoryLoading] = useState(true);
-  const [historyError, setHistoryError] = useState("");
-
-  const loadHistory = useCallback(async () => {
-    setHistoryLoading(true);
-    setHistoryError("");
-
-    try {
-      const response = await fetch("/api/mercury/history?limit=8", { cache: "no-store" });
-      const payload = await response.json();
-      if (!response.ok) throw new Error(payload.error || "Mercury could not load plan history.");
-      setHistory(Array.isArray(payload.plans) ? payload.plans : []);
-    } catch (requestError) {
-      setHistoryError(requestError instanceof Error ? requestError.message : "Mercury could not load plan history.");
-    } finally {
-      setHistoryLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void loadHistory();
-  }, [loadHistory]);
+  const [message, setMessage] = useState("");
 
   async function runObjective() {
-    const value = objective.trim();
-    if (!value || running) return;
-
+    if (!objective.trim() || running) return;
     setRunning(true);
-    setError("");
-    setApproved(false);
-
+    setMessage("");
     try {
       const response = await fetch("/api/mercury/plan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ objective: value }),
+        body: JSON.stringify({ objective: objective.trim() }),
       });
-
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error || "Mercury could not create a plan.");
-      setResult(payload as MercuryResult);
+      setMessage(`Plan created with ${payload.plan?.tasks?.length ?? 0} worker tasks.`);
       setObjective("");
-      await loadHistory();
-    } catch (requestError) {
-      setResult(null);
-      setError(requestError instanceof Error ? requestError.message : "Mercury could not create a plan.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Mercury could not create a plan.");
     } finally {
       setRunning(false);
     }
@@ -162,181 +57,49 @@ export default function DashboardPage() {
 
   return (
     <AppShell active="dashboard">
-      <header className="topbar command-header">
-        <div>
-          <div className="eyebrow">Mercury Command Center</div>
-          <h1>Good morning, Justin.</h1>
-          <p className="muted page-lead">One operating view for catalog, advertising, inventory, compliance, and executive action.</p>
-        </div>
-        <div className="status-pill"><span className="dot" />Planning API online</div>
-      </header>
+      <div className="terminal-page">
+        <header className="terminal-header">
+          <div><h1>Mercury Command Center</h1><p>Executive intelligence for Accutime&apos;s Amazon Vendor business.</p></div>
+          <div className="terminal-filters"><button>Jul 20 – Jul 27, 2026⌄</button><button>All Brands⌄</button><button aria-label="Notifications">●</button></div>
+        </header>
 
-      <section className="mercury-command" aria-label="Mercury objective planner">
-        <div className="mercury-orb" aria-hidden="true">M</div>
-        <div className="command-copy">
-          <span className="command-kicker">Ask Mercury</span>
-          <h2>What should we accomplish today?</h2>
-          <p>Describe the outcome. Mercury will create a worker plan, identify dependencies, and apply approval policies.</p>
-        </div>
-        <div className="command-form">
-          <input
-            aria-label="Command Mercury"
-            value={objective}
-            onChange={(event) => setObjective(event.target.value)}
-            onKeyDown={(event) => { if (event.key === "Enter") void runObjective(); }}
-            placeholder="Example: Improve ROAS without reducing revenue"
-            maxLength={500}
-          />
-          <button className="btn primary" type="button" onClick={() => void runObjective()} disabled={running || !objective.trim()}>
-            {running ? "Mercury is planning…" : "Run objective"}
-          </button>
-        </div>
-        <div className="command-suggestions">
-          {suggestions.map((suggestion) => (
-            <button key={suggestion} type="button" onClick={() => setObjective(suggestion)}>{suggestion}</button>
+        <section className="terminal-metrics">
+          {metrics.map(([label, value, change, direction]) => (
+            <article className="terminal-card metric-tile" key={label}>
+              <span>{label}</span><strong>{value}</strong><em className={direction}>{change}</em><small>vs prior 7 days</small><div className="sparkline" />
+            </article>
           ))}
-        </div>
-        {error && <p className="command-error" role="alert">{error}</p>}
-      </section>
+        </section>
 
-      {result && (
-        <section className="plan-panel" aria-live="polite">
-          <div className="plan-heading">
-            <div>
-              <div className="eyebrow">Execution plan · {formatConfidence(result.plan.confidence)} confidence</div>
-              <h2>{result.plan.objective}</h2>
-              <p className="muted">{result.plan.summary}</p>
-            </div>
-            <span className={`plan-state ${result.status === "awaiting_approval" ? "warning" : ""}`}>
-              {approved ? "Approved for execution" : result.status === "awaiting_approval" ? "Awaiting approval" : "Ready"}
-            </span>
-          </div>
+        <section className="mercury-console terminal-card">
+          <div className="mercury-symbol">M</div>
+          <div className="mercury-console-copy"><span>MERCURY</span><h2>What should we accomplish today?</h2><p>Set the outcome. Mercury will coordinate the right workers and stage approval-gated actions.</p></div>
+          <div className="mercury-console-form"><input value={objective} onChange={(event) => setObjective(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") void runObjective(); }} placeholder="Improve TACoS without reducing revenue" /><button onClick={() => void runObjective()} disabled={running || !objective.trim()}>{running ? "Planning…" : "Run objective"}</button></div>
+          {message && <p className="console-message">{message}</p>}
+        </section>
 
-          <div className="plan-grid">
-            {result.routes.map((task, index) => (
-              <div className="plan-step" key={task.id}>
-                <span className="step-number">{index + 1}</span>
-                <div>
-                  <strong>{task.worker}</strong>
-                  <p>{task.title}</p>
-                  <span className="route-state">{task.routeStatus.replaceAll("_", " ")}</span>
-                </div>
-              </div>
-            ))}
-          </div>
+        <section className="terminal-grid-main">
+          <article className="terminal-card revenue-panel">
+            <div className="panel-head"><div><h2>Revenue Trend</h2><span><b /> Shipped Revenue　· · Prior Period</span></div><button>Daily⌄</button></div>
+            <svg className="revenue-chart" viewBox="0 0 760 250" role="img" aria-label="Revenue trend chart"><path className="grid-line" d="M50 30H740M50 85H740M50 140H740M50 195H740"/><polyline className="prior-line" points="50,185 155,130 260,175 365,112 470,86 575,126 730,62"/><polyline className="current-line" points="50,150 155,100 260,128 365,72 470,55 575,76 730,25"/>{["May 4","May 5","May 6","May 7","May 8","May 9","May 10"].map((label,index)=><text key={label} x={50+index*113} y="235">{label}</text>)}</svg>
+          </article>
 
-          <div className="approval-bar">
-            <div>
-              <strong>{result.plan.requiresApproval ? "Material actions are approval-gated." : "No approval is required for this plan."}</strong>
-              <span>{result.approvalReasons[0] || "Mercury can stage this plan without marketplace writes."}</span>
-            </div>
-            {result.plan.requiresApproval && !approved && (
-              <button className="btn primary" type="button" onClick={() => setApproved(true)}>Approve plan</button>
-            )}
-            {approved && <span className="badge live">Approval recorded</span>}
+          <article className="terminal-card signals-panel"><div className="panel-head"><h2>Top Signals</h2><button>View all</button></div>{[["Revenue Decline","6"],["ACoS Above Target","4"],["Stockout Risk","7"],["Suppressed ASINs","3"],["Compliance Risk","2"],["Opportunity Detected","8"]].map(([label,count],i)=><div className="signal-row" key={label}><span className={i===5?"positive":"negative"}>{i===5?"↑":"↓"}</span><b>{label}</b><em>{count}</em></div>)}</article>
+
+          <article className="terminal-card brief-panel"><div className="brief-title"><span>✦</span><div><h2>Mercury Morning Brief</h2><p>July 27, 2026 · 7:30 AM</p></div></div><strong>What happened</strong><p>Shipped revenue increased 9.7%, driven by stronger performance in Minecraft and Spider-Man watches. Ad sales grew 15.2%.</p><strong>What matters</strong><p>ACoS increased to 19.6% due to higher spend on low-converting terms. Seven ASINs are at risk of stockout within 14 days.</p><strong>What to do next</strong><p>Adjust ad spend, address stockout risks, and optimize underperforming listings to protect momentum.</p><button className="outline-button">View Full Brief</button></article>
+        </section>
+
+        <section className="terminal-grid-bottom">
+          <article className="terminal-card recommendations-panel"><div className="panel-head"><h2>Top Recommendations</h2><button>View all (18)</button></div><div className="recommendation-head"><span>Recommendation</span><span>Priority</span><span>Impact</span><span>Owner</span><span>Status</span></div>{recommendations.map(([title,detail,priority,impact,owner])=><div className="recommendation-row" key={title}><div><strong>{title}</strong><small>{detail}</small></div><span className={`priority-chip ${priority.toLowerCase()}`}>{priority}</span><em>{impact}</em><span>{owner}</span><button>Pending</button></div>)}</article>
+
+          <div className="terminal-side-stack">
+            <article className="terminal-card inventory-panel"><div className="panel-head"><h2>Inventory Risk</h2><button>View all</button></div><div className="inventory-content"><div className="donut"><strong>62</strong><span>ASINs</span></div><div><p><i className="red"/> At Risk (≤14 days) <b>7</b></p><p><i className="orange"/> Low (15–28 days) <b>15</b></p><p><i className="green"/> Healthy (&gt;28 days) <b>40</b></p></div></div></article>
+            <article className="terminal-card workers-panel"><div className="panel-head"><h2>Worker Activity</h2><button>View all</button></div>{workers.map(([name,role,status,time])=><div className="worker-row" key={name}><span className="worker-avatar">{name[0]}</span><div><strong>{name}</strong><small>{role}</small></div><em className={status.toLowerCase()}>{status}</em><time>{time}</time></div>)}</article>
           </div>
         </section>
-      )}
 
-      <section className="card" aria-labelledby="recent-objectives-title">
-        <div className="section-title">
-          <div><div className="eyebrow">Mercury memory</div><h2 id="recent-objectives-title">Recent objectives</h2></div>
-          <button className="text-button" type="button" onClick={() => void loadHistory()} disabled={historyLoading}>
-            {historyLoading ? "Refreshing…" : "Refresh"}
-          </button>
-        </div>
-        {historyError && <p className="command-error" role="alert">{historyError}</p>}
-        {!historyError && !historyLoading && history.length === 0 && (
-          <p className="muted">No persisted objectives yet. Configure DATABASE_URL and run an objective to populate Mercury history.</p>
-        )}
-        <div className="priority-list">
-          {history.map((plan) => (
-            <div className="priority-item" key={plan.id}>
-              <span className={`priority ${plan.status === "failed" ? "critical" : plan.status === "awaiting_approval" ? "high" : ""}`}>
-                {formatStatus(plan.status)}
-              </span>
-              <div className="priority-copy">
-                <strong>{plan.objective}</strong>
-                <p>{plan.summary}</p>
-                <span>{formatConfidence(plan.confidence)} confidence · {formatCreatedAt(plan.createdAt)}</span>
-              </div>
-              <span className={`badge ${plan.requiresApproval ? "review" : "live"}`}>
-                {plan.requiresApproval ? "Approval gated" : "Autonomous"}
-              </span>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="grid metrics command-metrics" id="performance">
-        {metrics.map((metric) => <MetricCard key={metric.title} {...metric} />)}
-      </section>
-
-      <section className="command-layout">
-        <div className="command-primary">
-          <article className="card priority-panel" id="priorities">
-            <div className="section-title">
-              <div><div className="eyebrow">Decision queue</div><h2>Highest-impact priorities</h2></div>
-              <span className="muted">3 require attention</span>
-            </div>
-            <div className="priority-list">
-              {priorities.map((item) => (
-                <div className="priority-item" key={item.title}>
-                  <span className={`priority ${item.severity.toLowerCase()}`}>{item.severity}</span>
-                  <div className="priority-copy"><strong>{item.title}</strong><p>{item.detail}</p><span>{item.owner} · {item.impact}</span></div>
-                  <button className="text-button" type="button">Review</button>
-                </div>
-              ))}
-            </div>
-          </article>
-
-          <article className="card" id="workers">
-            <div className="section-title">
-              <div><div className="eyebrow">Live operations</div><h2>AI workforce activity</h2></div>
-              <span className="muted">6 workers online</span>
-            </div>
-            <div className="worker-operations">
-              {workers.map((worker) => (
-                <div className="operation-row" key={worker.name}>
-                  <div className="operation-avatar">{worker.name.charAt(0)}</div>
-                  <div className="operation-copy">
-                    <div className="operation-title"><strong>{worker.name}</strong><span>{worker.task}</span></div>
-                    <div className="progress-track"><span style={{ width: `${worker.progress}%` }} /></div>
-                  </div>
-                  <span className={`badge ${worker.status === "Review" ? "review" : "live"}`}>{worker.status}</span>
-                </div>
-              ))}
-            </div>
-          </article>
-        </div>
-
-        <aside className="command-secondary">
-          <article className="card health-card">
-            <div className="section-title"><h2>Commerce health</h2><span className="health-score">86</span></div>
-            <div className="health-ring"><div><strong>86</strong><span>Healthy</span></div></div>
-            <p className="muted">Strong revenue and advertising efficiency are offset by inventory and compliance risk.</p>
-          </article>
-
-          <article className="card">
-            <div className="section-title"><h2>Live signals</h2><span className="muted">Last 30 days</span></div>
-            <div className="signal-list">
-              {signals.map(([label, value, tone]) => <div className="signal-row" key={label}><span>{label}</span><strong className={tone}>{value}</strong></div>)}
-            </div>
-          </article>
-
-          <article className="card" id="activity">
-            <div className="section-title"><h2>Recent actions</h2><span className="muted">Live</span></div>
-            <div className="activity-list compact-activity">
-              {activity.map(([text, time]) => <div className="activity" key={text}><div>{text}</div><div className="activity-time">{time}</div></div>)}
-            </div>
-          </article>
-
-          <article className="card" id="settings">
-            <div className="section-title"><h2>Environment</h2><span className="badge live">API connected</span></div>
-            <p className="muted">Mercury planning is active. Marketplace writes remain disabled until account integrations and execution controls are configured.</p>
-          </article>
-        </aside>
-      </section>
+        <footer className="terminal-status"><span><i /> All systems operational</span><span>Last Data Refresh: July 27, 2026 9:42 AM</span><span>Amazon Vendor · Ads · Catalog</span></footer>
+      </div>
     </AppShell>
   );
 }
