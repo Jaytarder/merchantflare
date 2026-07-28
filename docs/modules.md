@@ -51,7 +51,7 @@ Scope:
 - conversion friction; and
 - prioritized catalog recommendations.
 
-Current implementation is limited to navigation metadata, catalog capability types, planning rules, and deterministic example output in the Mercury foundation. There is no Atlas product route.
+Atlas Foundations is implemented under `lib/atlas/`, with an authenticated `/atlas` route and a read-only assessment API. Atlas evaluates only organization-scoped normalized catalog and compliance evidence, produces transparent component scores, findings, recommendations, opportunities, and approval-compatible improvement plans, and renders the same typed assessment inside Mercury catalog conversations. With no connected provider, Atlas reports unavailable evidence and does not infer health or recommendations. Live ingestion, filtering, field-level diffs, publication, and outcome measurement are not implemented.
 
 ## Vector
 

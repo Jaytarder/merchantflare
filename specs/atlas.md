@@ -1,6 +1,6 @@
 # Atlas — Catalog Intelligence Specification
 
-**Status:** Planned
+**Status:** Scaffolded
 **Roadmap stage:** 3
 **Canonical route:** `/atlas`
 
@@ -10,7 +10,9 @@ Atlas turns catalog and product-detail evidence into prioritized findings and go
 
 ## Current implementation evidence
 
-Atlas currently has navigation metadata, `catalog.audit` and `catalog.optimize` capability types, keyword-planning rules, module registration under legacy worker contracts, deterministic example output, and a provider-neutral evidence contract that can represent catalog records. There is no Atlas route, connected catalog reader or ingestion flow, Atlas-specific catalog model, product UI, publishing adapter, or measured outcome flow.
+Atlas Foundations is implemented. `lib/atlas/` defines typed assessments, explainable health components, findings, recommendations, opportunities, and governed improvement plans. `/atlas` is authenticated and responsive; `GET /api/atlas/assessment` exposes the same organization-scoped read model. Mercury routes catalog objectives through Atlas and persists its typed assessment inside the plan snapshot.
+
+Atlas reads only normalized Commerce Evidence Layer catalog and compliance records. It explicitly reports missing evidence, excludes unavailable dimensions from overall scoring, and generates no recommendation from an evidence gap. No catalog provider is connected, and there is no product filtering, field-level diff, publication adapter, provider result handling, or measured outcome flow. Therefore this specification remains **Scaffolded**, not Implemented, under the acceptance criteria below.
 
 ## In scope
 
@@ -93,6 +95,8 @@ Atlas is implemented only when:
 - provider results and failures are persisted;
 - outcome measurement distinguishes projection from actual performance; and
 - tests cover catalog identity, diffing, policy, authorization, and execution failure.
+
+Foundation coverage currently satisfies the authenticated responsive route, evidence citations/freshness contract, transparent assessment behavior, organization isolation, and approval compatibility. It does not satisfy the authorized-source, field-level diff, execution, provider-result, or outcome-measurement criteria.
 
 ## Dependencies
 

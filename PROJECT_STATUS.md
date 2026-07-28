@@ -1,6 +1,6 @@
 # MerchantFlare Project Status
 
-Last verified against the repository: 2026-07-27
+Last verified against the repository: 2026-07-28
 
 This file is the current implementation record for MerchantFlare. Product direction lives in `docs/`; this tracker records what the code actually supports today. Navigation entries, domain types, static data, and planned infrastructure are not treated as completed features.
 
@@ -8,7 +8,7 @@ This file is the current implementation record for MerchantFlare. Product direct
 
 MerchantFlare is an early-stage Commerce Intelligence Platform built with the Next.js App Router and TypeScript. Mercury is the Commerce Intelligence Engine and primary conversational workspace.
 
-Sprint 1, the application shell, is implemented. Sprint 2 has an organization-scoped conversation, governance, and Commerce Evidence foundation. Sprint 4 adds the Platform Core foundation: durable organizations, users, memberships, invitations, settings, centralized role permissions, a Cognito-ready identity boundary, immutable audit events, notifications, feature flags, and subscription entitlements. Mercury APIs and controls now enforce organization role permissions. Cognito authentication, invitation delivery, organization switching, live Stripe billing, and production infrastructure are not implemented.
+Sprint 1, the application shell, is implemented. Sprint 2 has an organization-scoped conversation, governance, and Commerce Evidence foundation. Sprint 4 adds the Platform Core foundation. Sprint 5 adds the Atlas foundation: an explainable, provider-neutral catalog assessment domain, an authenticated catalog intelligence route, and Mercury integration. Atlas can only assess normalized evidence already present in the Commerce Evidence Layer; no live catalog provider or publishing adapter is implemented.
 
 ## Completed work
 
@@ -36,6 +36,9 @@ Sprint 1, the application shell, is implemented. Sprint 2 has an organization-sc
 - A provider-agnostic Commerce Evidence Layer under `lib/evidence/` with typed provider readers, versioned normalization pipelines, deterministic evidence identity, source provenance, dataset freshness policies, memory and PostgreSQL cache adapters, normalized evidence queries, provider registration, and bounded idempotent synchronization orchestration.
 - Typed Amazon SP-API and Amazon Ads evidence record/reader interfaces and normalization pipelines. No Amazon evidence reader is implemented or registered, and no live synchronization is enabled.
 - Mercury plan creation queries only normalized evidence records by capability dataset, attaches matching records to the immutable plan, recalculates freshness at read time, and preserves the unavailable state when no normalized evidence exists.
+- An Atlas Catalog Intelligence foundation under `lib/atlas/` with typed assessments, component health scores, findings, recommendations, opportunities, and governed improvement plans. Every output includes evidence, confidence, freshness, assumptions, or explicit unavailable-evidence reasons.
+- Authenticated `/atlas` and `GET /api/atlas/assessment` surfaces evaluate organization-scoped normalized catalog and compliance evidence. Missing evidence produces an unavailable assessment rather than a fabricated score.
+- Mercury routes catalog objectives through Atlas, embeds the resulting assessment in the immutable plan snapshot, renders the assessment in conversation continuity, and adds an approval-gated `catalog.optimize` review task only when evidence-backed recommendations exist.
 - Authenticated, organization-scoped, idempotent plan approval and rejection from the Mercury workspace. Decisions bind the plan version, policy version, proposal snapshot, actor, note, and timestamp without claiming execution occurred.
 - A checksum-enforced PostgreSQL migration runner and a dry-run command for validating ordered migration files.
 - A multi-organization Platform Core under `lib/platform/` with Owner, Admin, Manager, Analyst, and Viewer permissions; organization-scoped services; durable memberships, invitations, settings, audit events, notifications, feature flags, subscription plans, subscriptions, and entitlements.
@@ -64,11 +67,11 @@ Sprint 1, the application shell, is implemented. Sprint 2 has an organization-sc
 | --- | --- |
 | Web application | Next.js App Router application with React and TypeScript |
 | Styling | Global CSS in `app/globals.css` and shell CSS in `app/components/app-shell.css`; a second `styles/design-system.css` token set exists but is not imported |
-| Pages | `/`, `/login`, `/dashboard`, and legacy `/workers` |
-| API | Next.js route handlers for login, logout, Mercury conversations/messages and revisions, plan approval decisions, deterministic planning, and plan history |
+| Pages | `/`, `/login`, `/dashboard`, `/atlas`, and legacy `/workers` |
+| API | Next.js route handlers for login, logout, Mercury conversations/messages and revisions, plan approval decisions, deterministic planning/history, Atlas assessment, and Platform Core |
 | Authentication | Cognito-ready principal and membership abstractions with the environment-configured administrator/HMAC cookie retained as the active transitional adapter; production fallbacks are prohibited |
 | Authorization | Central Owner, Admin, Manager, Analyst, and Viewer permission matrix enforced by platform and Mercury server boundaries |
-| Domain services | `lib/platform/` for SaaS control-plane services, `lib/mercury/` for planning/governance, and `lib/evidence/` for provider-neutral commerce evidence |
+| Domain services | `lib/platform/` for SaaS control-plane services, `lib/mercury/` for planning/governance, `lib/evidence/` for provider-neutral commerce evidence, and `lib/atlas/` for explainable catalog intelligence |
 | Data | Optional PostgreSQL connection via `DATABASE_URL`; six ordered SQL migrations and a cross-platform checksum-enforced migration runner |
 | Integrations | An incomplete legacy Amazon SP-API helper plus typed SP-API and Amazon Ads evidence interfaces; no provider reader or live integration is connected |
 
@@ -94,6 +97,7 @@ The documented target uses AWS Amplify Hosting, API Gateway, Lambda, Aurora Post
 | Mercury API | `/api/mercury/conversations`, conversation detail/message routes, `/api/mercury/plans/[planId]/approval`, `POST /api/mercury/plan`, `GET /api/mercury/history` | Enforces the administrator session, scopes reads/writes by organization, persists idempotent conversation turns and revisions, records approval decisions, and supports compatibility planning/history |
 | Mercury services | `lib/mercury/` | Keyword planning, capability mapping, approval rules, dependency routing, events, repository operations, and two execution foundations |
 | Commerce Evidence | `lib/evidence/`, `lib/mercury/evidence.ts` | Provider contracts, normalized record schema, provenance, freshness, cache-aside queries, sync orchestration, PostgreSQL adapters, Mercury capability-to-dataset selection, and coverage summaries |
+| Atlas | `/atlas`, `/api/atlas/assessment`, `lib/atlas/`, `app/components/atlas/` | Organization-scoped evidence assessment, transparent component scoring, findings, recommendations, opportunities, approval-compatible plans, and responsive presentation |
 | Platform Core | `lib/platform/`, `/api/platform/*` | Organization and membership services, RBAC, identity abstraction, team invitations, settings, immutable audit, notifications, feature flags, and subscription entitlements |
 | Database | `db/migrations/001_mercury_core.sql` through `006_platform_core.sql`, `scripts/migrate.ts` | PostgreSQL schemas for Platform Core, Mercury, evidence, sync, approvals, execution, and integration metadata; migrations are applied explicitly with `npm run migrate` |
 | Amazon provider boundaries | `lib/evidence/providers/amazon-sp-api.ts`, `lib/evidence/providers/amazon-ads.ts` | Typed provider records, reader interfaces, and normalization pipelines only; no live reader, authorization flow, or synchronization is registered |
@@ -101,20 +105,21 @@ The documented target uses AWS Amplify Hosting, API Gateway, Lambda, Aurora Post
 
 ## Work in progress
 
-- Sprint 2: Mercury Command Center.
+- Sprint 2: Mercury Command Center remains in progress.
+- Sprint 5: Atlas Foundations is implemented; live catalog ingestion, filtering, field-level diffs, execution, and outcomes remain.
 - Platform Core UI and external-service adapters: organization switching, Settings/Team screens, Cognito verification, invitation delivery, and Stripe workflows.
 - Replacing deterministic response construction with evidence-grounded conversational reasoning while retaining deterministic routing as an explicitly limited fallback.
 - Implementing the first authorized provider reader and connection lifecycle against the Commerce Evidence contracts, then connecting approved plans to a canonical execution path, unified history, and measured outcomes.
 - Replacing legacy “AI workforce,” “AI workers,” and worker-oriented product language with the approved Commerce Intelligence vocabulary.
 - Consolidating the duplicated styling/token foundations and deciding which unused marketing components belong in the active page.
-- Turning module navigation entries and platform statuses into real routes and data-backed experiences.
+- Turning the remaining module navigation entries and platform statuses into real routes and data-backed experiences.
 
 ## Known gaps and blockers
 
 - Platform and Mercury persistence require PostgreSQL plus migrations `001` through `006`. The migration files and runner were dry-run validated, but no database was available in this workspace to apply or integration-test them.
 - Mercury responses are deterministic planning summaries. Normalized evidence retrieval and citation attachment are implemented, but no provider reader populates evidence, and there is no model-backed reasoning, attachments, or streaming.
-- Atlas, Vector, Oracle, Sentinel, Forge, and Pulse have navigation, types, routing metadata, and deterministic output scaffolding only. They do not have production module pages, data pipelines, or live analysis.
-- Navigation links for Execution, Approvals, History, Knowledge, Integrations, Billing, Settings, and all six module pages currently lead to unimplemented routes.
+- Atlas has a production-quality foundation and route, but it has no connected source, provider ingestion, field-level diffing, publication adapter, or outcome measurement. Vector, Oracle, Sentinel, Forge, and Pulse remain scaffolds only.
+- Navigation links for Execution, Approvals, History, Knowledge, Integrations, Billing, Settings, and five intelligence module pages currently lead to unimplemented routes.
 - Notifications are data-backed when PostgreSQL is configured. Sidebar provider entries remain static “Not configured” presentation rather than live health checks.
 - `/workers` uses the application shell but is not protected by the `/dashboard` layout guard.
 - The active login remains the single administrator cookie. Development fallback credentials are rejected in production, but Cognito token verification, multi-user sign-in, session revocation, and organization switching are not implemented.
@@ -130,15 +135,14 @@ The documented target uses AWS Amplify Hosting, API Gateway, Lambda, Aurora Post
 
 ## Next sprint
 
-Sprint 2 is the Mercury Command Center.
-
-The next implementation should operationalize Platform Core before connecting external commerce sources:
+The recommended next milestone is the first authorized catalog evidence provider and Atlas product-depth milestone:
 
 - Apply migration `006` to a development PostgreSQL environment and add integration tests for tenant isolation, membership changes, invitation replay/expiry, audit immutability, notification deduplication, and entitlement projections.
 - Implement verified Cognito session handling and organization selection against the existing identity and membership abstractions.
 - Build the authenticated Settings/Team experience and invitation acceptance/delivery flow.
 - Decide the first subscription plan catalog, grace behavior, and entitlement keys before implementing signed Stripe webhooks and hosted billing flows.
-- Then choose the first Amazon account model and dataset and implement its authorization and provider reader without bypassing RBAC, audit, notification, feature-flag, or entitlement boundaries.
+- Choose the first catalog account model and dataset, then implement authorization and a provider reader without bypassing RBAC, audit, notifications, feature flags, entitlements, or the Commerce Evidence boundary.
+- Add Atlas account/marketplace/product filtering, persisted assessment history, and field-level recommendation diffs after real source semantics are known.
 - Consolidate the two execution foundations before exposing execution controls.
 - Add PostgreSQL integration and authenticated API tests for revision, supersession, idempotency, and approval concurrency.
 - Remove or migrate `/workers` only after confirming its replacement route and any compatibility requirements.
@@ -150,7 +154,7 @@ The next implementation should operationalize Platform Core before connecting ex
 | 1. Application Shell | Complete | Responsive shell components are wired into the application |
 | 2. Mercury Command Center | In progress | Durable conversations, versioned deterministic plans, normalized evidence lookup and citations, plan-level approval decisions, and the responsive workspace exist; a connected provider, model-grounded reasoning, execution, and outcomes remain |
 | Platform Core | Foundation implemented | Multi-organization persistence, RBAC, identity abstraction, team services, immutable audit, notifications, flags, and subscription entitlements exist; external identity/billing adapters and management UI remain |
-| 3. Atlas | Not started | Navigation, types, routing, and output scaffolding only |
+| 3. Atlas | Foundation implemented | Explainable normalized-evidence assessment, health scoring, findings, recommendations, opportunities, governed plans, Mercury integration, and `/atlas` exist; live ingestion, diffs, execution, and outcomes remain |
 | 4. Vector | Not started | Navigation, types, routing, and output scaffolding only |
 | 5. Oracle | Not started | Navigation, types, routing, and output scaffolding only |
 | 6. Sentinel | Not started | Navigation, types, routing, and output scaffolding only |
@@ -168,14 +172,16 @@ Validation was run against this repository state on 2026-07-28.
 | TypeScript typecheck (`npm run typecheck`) | Passed |
 | Production build (`npm run build`) | Passed |
 | Lint | Unavailable: no lint script is defined |
-| Automated tests (`npm test`) | Passed: 23 tests |
+| Automated tests (`npm test`) | Passed: 29 tests, including Atlas scoring, missing evidence, confidence, routing, plan governance, and organization isolation |
 | Migration validation (`npm run migrate:dry-run`) | Passed: migrations `001` through `006` and checksums validated; no database application was attempted |
-| Responsive browser QA | Passed: authenticated desktop and 390 × 844 mobile shell states loaded without console errors; PostgreSQL-unavailable state remained explicit |
+| Markdown relative links | Passed across `AGENTS.md`, `PROJECT_STATUS.md`, `docs/`, and `specs/` |
+| Responsive browser QA | Passed: authenticated `/atlas` at 1440 × 900 and 390 × 844 with no horizontal overflow or console errors; unavailable evidence remained explicit |
 
 ## Changelog
 
 | Date | Change |
 | --- | --- |
+| 2026-07-28 | Added Atlas Foundations with provider-neutral catalog assessment, explainable health scoring, evidence-backed recommendations and opportunities, governed improvement plans, Mercury routing/rendering, and an authenticated responsive route. |
 | 2026-07-27 | Added the Sprint 4 Platform Core foundation with multi-organization persistence, RBAC, team services, Cognito-ready identity contracts, immutable audit, notifications, feature flags, subscription entitlements, and Mercury permission enforcement. |
 | 2026-07-27 | Added the provider-agnostic Commerce Evidence Layer, normalized Amazon provider contracts, freshness/cache/provenance behavior, bounded sync orchestration, and Mercury normalized-evidence consumption. |
 | 2026-07-27 | Added versioned Mercury plan revision, evidence/provenance contracts, idempotent plan-level approval decisions, migration tooling, and initial domain tests. |

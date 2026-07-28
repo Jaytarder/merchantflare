@@ -84,9 +84,9 @@ Still required:
 - attachments and optional response streaming; and
 - PostgreSQL integration, API, browser, and broader domain test coverage.
 
-## 3. Atlas — Not started
+## 3. Atlas — Foundation implemented
 
-Navigation and catalog capability types exist. There is no Atlas route or complete Catalog Intelligence experience.
+Atlas now has a provider-neutral domain, explainable assessment and health scoring, evidence-backed findings and recommendations, confidence-degraded opportunities, governed improvement plans, an authenticated responsive route, and Mercury integration. It consumes only normalized Commerce Evidence Layer records. The milestone is not complete because no authorized catalog source, product filtering, field-level diff, execution adapter, or outcome measurement exists.
 
 ## 4. Vector — Not started
 

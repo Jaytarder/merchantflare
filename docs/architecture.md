@@ -50,7 +50,7 @@ This diagram is the target architecture, not a statement that the AWS resources 
 | `/dashboard` | Auth-gated Mercury conversation workspace with durable threads and deterministic message-linked plans when PostgreSQL is available |
 | `/workers` | Legacy intelligence-module prototype using workforce terminology; not a canonical product destination |
 
-Atlas, Vector, Oracle, Sentinel, Forge, Pulse, Execution, Approvals, History, Knowledge, Integrations, Billing, and Settings appear in shell configuration, but corresponding page routes are not implemented.
+Atlas has an authenticated application route. Vector, Oracle, Sentinel, Forge, Pulse, Execution, Approvals, History, Knowledge, Integrations, Billing, and Settings appear in shell configuration, but corresponding page routes are not implemented.
 
 ### Application shell
 
@@ -177,6 +177,14 @@ Migrations currently define:
 Platform Core, conversation, and normalized evidence operations require `DATABASE_URL` and the committed migrations through `006_platform_core.sql`. `npm run migrate` applies unapplied migrations under a PostgreSQL advisory lock and rejects changed, missing, misnamed, or duplicate-sequence migration files; checksums normalize line endings for cross-platform stability. `npm run migrate:dry-run` validates ordering and checksums without a database. A submitted turn queries normalized evidence by capability dataset, then persists its user message, versioned plan, evidence links, tasks, events, approval requirements, notification, and audit event transactionally. When persistence is unavailable, the workspace presents an explicit unavailable state rather than fabricated conversation data.
 
 The evidence engine and schemas are implemented boundaries, not evidence that a source is connected. No live provider reader currently populates normalized evidence.
+
+### Atlas domain layer
+
+`lib/atlas/` is the provider-neutral Catalog Intelligence domain. It accepts only organization-scoped `NormalizedEvidenceRecord` values from the Commerce Evidence Layer. It contains separate assessment, health, finding, recommendation, opportunity, planning, and routing modules.
+
+Health dimensions are scored only when the required normalized fact exists. Each component exposes its score or unavailable state, explanation, evidence references, confidence, assumptions, and unavailable evidence. The overall score renormalizes weights across scored dimensions so missing data is never treated as poor performance. Recommendations are generated only for evidence-backed quality gaps; evidence gaps remain informational findings.
+
+Mercury enriches catalog plans after normalized evidence retrieval and embeds the typed Atlas assessment in the persisted plan payload. When recommendations exist, Mercury adds an approval-gated catalog improvement review task using the existing catalog approval policy. Approval does not publish content. `/atlas` and its read-only assessment API use the same domain and organization authorization. There is no provider client, publication path, or outcome measurement in this layer.
 
 Aurora PostgreSQL is the target managed database, but the repository contains no AWS deployment configuration proving an Aurora cluster exists.
 
