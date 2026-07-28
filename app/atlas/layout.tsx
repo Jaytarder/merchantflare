@@ -1,7 +1,6 @@
 import AuthenticatedAppShell from "../components/layout/AuthenticatedAppShell";
-import "../atlas/atlas.css";
 
-export default async function DashboardLayout({
+export default function AtlasLayout({
   children,
 }: {
   children: React.ReactNode;

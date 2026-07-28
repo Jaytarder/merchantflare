@@ -1,4 +1,5 @@
 import type { TaskPriority, WorkerKey } from "../domain";
+import type { CatalogAssessment } from "../atlas";
 
 export type MercuryCapability =
   | "catalog.audit"
@@ -31,6 +32,7 @@ export type ExecutionPlan = {
   confidence: number;
   tasks: PlannedTask[];
   requiresApproval: boolean;
+  atlasAssessment?: CatalogAssessment;
 };
 
 export type OrchestrationEventType =

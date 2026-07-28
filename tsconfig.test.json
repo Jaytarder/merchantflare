@@ -12,6 +12,8 @@
   "include": [
     "tests/**/*.ts",
     "lib/auth.ts",
+    "lib/atlas/**/*.ts",
+    "lib/evidence/**/*.ts",
     "lib/idempotency.ts",
     "lib/mercury/**/*.ts",
     "lib/platform/**/*.ts"

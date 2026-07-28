@@ -5,6 +5,7 @@ import type {
   ConversationPlan,
   ConversationPlanTask,
 } from "../../lib/mercury/conversation-types";
+import AtlasAssessmentCard from "../components/atlas/AtlasAssessmentCard";
 
 type MercuryPlanCardProps = {
   plan: ConversationPlan;
@@ -109,6 +110,12 @@ export default function MercuryPlanCard({
           </ul>
         ) : null}
       </div>
+
+      {plan.atlasAssessment ? (
+        <div className="mercury-atlas-assessment">
+          <AtlasAssessmentCard assessment={plan.atlasAssessment} />
+        </div>
+      ) : null}
 
       <div className="mercury-plan-tasks">
         {plan.tasks.map((task, index) => (

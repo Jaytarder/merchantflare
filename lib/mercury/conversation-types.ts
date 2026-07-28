@@ -5,6 +5,7 @@ import type {
   RouteStatus,
 } from "./types";
 import type { MercuryEvidenceCoverage } from "./evidence";
+import type { CatalogAssessment } from "../atlas";
 
 export type ConversationStatus = "active" | "archived";
 export type ConversationAuthor = "user" | "mercury" | "system";
@@ -44,6 +45,7 @@ export type ConversationPlan = {
   tasks: ConversationPlanTask[];
   plannerMode: "deterministic";
   evidence: MercuryEvidenceCoverage;
+  atlasAssessment?: CatalogAssessment;
   approval?: {
     id: string;
     status: "pending" | "approved" | "rejected" | "superseded";

@@ -15,6 +15,7 @@ import {
   type EvidenceProvenance,
 } from "../evidence";
 import { orchestrate } from "./orchestrator";
+import { enrichOrchestrationWithAtlas } from "../atlas";
 import {
   persistOrchestrationResult,
   type PlanPersistenceContext,
@@ -94,7 +95,10 @@ function mercuryResponseContent(
     evidenceCount > 0
       ? `It references ${evidenceCount} normalized evidence ${evidenceCount === 1 ? "item" : "items"} with source provenance.`
       : "No normalized commerce evidence matched this plan, so its evidence coverage is unavailable.";
-  return `Mercury created plan v${version} with ${plan.tasks.length} ${taskLabel} across ${moduleCount} ${moduleLabel}. This plan uses deterministic routing. ${evidenceMessage}`;
+  const atlasMessage = plan.atlasAssessment
+    ? ` Atlas ${plan.atlasAssessment.summary.headline.toLowerCase()}: ${plan.atlasAssessment.health.scoredDimensions} of ${plan.atlasAssessment.health.totalDimensions} health dimensions scored at ${Math.round(plan.atlasAssessment.confidence.score * 100)}% confidence with ${plan.atlasAssessment.freshness} evidence.`
+    : "";
+  return `Mercury created plan v${version} with ${plan.tasks.length} ${taskLabel} across ${moduleCount} ${moduleLabel}. This plan uses deterministic routing. ${evidenceMessage}${atlasMessage}`;
 }
 
 export async function listMercuryConversations(
@@ -409,6 +413,7 @@ export async function getMercuryConversation(
               ? evidence.limitation
               : plan.evidence_limitation,
         },
+        atlasAssessment: plan.payload.atlasAssessment,
         approval: approvalsByPlan.get(plan.id),
         createdAt: plan.created_at.toISOString(),
       });
@@ -445,7 +450,7 @@ export async function createMercuryConversationTurn(input: {
   }
 
   const sql = requireDatabase();
-  const result = await orchestrate(input.message);
+  const initialResult = await orchestrate(input.message);
   const evidenceService = new CachedEvidenceQueryService(
     new PostgresEvidenceReader(sql),
     new PostgresEvidenceCache(sql, input.principal.organizationId),
@@ -453,13 +458,18 @@ export async function createMercuryConversationTurn(input: {
   const normalizedEvidence = await evidenceService.query({
     organizationId: input.principal.organizationId,
     datasets: evidenceDatasetsForCapabilities(
-      result.plan.tasks.map((task) => task.capability),
+      initialResult.plan.tasks.map((task) => task.capability),
     ),
     limit: 50,
   });
   const evidence = summarizeEvidence(
     normalizedEvidence.map(toMercuryEvidenceItem),
   );
+  const result = enrichOrchestrationWithAtlas({
+    result: initialResult,
+    organizationId: input.principal.organizationId,
+    evidence: normalizedEvidence,
+  });
   let conversationId = input.conversationId ?? createId("conversation");
   const userMessageId = createId("message");
   const responseMessageId = createId("message");
