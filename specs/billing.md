@@ -1,6 +1,6 @@
 # Billing Specification
 
-**Status:** Planned
+**Status:** Scaffolded
 **Canonical route:** `/billing`
 
 ## Purpose
@@ -9,7 +9,9 @@ Billing manages subscription state, entitlements, usage visibility, invoices, an
 
 ## Current implementation evidence
 
-Billing navigation exists. Stripe is named in the target architecture, and a static sidebar status claims syncing, but there is no Stripe dependency, schema, route, webhook, customer mapping, subscription logic, usage metering, invoice UI, or entitlement enforcement.
+Billing navigation exists. Migration `006_platform_core.sql` adds versioned plans and entitlements, organization subscriptions, optional Stripe customer/subscription identifiers, organization overrides, and an effective-entitlement projection. `lib/platform/billing.ts` evaluates entitlements only from trusted trialing or active subscription state, gives explicit organization overrides precedence, and exposes a permission-enforced organization subscription read service through `GET /api/platform/billing`.
+
+There is no Stripe dependency, customer synchronization, signed webhook, checkout or portal route, plan catalog seed, usage metering, invoice UI, `/billing` page, or broad feature entitlement enforcement. The sidebar truthfully remains “Not configured.”
 
 ## Functional requirements
 
@@ -33,7 +35,7 @@ Billing navigation exists. Stripe is named in the target architecture, and a sta
 
 ## Acceptance criteria
 
-Billing is implemented only when:
+Billing is complete only when:
 
 - organization/customer mapping is durable;
 - signed idempotent webhooks synchronize subscription state;

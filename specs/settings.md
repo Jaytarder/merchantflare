@@ -1,6 +1,6 @@
 # Settings Specification
 
-**Status:** Planned
+**Status:** Scaffolded
 **Canonical route:** `/settings`
 
 ## Purpose
@@ -9,7 +9,9 @@ Settings manages organization identity, users, roles, policies, preferences, sec
 
 ## Current implementation evidence
 
-Settings navigation and a user-menu link exist. Early organization and user role types exist in `lib/domain.ts`, but there is no route, persistence, multi-user identity, membership model, invitation flow, policy editor, or preference API. Authentication is a single administrator cookie with development fallback values.
+Settings navigation and a user-menu link exist. Migration `006_platform_core.sql` adds durable organizations, users, memberships, invitations, and organization settings. `lib/platform/organizations.ts` and `/api/platform/organization`, `/members`, and `/invitations` provide permission-enforced, organization-scoped services and APIs. Owner, Admin, Manager, Analyst, and Viewer permissions are centralized; owner protections prevent removing or demoting the last active owner. Invitations expire, are single-use, match a verified email, and store only a SHA-256 token hash.
+
+The existing signed administrator cookie remains the active login adapter and is provisioned as an Owner membership. The identity boundary is Cognito-ready, but no Cognito verifier, multi-user sign-in, organization selector, invitation delivery/acceptance route, session revocation, `/settings` page, approval-policy editor, retention control, or notification-preference UI is implemented.
 
 ## In scope
 
@@ -52,7 +54,7 @@ Before production multi-user release:
 
 ## Acceptance criteria
 
-Settings are implemented only when:
+Settings are complete only when:
 
 - `/settings` is authenticated and organization-scoped;
 - organization, membership, role, and preference models are durable;
@@ -65,8 +67,8 @@ Settings are implemented only when:
 ## Open decisions
 
 - Identity provider and Cognito migration timing.
-- Role and permission matrix.
-- Multi-organization membership.
+- Organization selection behavior for multi-organization members.
+- Ownership transfer and recovery when the final owner is unavailable.
 - Policy editor scope for the first release.
 - Retention and organization deletion behavior.
 

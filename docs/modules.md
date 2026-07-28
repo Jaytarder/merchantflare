@@ -35,7 +35,7 @@ Mercury is responsible for:
 - tracking execution and history; and
 - connecting activity to outcomes.
 
-Current code provides early objective planning, routing, approval, persistence, normalized evidence selection, and execution primitives. Mercury can attach normalized evidence already stored in the Commerce Evidence layer, but no live provider currently populates that store. The full conversational and orchestration experience is not complete.
+Current code provides early objective planning, routing, approval, persistence, normalized evidence selection, and execution primitives. Mercury reads and writes through an authenticated organization principal, enforces centralized role permissions, and records material mutations in the Platform Core audit and notification services. Mercury can attach normalized evidence already stored in the Commerce Evidence layer, but no live provider currently populates that store. The full conversational and orchestration experience is not complete.
 
 ## Atlas
 
@@ -146,6 +146,8 @@ These are platform surfaces, not intelligence modules:
 - **Settings:** organization, users, policies, preferences, and security
 
 Navigation entries exist for these surfaces, but their page routes are not currently implemented.
+
+Platform Core now supplies durable organization/team settings, immutable audit, notification, feature-flag, subscription, and entitlement contracts behind these surfaces. Organization, team, audit, notification, and billing read/update APIs exist, but the corresponding page experiences and external Cognito/Stripe adapters do not.
 
 ## Internal terminology debt
 

@@ -8,7 +8,7 @@ This file is the current implementation record for MerchantFlare. Product direct
 
 MerchantFlare is an early-stage Commerce Intelligence Platform built with the Next.js App Router and TypeScript. Mercury is the Commerce Intelligence Engine and primary conversational workspace.
 
-Sprint 1, the application shell, is implemented. Sprint 2 now has an organization-scoped conversation, governance, and Commerce Evidence foundation: authenticated APIs, durable conversations and messages when PostgreSQL is configured, deterministic versioned plans, provider-neutral normalized evidence contracts, truthful freshness and provenance, idempotent plan-level approval decisions, and a responsive Mercury workspace on `/dashboard`. It does not yet provide model-backed reasoning, a connected evidence provider, production intelligence modules, live commerce data, governed execution controls, or the planned AWS deployment architecture.
+Sprint 1, the application shell, is implemented. Sprint 2 has an organization-scoped conversation, governance, and Commerce Evidence foundation. Sprint 4 adds the Platform Core foundation: durable organizations, users, memberships, invitations, settings, centralized role permissions, a Cognito-ready identity boundary, immutable audit events, notifications, feature flags, and subscription entitlements. Mercury APIs and controls now enforce organization role permissions. Cognito authentication, invitation delivery, organization switching, live Stripe billing, and production infrastructure are not implemented.
 
 ## Completed work
 
@@ -38,6 +38,15 @@ Sprint 1, the application shell, is implemented. Sprint 2 now has an organizatio
 - Mercury plan creation queries only normalized evidence records by capability dataset, attaches matching records to the immutable plan, recalculates freshness at read time, and preserves the unavailable state when no normalized evidence exists.
 - Authenticated, organization-scoped, idempotent plan approval and rejection from the Mercury workspace. Decisions bind the plan version, policy version, proposal snapshot, actor, note, and timestamp without claiming execution occurred.
 - A checksum-enforced PostgreSQL migration runner and a dry-run command for validating ordered migration files.
+- A multi-organization Platform Core under `lib/platform/` with Owner, Admin, Manager, Analyst, and Viewer permissions; organization-scoped services; durable memberships, invitations, settings, audit events, notifications, feature flags, subscription plans, subscriptions, and entitlements.
+- A Cognito-ready identity/session abstraction and PostgreSQL membership resolver. The existing signed administrator cookie remains the active login mechanism and is provisioned as a transitional Owner membership; no Cognito JWT verifier or hosted authentication flow is implemented.
+- Organization, member, invitation, audit, notification, and subscription read/update APIs under `/api/platform/`. Invitation tokens are generated once and stored only as SHA-256 hashes, but email delivery and invitation acceptance routing are not implemented.
+- Database-enforced append-only platform audit events. Mercury plan creation, revision, conversation updates, approval decisions, organization settings, invitations, membership role changes, and removals record typed audit events.
+- A central, durable notification framework with severity, category, recipient/broadcast scope, deduplication, expiry, read state, and organization authorization. The shell now renders actual stored notifications rather than a fabricated count.
+- Server-side and UI permission enforcement for Mercury reads, writes, plan revision, and approval decisions. Navigation and Mercury controls are filtered by the active organization role.
+- A provider-neutral feature flag evaluator with deterministic organization rollout and user/organization overrides.
+- A Stripe-ready subscription and entitlement projection with versioned plans and trusted server-side entitlement evaluation. No Stripe SDK, customer synchronization, webhooks, checkout, portal, invoices, or payment UI is implemented.
+- Migration checksums now normalize line endings so the same committed SQL has a stable checksum across Windows and Linux.
 - Automated domain tests for deterministic routing, approval gating and policy versioning, idempotency-key validation, and evidence coverage.
 - A real `/dashboard` Mercury conversation workspace with thread history, plan review, responsive navigation, and explicit database-unavailable and evidence-unavailable states.
 - Authenticated, organization-scoped Mercury plan history through `GET /api/mercury/history`.
@@ -57,12 +66,13 @@ Sprint 1, the application shell, is implemented. Sprint 2 now has an organizatio
 | Styling | Global CSS in `app/globals.css` and shell CSS in `app/components/app-shell.css`; a second `styles/design-system.css` token set exists but is not imported |
 | Pages | `/`, `/login`, `/dashboard`, and legacy `/workers` |
 | API | Next.js route handlers for login, logout, Mercury conversations/messages and revisions, plan approval decisions, deterministic planning, and plan history |
-| Authentication | Environment-configured administrator credentials and an HMAC-signed, HTTP-only cookie carrying organization context; `/dashboard` and Mercury APIs are guarded |
-| Domain services | Local TypeScript modules under `lib/mercury/` for planning and governance plus `lib/evidence/` for provider-neutral evidence normalization, freshness, caching, querying, provenance, and sync orchestration |
-| Data | Optional PostgreSQL connection via `DATABASE_URL`; five ordered SQL migrations and a checksum-enforced migration runner |
+| Authentication | Cognito-ready principal and membership abstractions with the environment-configured administrator/HMAC cookie retained as the active transitional adapter; production fallbacks are prohibited |
+| Authorization | Central Owner, Admin, Manager, Analyst, and Viewer permission matrix enforced by platform and Mercury server boundaries |
+| Domain services | `lib/platform/` for SaaS control-plane services, `lib/mercury/` for planning/governance, and `lib/evidence/` for provider-neutral commerce evidence |
+| Data | Optional PostgreSQL connection via `DATABASE_URL`; six ordered SQL migrations and a cross-platform checksum-enforced migration runner |
 | Integrations | An incomplete legacy Amazon SP-API helper plus typed SP-API and Amazon Ads evidence interfaces; no provider reader or live integration is connected |
 
-The implemented application is currently a single Next.js codebase. Conversation, governance, and normalized evidence operations require `DATABASE_URL` and migrations through `005_commerce_evidence_engine.sql`; the workspace presents a truthful unavailable state when persistence is absent. Mercury queries normalized evidence and plan citations through the provider-neutral evidence boundary, but no live provider populates it. The compatibility planning endpoint can still return a deterministic, unpersisted plan without a database.
+The implemented application is currently a single Next.js codebase. Platform Core, conversation, governance, and normalized evidence operations require `DATABASE_URL` and migrations through `006_platform_core.sql`. The legacy administrator session is provisioned idempotently into the organization/membership model when PostgreSQL is configured. Mercury queries normalized evidence and plan citations through the provider-neutral evidence boundary, but no live provider populates it.
 
 ### Planned production architecture
 
@@ -74,7 +84,7 @@ The documented target uses AWS Amplify Hosting, API Gateway, Lambda, Aurora Post
 | --- | --- | --- |
 | Shell | `AppShell`, `Sidebar`, `SidebarSection`, `SidebarItem`, `Topbar`, `Workspace` | Responsive shell state, drawer behavior, sidebar collapse, and application content framing |
 | Navigation | `navigation.ts` | Central navigation configuration and route matching; most configured destination routes do not exist yet |
-| Topbar tools | `SearchBar`, `UserMenu`, `NotificationBell` | Navigation filtering and routing, logout form, and static empty notification state |
+| Topbar tools | `SearchBar`, `UserMenu`, `NotificationBell` | Role-filtered navigation search, active role/account display, logout form, and organization-scoped notification inbox |
 | Brand | `components/brand/Logo.tsx`, `public/brand/` | Shared wordmark, monogram, and horizontal lockup variants for dark and light surfaces, plus favicon and app-icon assets |
 | Shared UI | `Button`, `Card`, `Badge`, `StatusDot`, `MetricTile` | Reusable styled presentation components |
 | Marketing | Root page plus components under `components/marketing/` | Public presentation only; the active page uses the shared brand component but does not use all newer marketing components |
@@ -84,13 +94,15 @@ The documented target uses AWS Amplify Hosting, API Gateway, Lambda, Aurora Post
 | Mercury API | `/api/mercury/conversations`, conversation detail/message routes, `/api/mercury/plans/[planId]/approval`, `POST /api/mercury/plan`, `GET /api/mercury/history` | Enforces the administrator session, scopes reads/writes by organization, persists idempotent conversation turns and revisions, records approval decisions, and supports compatibility planning/history |
 | Mercury services | `lib/mercury/` | Keyword planning, capability mapping, approval rules, dependency routing, events, repository operations, and two execution foundations |
 | Commerce Evidence | `lib/evidence/`, `lib/mercury/evidence.ts` | Provider contracts, normalized record schema, provenance, freshness, cache-aside queries, sync orchestration, PostgreSQL adapters, Mercury capability-to-dataset selection, and coverage summaries |
-| Database | `db/migrations/001_mercury_core.sql` through `005_commerce_evidence_engine.sql`, `scripts/migrate.ts` | PostgreSQL schemas for conversations, messages, versioned plans, normalized evidence, sync runs/cursors/cache, approvals, execution, and integration metadata; migrations are applied explicitly with `npm run migrate` |
+| Platform Core | `lib/platform/`, `/api/platform/*` | Organization and membership services, RBAC, identity abstraction, team invitations, settings, immutable audit, notifications, feature flags, and subscription entitlements |
+| Database | `db/migrations/001_mercury_core.sql` through `006_platform_core.sql`, `scripts/migrate.ts` | PostgreSQL schemas for Platform Core, Mercury, evidence, sync, approvals, execution, and integration metadata; migrations are applied explicitly with `npm run migrate` |
 | Amazon provider boundaries | `lib/evidence/providers/amazon-sp-api.ts`, `lib/evidence/providers/amazon-ads.ts` | Typed provider records, reader interfaces, and normalization pipelines only; no live reader, authorization flow, or synchronization is registered |
 | Legacy Amazon helper | `lib/amazon/sp-api.ts` | LWA token exchange and request helper only; it is not a complete production SP-API integration and is not wired into the evidence engine |
 
 ## Work in progress
 
 - Sprint 2: Mercury Command Center.
+- Platform Core UI and external-service adapters: organization switching, Settings/Team screens, Cognito verification, invitation delivery, and Stripe workflows.
 - Replacing deterministic response construction with evidence-grounded conversational reasoning while retaining deterministic routing as an explicitly limited fallback.
 - Implementing the first authorized provider reader and connection lifecycle against the Commerce Evidence contracts, then connecting approved plans to a canonical execution path, unified history, and measured outcomes.
 - Replacing legacy “AI workforce,” “AI workers,” and worker-oriented product language with the approved Commerce Intelligence vocabulary.
@@ -99,13 +111,16 @@ The documented target uses AWS Amplify Hosting, API Gateway, Lambda, Aurora Post
 
 ## Known gaps and blockers
 
-- Mercury conversations require PostgreSQL plus migrations `001` through `005`. The migration files and runner were dry-run validated, but no database was available in this workspace to apply or integration-test them.
+- Platform and Mercury persistence require PostgreSQL plus migrations `001` through `006`. The migration files and runner were dry-run validated, but no database was available in this workspace to apply or integration-test them.
 - Mercury responses are deterministic planning summaries. Normalized evidence retrieval and citation attachment are implemented, but no provider reader populates evidence, and there is no model-backed reasoning, attachments, or streaming.
 - Atlas, Vector, Oracle, Sentinel, Forge, and Pulse have navigation, types, routing metadata, and deterministic output scaffolding only. They do not have production module pages, data pipelines, or live analysis.
 - Navigation links for Execution, Approvals, History, Knowledge, Integrations, Billing, Settings, and all six module pages currently lead to unimplemented routes.
-- Notifications and account details are static. Sidebar provider entries truthfully display “Not configured” but are not live health checks.
+- Notifications are data-backed when PostgreSQL is configured. Sidebar provider entries remain static “Not configured” presentation rather than live health checks.
 - `/workers` uses the application shell but is not protected by the `/dashboard` layout guard.
-- Authentication contains development fallback credentials and a fallback signing secret. It is not suitable for production, and Cognito is not implemented.
+- The active login remains the single administrator cookie. Development fallback credentials are rejected in production, but Cognito token verification, multi-user sign-in, session revocation, and organization switching are not implemented.
+- Team persistence and authorized APIs exist, but there is no Settings UI, ownership-transfer workflow, invitation email delivery, invitation acceptance route, or session invalidation after membership changes.
+- Subscription and entitlement persistence exists, but Stripe customer mapping is not synchronized and there are no signed webhooks, checkout/portal sessions, invoices, usage metering, plan catalog, or billing UI.
+- Feature flag evaluation and persistence exist, but there is no flag administration API/UI or external configuration provider.
 - Amazon SP-API and Amazon Ads have evidence contracts and normalizers only. No live reader, complete authentication/signing flow, connection management, scheduler, credential storage, or production synchronization is implemented.
 - Stripe billing, S3 artifact storage, API Gateway, Lambda, Aurora provisioning, Amplify configuration, and Cognito are not implemented in this repository.
 - Mercury has separate `executor.ts` and `runtime.ts` execution paths. Neither is exposed as a complete authenticated application workflow, and the boundary between them is not finalized.
@@ -117,12 +132,13 @@ The documented target uses AWS Amplify Hosting, API Gateway, Lambda, Aurora Post
 
 Sprint 2 is the Mercury Command Center.
 
-The next implementation should connect one authorized source to the provider-neutral evidence boundary:
+The next implementation should operationalize Platform Core before connecting external commerce sources:
 
-- Choose and integrate the conversational model/provider behind a typed server boundary.
-- Choose the first Amazon account model and dataset, then implement its production authorization, provider reader, secret storage, and observable synchronization entry point.
-- Ground Mercury responses and confidence explanations in retrieved evidence with citations, freshness, and limitations.
-- Add PostgreSQL integration tests for normalized evidence persistence, cursor advancement, cache invalidation, idempotent sync replay, and tenant isolation.
+- Apply migration `006` to a development PostgreSQL environment and add integration tests for tenant isolation, membership changes, invitation replay/expiry, audit immutability, notification deduplication, and entitlement projections.
+- Implement verified Cognito session handling and organization selection against the existing identity and membership abstractions.
+- Build the authenticated Settings/Team experience and invitation acceptance/delivery flow.
+- Decide the first subscription plan catalog, grace behavior, and entitlement keys before implementing signed Stripe webhooks and hosted billing flows.
+- Then choose the first Amazon account model and dataset and implement its authorization and provider reader without bypassing RBAC, audit, notification, feature-flag, or entitlement boundaries.
 - Consolidate the two execution foundations before exposing execution controls.
 - Add PostgreSQL integration and authenticated API tests for revision, supersession, idempotency, and approval concurrency.
 - Remove or migrate `/workers` only after confirming its replacement route and any compatibility requirements.
@@ -133,6 +149,7 @@ The next implementation should connect one authorized source to the provider-neu
 | --- | --- | --- |
 | 1. Application Shell | Complete | Responsive shell components are wired into the application |
 | 2. Mercury Command Center | In progress | Durable conversations, versioned deterministic plans, normalized evidence lookup and citations, plan-level approval decisions, and the responsive workspace exist; a connected provider, model-grounded reasoning, execution, and outcomes remain |
+| Platform Core | Foundation implemented | Multi-organization persistence, RBAC, identity abstraction, team services, immutable audit, notifications, flags, and subscription entitlements exist; external identity/billing adapters and management UI remain |
 | 3. Atlas | Not started | Navigation, types, routing, and output scaffolding only |
 | 4. Vector | Not started | Navigation, types, routing, and output scaffolding only |
 | 5. Oracle | Not started | Navigation, types, routing, and output scaffolding only |
@@ -144,20 +161,22 @@ The next implementation should connect one authorized source to the provider-neu
 
 ## Validation status
 
-Validation was run against this repository state on 2026-07-27.
+Validation was run against this repository state on 2026-07-28.
 
 | Check | Status |
 | --- | --- |
 | TypeScript typecheck (`npm run typecheck`) | Passed |
 | Production build (`npm run build`) | Passed |
 | Lint | Unavailable: no lint script is defined |
-| Automated tests (`npm test`) | Passed: 15 tests |
-| Migration validation (`npm run migrate:dry-run`) | Passed: migrations `001` through `005` and checksums validated; no database application was attempted |
+| Automated tests (`npm test`) | Passed: 23 tests |
+| Migration validation (`npm run migrate:dry-run`) | Passed: migrations `001` through `006` and checksums validated; no database application was attempted |
+| Responsive browser QA | Passed: authenticated desktop and 390 × 844 mobile shell states loaded without console errors; PostgreSQL-unavailable state remained explicit |
 
 ## Changelog
 
 | Date | Change |
 | --- | --- |
+| 2026-07-27 | Added the Sprint 4 Platform Core foundation with multi-organization persistence, RBAC, team services, Cognito-ready identity contracts, immutable audit, notifications, feature flags, subscription entitlements, and Mercury permission enforcement. |
 | 2026-07-27 | Added the provider-agnostic Commerce Evidence Layer, normalized Amazon provider contracts, freshness/cache/provenance behavior, bounded sync orchestration, and Mercury normalized-evidence consumption. |
 | 2026-07-27 | Added versioned Mercury plan revision, evidence/provenance contracts, idempotent plan-level approval decisions, migration tooling, and initial domain tests. |
 | 2026-07-27 | Added the authenticated, organization-scoped Mercury conversation foundation and replaced the static dashboard with the durable conversation workspace. |

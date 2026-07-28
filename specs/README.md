@@ -43,8 +43,8 @@ Static data, navigation configuration, legacy prototypes, deterministic example 
 | [History](history.md) | Scaffolded | Conversations, plans, decisions, execution, and outcomes |
 | [Knowledge](knowledge.md) | Planned | Governed business context and evidence |
 | [Integrations](integrations.md) | Scaffolded | Provider connection, sync, and health management |
-| [Billing](billing.md) | Planned | Subscription, entitlement, usage, and invoice experience |
-| [Settings](settings.md) | Planned | Organization, access, policy, and preference management |
+| [Billing](billing.md) | Scaffolded | Subscription and entitlement domain; live Stripe and billing experience remain |
+| [Settings](settings.md) | Scaffolded | Durable organization, access, invitation, preference, audit, notification, and flag foundations |
 | [Mercury orchestration engine](mercury-orchestration-engine.md) | Scaffolded | Planning, routing, approval, execution, recovery, and outcomes |
 
 ## Shared delivery rules
@@ -66,8 +66,8 @@ All feature work must:
 
 These decisions affect more than one specification and must be resolved before their dependent milestones:
 
-1. Organization and marketplace tenancy model, including whether one user may access multiple organizations.
-2. Initial identity approach and the migration boundary from the current administrator cookie to Cognito.
+1. Organization-selection and session semantics for users with multiple active memberships.
+2. Cognito token verification, hosted sign-in, session revocation, and migration timing for the current administrator cookie.
 3. First supported Amazon account model: Seller, Vendor, or both.
 4. System of record for normalized commerce facts and metric definitions.
 5. Evidence retention, provider-payload retention, and regional data residency requirements.

@@ -10,18 +10,21 @@ This specification defines cross-cutting contracts that feature specifications i
 ## Current implementation evidence
 
 - Strict TypeScript is enabled in `tsconfig.json`.
-- `lib/domain.ts` contains early organization, user, account, objective, task, alert, metric, and event types.
-- `lib/auth.ts` provides a single administrator session with development fallbacks and an organization identifier.
+- `lib/platform/authorization.ts` centrally defines Owner, Admin, Manager, Analyst, and Viewer permissions and organization-scope guards.
+- `lib/platform/identity.ts` separates verified Cognito identity, membership resolution, and authenticated principals. `lib/auth.ts` remains the active signed administrator-cookie adapter, maps that administrator to Owner, and rejects credential or signing-secret fallbacks in production.
+- `lib/platform/organizations.ts` provides durable organization, membership, invitation, and settings services. Invitations expire, are single-use, bind a role and organization, and store only a token hash.
+- `lib/platform/audit.ts`, `notifications.ts`, `feature-flags.ts`, and `billing.ts` provide organization-scoped audit, notification, feature-flag, subscription, and entitlement boundaries.
 - `lib/db.ts` provides an optional PostgreSQL connection.
-- Mercury migrations establish organization-scoped conversations, messages, versioned plans, tasks, events, approvals, evidence/provenance records, mutation idempotency records, execution fields, and integration metadata.
+- Migrations establish Platform Core tenancy plus organization-scoped conversations, messages, versioned plans, tasks, events, approvals, evidence/provenance records, mutation idempotency records, execution fields, and integration metadata.
 - `lib/mercury/evidence.ts` defines typed evidence coverage and freshness summaries; without ingested records it returns an explicit unavailable limitation.
 - `lib/evidence/` defines provider-neutral reader/adaptor contracts, canonical attribute/metric/status evidence values, deterministic identity, versioned normalization, provenance hashes, dataset freshness policies, memory and PostgreSQL caching, normalized queries, provider registration, and bounded idempotent synchronization orchestration.
 - Migration `005_commerce_evidence_engine.sql` adds normalized evidence fields, sync runs, durable cursors, and a normalized cache projection.
+- Migration `006_platform_core.sql` adds the Platform Core schema, append-only audit trigger, subscription entitlement projection, organization-scoped integration keys, and foreign-key tenant boundaries.
 - Mercury maps plan capabilities to evidence datasets and consumes only normalized records; provider-specific records terminate inside normalization pipelines.
 - Amazon SP-API and Amazon Ads have typed evidence record/reader interfaces and normalization pipelines, but no production readers are registered.
 - Conversation turns, revisions, and plan-level approval decisions accept validated idempotency keys.
-- `scripts/migrate.ts` provides an ordered, checksum-enforced PostgreSQL migration boundary.
-- The normalized evidence model is implemented for evidence records; production tenancy and authorization, broader normalized commerce entities, production provider synchronization, audit policy, queueing, observability, and AWS resource configuration remain incomplete.
+- `scripts/migrate.ts` provides an ordered, checksum-enforced PostgreSQL migration boundary with line-ending-normalized checksums.
+- Platform and Mercury route handlers enforce server-side permissions and organization scope. Cognito verification, organization switching, live Stripe workflows, production provider synchronization, broader normalized commerce entities, queueing, observability, and AWS resource configuration remain incomplete.
 
 ## Core domain boundaries
 
@@ -52,7 +55,7 @@ Persisted records MUST carry an organization boundary. Records tied to a provide
 - Provider credentials MUST remain server-side and be stored through an approved secret-management mechanism.
 - Security-sensitive events MUST be auditable.
 
-The current HMAC administrator cookie is an interim scaffold. Its compatibility and migration path must be addressed in the [Settings specification](settings.md) and before multi-user production use.
+The current HMAC administrator cookie is an interim adapter behind the authenticated-principal contract. It is idempotently provisioned as an Owner membership when PostgreSQL is configured. Cognito verification, multi-user login, organization selection, session revocation, and the compatibility retirement path remain required before production multi-user use.
 
 ## Evidence and data provenance
 
@@ -131,7 +134,8 @@ This cross-cutting specification is complete only when:
 
 ## Open decisions
 
-- Organization membership and role matrix.
+- Organization selection and active-session behavior for users with multiple memberships.
+- Ownership transfer and last-owner recovery policy.
 - Data retention and deletion policy.
 - Currency conversion and metric-definition ownership.
 - Event transport and durable queue technology.

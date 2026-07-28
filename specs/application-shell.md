@@ -18,7 +18,7 @@ The current shell implements:
 - route highlighting;
 - a sticky topbar;
 - navigation search with `Ctrl+K`;
-- notification and user-menu surfaces;
+- role-filtered navigation plus notification and user-menu surfaces;
 - explicit “Not configured” platform-status presentation;
 - a responsive workspace boundary;
 - a reusable MerchantFlare horizontal wordmark and compact monogram; and
@@ -57,6 +57,8 @@ The shell is composed from `app/components/layout/` and styled by `app/component
 
 - Connection status MUST come from a data-backed integration health source before it is labeled live.
 - Notifications MUST come from a durable notification or event source before counts are non-zero.
+
+The dashboard shell now loads organization- and recipient-scoped notifications from Platform Core and displays their real unread state. Navigation and Mercury search results are filtered by the active organization role. Notification interaction remains read-only in the shell until the mark-read API is wired into a client interaction.
 - Logout MUST invalidate the current session.
 - Account links MUST route only to implemented and authorized destinations.
 
@@ -64,7 +66,7 @@ The shell is composed from `app/components/layout/` and styled by `app/component
 
 - Most configured destinations are not implemented.
 - Provider states are static “Not configured” entries rather than live health.
-- Notifications are a static empty state.
+- Notifications are loaded from Platform Core, but the shell does not yet wire its mark-read interaction or provide notification preferences.
 - `/workers` bypasses the dashboard authentication layout.
 
 ## Acceptance criteria

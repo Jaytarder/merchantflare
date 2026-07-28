@@ -14,6 +14,7 @@ Mercury is not a persona managing assistants or a workforce.
 
 - `/dashboard` is protected by the administrator session layout and renders the responsive Mercury conversation workspace.
 - Authenticated, organization-scoped APIs create, list, open, rename, archive, restore, and extend conversations.
+- Centralized role permissions protect every Mercury API and hide unavailable write and approval controls; repository operations reassert organization scope.
 - PostgreSQL schemas persist conversations and messages and link generated plans to their originating user and Mercury messages.
 - A submitted turn transactionally stores the user message, deterministic plan, routed tasks, events, approval requirements, and Mercury response.
 - Plans are versioned. A revision is submitted as a new conversation turn, preserves its parent and root identifiers, and supersedes the prior pending version.
@@ -23,6 +24,7 @@ Mercury is not a persona managing assistants or a workforce.
 - The workspace renders durable messages and reviewable plan details and supports first-use, loading, persistence-unavailable, evidence-unavailable, error, active, and archived states.
 - Deterministic keyword rules produce the current responses and are labeled as limited planning behavior.
 - `POST /api/mercury/plan` remains as an authenticated compatibility endpoint, and `GET /api/mercury/history` returns organization-scoped plan summaries.
+- Material conversation, plan, revision, and approval mutations append Platform Core audit events; approval requests create deduplicated organization notifications.
 - There is no model-backed reasoning, connected provider reader, live synchronization, attachments, streaming response, execution control, or outcome measurement. Approval remains plan-level and uses the interim administrator identity.
 
 ## User outcomes

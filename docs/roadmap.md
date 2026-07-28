@@ -29,6 +29,29 @@ Known follow-up:
 - replace explicit “Not configured” provider states with real integration health when connections exist; and
 - ensure all future platform routes share the authenticated shell layout.
 
+## Platform Core — Foundation only
+
+Implemented:
+
+- durable organization, user, membership, invitation, and settings models;
+- centralized Owner, Admin, Manager, Analyst, and Viewer permissions;
+- a Cognito-ready identity and membership boundary with the existing signed cookie retained as a transitional adapter;
+- organization-scoped team, settings, audit, notification, and subscription APIs;
+- database-enforced immutable audit events;
+- durable, scoped, deduplicated notifications rendered in the application shell;
+- deterministic feature-flag evaluation with organization and user overrides;
+- versioned subscription and entitlement persistence with trusted server-side evaluation; and
+- Mercury API, repository, and UI permission enforcement.
+
+Still required:
+
+- verified Cognito sessions, multi-user login, session revocation, and organization switching;
+- Settings, team, audit, notification-preference, feature-flag, and Billing user interfaces;
+- invitation delivery and acceptance routing;
+- ownership transfer and organization lifecycle workflows;
+- signed Stripe webhooks, customer synchronization, checkout, portal, invoices, usage, and plan catalog; and
+- PostgreSQL integration and authenticated API tests.
+
 ## 2. Mercury Command Center — In progress
 
 Implemented:
@@ -53,7 +76,7 @@ Still required:
 - model-backed conversational reasoning;
 - a production provider reader, authorization flow, and live commerce evidence synchronization;
 - evidence-grounded model responses and confidence explanations;
-- a dedicated approval queue, multi-user reviewer authorization, expiry, and delegation;
+- a dedicated approval queue, separation-of-duties policy, expiry, and delegation;
 - execution controls and live progress;
 - history UI;
 - knowledge context;
@@ -125,9 +148,9 @@ Still required:
 These concerns should be addressed within the sprint that first requires them:
 
 - AWS infrastructure and environment configuration;
-- Cognito-based identity and organization tenancy;
+- Cognito verification and multi-user session lifecycle on the implemented organization tenancy model;
 - S3 artifact storage;
-- Stripe plans, entitlements, and billing;
+- Stripe synchronization and billing workflows on the implemented subscription and entitlement model;
 - testing and linting infrastructure;
 - accessibility and responsive QA;
 - product-language migration away from workforce terminology; and
