@@ -30,6 +30,7 @@ Static data, navigation configuration, legacy prototypes, deterministic example 
 | Specification | Current status | Scope |
 | --- | --- | --- |
 | [Platform contracts](platform-contracts.md) | Scaffolded | Shared tenancy, evidence, status, security, data, accessibility, and operational requirements |
+| [Authentication](authentication.md) | Scaffolded | Cognito identity, application sessions, tenant membership, and bootstrap operations |
 | [Application shell](application-shell.md) | Implemented | Responsive authenticated application frame and navigation |
 | [Mercury Command Center](mercury-command-center.md) | Scaffolded | Primary conversational Commerce Intelligence workspace |
 | [Atlas](atlas.md) | Planned | Catalog Intelligence |
@@ -67,7 +68,7 @@ All feature work must:
 These decisions affect more than one specification and must be resolved before their dependent milestones:
 
 1. Organization-selection and session semantics for users with multiple active memberships.
-2. Cognito token verification, hosted sign-in, session revocation, and migration timing for the current administrator cookie.
+2. Multi-organization selection, invitation-to-Cognito binding, session revocation, and the operational verification required by the authentication specification.
 3. First supported Amazon account model: Seller, Vendor, or both.
 4. System of record for normalized commerce facts and metric definitions.
 5. Evidence retention, provider-payload retention, and regional data residency requirements.

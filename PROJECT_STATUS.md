@@ -8,7 +8,7 @@ This file is the current implementation record for MerchantFlare. Product direct
 
 MerchantFlare is an early-stage Commerce Intelligence Platform built with the Next.js App Router and TypeScript. Mercury is the Commerce Intelligence Engine and primary conversational workspace.
 
-Sprint 1, the application shell, is implemented. Sprint 2 has an organization-scoped conversation, governance, and Commerce Evidence foundation. Sprint 4 adds the Platform Core foundation. Sprint 5 adds the Atlas foundation: an explainable, provider-neutral catalog assessment domain, an authenticated catalog intelligence route, and Mercury integration. Atlas can only assess normalized evidence already present in the Commerce Evidence Layer; no live catalog provider or publishing adapter is implemented.
+Sprint 1, the application shell, is implemented. Sprint 2 has an organization-scoped conversation, governance, and Commerce Evidence foundation. Sprint 4 adds the Platform Core foundation. Sprint 5 adds the Atlas foundation. Sprint 5B adds deployment-ready Cognito authentication code and infrastructure, but it is not operationally complete because no real user pool has been deployed or tested. Atlas can only assess normalized evidence already present in the Commerce Evidence Layer; no live catalog provider or publishing adapter is implemented.
 
 ## Completed work
 
@@ -24,9 +24,9 @@ Sprint 1, the application shell, is implemented. Sprint 2 has an organization-sc
 
 ### Application and service foundations
 
-- Root marketing page, administrator login page, dashboard page, and legacy `/workers` prototype.
-- HMAC-signed administrator session cookie with login, logout, and a server-side guard for `/dashboard`.
-- Organization context in the interim administrator session and server-side authentication checks on Mercury application APIs.
+- Root marketing page, Cognito sign-in entry page, dashboard page, and legacy `/workers` prototype.
+- Cognito authorization-code/PKCE login and callback, verified JWT handling, encrypted refresh cookie, signed application session, logout, managed password-recovery entry, and protected page/API routing.
+- Server-side active membership resolution for Cognito identities at callback, refresh, and Platform Core/Mercury authorization boundaries.
 - Mercury objective validation, deterministic keyword-based planning, capability routing, approval-policy evaluation, event generation, and plan responses through `POST /api/mercury/plan`.
 - PostgreSQL persistence for organization-scoped Mercury conversations, messages, plans, tasks, events, approvals, execution state, and integration metadata when `DATABASE_URL` is configured and migrations are applied.
 - Authenticated, organization-scoped conversation APIs to create, list, open, rename, archive, restore, and extend conversations.
@@ -42,7 +42,8 @@ Sprint 1, the application shell, is implemented. Sprint 2 has an organization-sc
 - Authenticated, organization-scoped, idempotent plan approval and rejection from the Mercury workspace. Decisions bind the plan version, policy version, proposal snapshot, actor, note, and timestamp without claiming execution occurred.
 - A checksum-enforced PostgreSQL migration runner and a dry-run command for validating ordered migration files.
 - A multi-organization Platform Core under `lib/platform/` with Owner, Admin, Manager, Analyst, and Viewer permissions; organization-scoped services; durable memberships, invitations, settings, audit events, notifications, feature flags, subscription plans, subscriptions, and entitlements.
-- A Cognito-ready identity/session abstraction and PostgreSQL membership resolver. The existing signed administrator cookie remains the active login mechanism and is provisioned as a transitional Owner membership; no Cognito JWT verifier or hosted authentication flow is implemented.
+- Cognito CloudFormation for an email-sign-in user pool, public browser client without a secret, callback/logout allowlists, token lifetimes, and a managed-login domain.
+- An explicit, idempotent first-Owner bootstrap command that refuses to silently grant access to unknown Cognito identities or replace a different existing Cognito Owner.
 - Organization, member, invitation, audit, notification, and subscription read/update APIs under `/api/platform/`. Invitation tokens are generated once and stored only as SHA-256 hashes, but email delivery and invitation acceptance routing are not implemented.
 - Database-enforced append-only platform audit events. Mercury plan creation, revision, conversation updates, approval decisions, organization settings, invitations, membership role changes, and removals record typed audit events.
 - A central, durable notification framework with severity, category, recipient/broadcast scope, deduplication, expiry, read state, and organization authorization. The shell now renders actual stored notifications rather than a fabricated count.
@@ -69,17 +70,17 @@ Sprint 1, the application shell, is implemented. Sprint 2 has an organization-sc
 | Styling | Global CSS in `app/globals.css` and shell CSS in `app/components/app-shell.css`; a second `styles/design-system.css` token set exists but is not imported |
 | Pages | `/`, `/login`, `/dashboard`, `/atlas`, and legacy `/workers` |
 | API | Next.js route handlers for login, logout, Mercury conversations/messages and revisions, plan approval decisions, deterministic planning/history, Atlas assessment, and Platform Core |
-| Authentication | Cognito-ready principal and membership abstractions with the environment-configured administrator/HMAC cookie retained as the active transitional adapter; production fallbacks are prohibited |
+| Authentication | Cognito managed-login/PKCE application flow, RS256 JWT verifier, encrypted refresh token, signed session, protected-route gateway, and active Platform Core membership resolution; real-pool verification is pending |
 | Authorization | Central Owner, Admin, Manager, Analyst, and Viewer permission matrix enforced by platform and Mercury server boundaries |
 | Domain services | `lib/platform/` for SaaS control-plane services, `lib/mercury/` for planning/governance, `lib/evidence/` for provider-neutral commerce evidence, and `lib/atlas/` for explainable catalog intelligence |
 | Data | Optional PostgreSQL connection via `DATABASE_URL`; six ordered SQL migrations and a cross-platform checksum-enforced migration runner |
 | Integrations | An incomplete legacy Amazon SP-API helper plus typed SP-API and Amazon Ads evidence interfaces; no provider reader or live integration is connected |
 
-The implemented application is currently a single Next.js codebase. Platform Core, conversation, governance, and normalized evidence operations require `DATABASE_URL` and migrations through `006_platform_core.sql`. The legacy administrator session is provisioned idempotently into the organization/membership model when PostgreSQL is configured. Mercury queries normalized evidence and plan citations through the provider-neutral evidence boundary, but no live provider populates it.
+The implemented application is currently a single Next.js codebase. Platform Core, authentication membership resolution, conversation, governance, and normalized evidence operations require `DATABASE_URL` and migrations through `006_platform_core.sql`. Mercury queries normalized evidence and plan citations through the provider-neutral evidence boundary, but no live provider populates it.
 
 ### Planned production architecture
 
-The documented target uses AWS Amplify Hosting, API Gateway, Lambda, Aurora PostgreSQL, S3, Stripe, Amazon SP-API, Amazon Ads API, and later Cognito. The repository does not currently contain infrastructure-as-code, deployment configuration, provisioned resource definitions, or production authentication for that architecture.
+The documented target uses AWS Amplify Hosting, API Gateway, Lambda, Aurora PostgreSQL, S3, Stripe, Amazon SP-API, Amazon Ads API, and Cognito. Cognito is the first AWS resource set represented as infrastructure-as-code. No resource was deployed from this workspace, and the broader target infrastructure remains unprovisioned here.
 
 ## Implemented components
 
@@ -91,10 +92,10 @@ The documented target uses AWS Amplify Hosting, API Gateway, Lambda, Aurora Post
 | Brand | `components/brand/Logo.tsx`, `public/brand/` | Shared wordmark, monogram, and horizontal lockup variants for dark and light surfaces, plus favicon and app-icon assets |
 | Shared UI | `Button`, `Card`, `Badge`, `StatusDot`, `MetricTile` | Reusable styled presentation components |
 | Marketing | Root page plus components under `components/marketing/` | Public presentation only; the active page uses the shared brand component but does not use all newer marketing components |
-| Login | `/login`, login/logout route handlers, `lib/auth.ts` | Single administrator credential check and cookie lifecycle |
+| Login | `/login`, `/api/auth/*`, `lib/auth/`, `proxy.ts` | Cognito PKCE initiation/callback, password-recovery entry, JWT validation, refresh, logout, safe redirects, protected routes, and organization membership enforcement; not real-pool verified |
 | Mercury workspace | `/dashboard`, `MercuryWorkspace`, `ConversationSidebar`, `MercuryPlanCard` | Creates and resumes durable conversations, submits messages, renders deterministic linked plans and evidence status, supports versioned revision and plan-level approval decisions, and supports rename/archive/restore |
 | Legacy prototype | `/workers` | Static AI-worker-oriented prototype retained as migration debt; it is not a completed intelligence-module experience |
-| Mercury API | `/api/mercury/conversations`, conversation detail/message routes, `/api/mercury/plans/[planId]/approval`, `POST /api/mercury/plan`, `GET /api/mercury/history` | Enforces the administrator session, scopes reads/writes by organization, persists idempotent conversation turns and revisions, records approval decisions, and supports compatibility planning/history |
+| Mercury API | `/api/mercury/conversations`, conversation detail/message routes, `/api/mercury/plans/[planId]/approval`, `POST /api/mercury/plan`, `GET /api/mercury/history` | Enforces the Cognito-derived principal and active membership, scopes reads/writes by organization, persists idempotent conversation turns and revisions, records approval decisions, and supports compatibility planning/history |
 | Mercury services | `lib/mercury/` | Keyword planning, capability mapping, approval rules, dependency routing, events, repository operations, and two execution foundations |
 | Commerce Evidence | `lib/evidence/`, `lib/mercury/evidence.ts` | Provider contracts, normalized record schema, provenance, freshness, cache-aside queries, sync orchestration, PostgreSQL adapters, Mercury capability-to-dataset selection, and coverage summaries |
 | Atlas | `/atlas`, `/api/atlas/assessment`, `lib/atlas/`, `app/components/atlas/` | Organization-scoped evidence assessment, transparent component scoring, findings, recommendations, opportunities, approval-compatible plans, and responsive presentation |
@@ -107,7 +108,7 @@ The documented target uses AWS Amplify Hosting, API Gateway, Lambda, Aurora Post
 
 - Sprint 2: Mercury Command Center remains in progress.
 - Sprint 5: Atlas Foundations is implemented; live catalog ingestion, filtering, field-level diffs, execution, and outcomes remain.
-- Platform Core UI and external-service adapters: organization switching, Settings/Team screens, Cognito verification, invitation delivery, and Stripe workflows.
+- Platform Core UI and external-service operations: organization switching, Settings/Team screens, Cognito deployment/verification, invitation delivery, and Stripe workflows.
 - Replacing deterministic response construction with evidence-grounded conversational reasoning while retaining deterministic routing as an explicitly limited fallback.
 - Implementing the first authorized provider reader and connection lifecycle against the Commerce Evidence contracts, then connecting approved plans to a canonical execution path, unified history, and measured outcomes.
 - Replacing legacy “AI workforce,” “AI workers,” and worker-oriented product language with the approved Commerce Intelligence vocabulary.
@@ -121,13 +122,14 @@ The documented target uses AWS Amplify Hosting, API Gateway, Lambda, Aurora Post
 - Atlas has a production-quality foundation and route, but it has no connected source, provider ingestion, field-level diffing, publication adapter, or outcome measurement. Vector, Oracle, Sentinel, Forge, and Pulse remain scaffolds only.
 - Navigation links for Execution, Approvals, History, Knowledge, Integrations, Billing, Settings, and five intelligence module pages currently lead to unimplemented routes.
 - Notifications are data-backed when PostgreSQL is configured. Sidebar provider entries remain static “Not configured” presentation rather than live health checks.
-- `/workers` uses the application shell but is not protected by the `/dashboard` layout guard.
-- The active login remains the single administrator cookie. Development fallback credentials are rejected in production, but Cognito token verification, multi-user sign-in, session revocation, and organization switching are not implemented.
-- Team persistence and authorized APIs exist, but there is no Settings UI, ownership-transfer workflow, invitation email delivery, invitation acceptance route, or session invalidation after membership changes.
+- `/workers` is protected by the route gateway and authenticated shell but remains a legacy prototype.
+- Cognito code and CloudFormation exist, but no real user pool or Amplify environment was available for end-to-end login, logout, verification, reset, refresh, or first-user testing. Authentication must not be called operational until that verification is complete.
+- Multi-organization selection, invitation-to-Cognito binding, and centralized early session revocation are not implemented.
+- Team persistence and authorized APIs exist, but there is no Settings UI, ownership-transfer workflow, invitation email delivery, or invitation acceptance route.
 - Subscription and entitlement persistence exists, but Stripe customer mapping is not synchronized and there are no signed webhooks, checkout/portal sessions, invoices, usage metering, plan catalog, or billing UI.
 - Feature flag evaluation and persistence exist, but there is no flag administration API/UI or external configuration provider.
 - Amazon SP-API and Amazon Ads have evidence contracts and normalizers only. No live reader, complete authentication/signing flow, connection management, scheduler, credential storage, or production synchronization is implemented.
-- Stripe billing, S3 artifact storage, API Gateway, Lambda, Aurora provisioning, Amplify configuration, and Cognito are not implemented in this repository.
+- Stripe billing, S3 artifact storage, API Gateway, Lambda, Aurora provisioning, and Amplify configuration are not implemented in this repository. Cognito IaC is implemented but not deployed.
 - Mercury has separate `executor.ts` and `runtime.ts` execution paths. Neither is exposed as a complete authenticated application workflow, and the boundary between them is not finalized.
 - Plan-level approval decisions have an application API and inline Mercury UI, but there is no `/approvals` queue, multi-user reviewer authorization, separation of duties, expiry, delegation, or task-level policy.
 - Unit tests cover selected Mercury and Commerce Evidence domain contracts. There is no lint script, database integration suite, API test suite, or browser automation suite.
@@ -138,7 +140,8 @@ The documented target uses AWS Amplify Hosting, API Gateway, Lambda, Aurora Post
 The recommended next milestone is the first authorized catalog evidence provider and Atlas product-depth milestone:
 
 - Apply migration `006` to a development PostgreSQL environment and add integration tests for tenant isolation, membership changes, invitation replay/expiry, audit immutability, notification deduplication, and entitlement projections.
-- Implement verified Cognito session handling and organization selection against the existing identity and membership abstractions.
+- Deploy the Cognito stack, configure Amplify, bootstrap the first Owner, and execute the operational verification checklist before enabling production access.
+- Add organization selection and invitation-to-Cognito binding after the single-membership flow is verified.
 - Build the authenticated Settings/Team experience and invitation acceptance/delivery flow.
 - Decide the first subscription plan catalog, grace behavior, and entitlement keys before implementing signed Stripe webhooks and hosted billing flows.
 - Choose the first catalog account model and dataset, then implement authorization and a provider reader without bypassing RBAC, audit, notifications, feature flags, entitlements, or the Commerce Evidence boundary.
@@ -172,15 +175,17 @@ Validation was run against this repository state on 2026-07-28.
 | TypeScript typecheck (`npm run typecheck`) | Passed |
 | Production build (`npm run build`) | Passed |
 | Lint | Unavailable: no lint script is defined |
-| Automated tests (`npm test`) | Passed: 29 tests, including Atlas scoring, missing evidence, confidence, routing, plan governance, and organization isolation |
+| Automated tests (`npm test`) | Passed: 36 tests, including Cognito JWT issuer/audience/expiry validation, membership denial, protected routes, safe redirects, permissions, Atlas, Mercury, and Evidence domains |
 | Migration validation (`npm run migrate:dry-run`) | Passed: migrations `001` through `006` and checksums validated; no database application was attempted |
 | Markdown relative links | Passed across `AGENTS.md`, `PROJECT_STATUS.md`, `docs/`, and `specs/` |
-| Responsive browser QA | Passed: authenticated `/atlas` at 1440 × 900 and 390 × 844 with no horizontal overflow or console errors; unavailable evidence remained explicit |
+| Responsive browser QA | Passed: `/login` at 1440 × 900 and 390 × 844 with no horizontal overflow or console errors; missing Cognito configuration produced the explicit unavailable state |
+| Real Cognito/Amplify verification | Not run: no Cognito User Pool or configured Amplify runtime was available; authentication remains scaffolded rather than operationally complete |
 
 ## Changelog
 
 | Date | Change |
 | --- | --- |
+| 2026-07-28 | Added Sprint 5B Cognito authentication architecture: PKCE managed login, JWT verification, encrypted refresh and signed sessions, protected routes, membership enforcement, first-Owner bootstrap, Cognito CloudFormation, Amplify configuration, tests, and deployment operations. Real-pool verification remains required. |
 | 2026-07-28 | Added Atlas Foundations with provider-neutral catalog assessment, explainable health scoring, evidence-backed recommendations and opportunities, governed improvement plans, Mercury routing/rendering, and an authenticated responsive route. |
 | 2026-07-27 | Added the Sprint 4 Platform Core foundation with multi-organization persistence, RBAC, team services, Cognito-ready identity contracts, immutable audit, notifications, feature flags, subscription entitlements, and Mercury permission enforcement. |
 | 2026-07-27 | Added the provider-agnostic Commerce Evidence Layer, normalized Amazon provider contracts, freshness/cache/provenance behavior, bounded sync orchestration, and Mercury normalized-evidence consumption. |

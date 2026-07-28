@@ -35,7 +35,8 @@ Implemented:
 
 - durable organization, user, membership, invitation, and settings models;
 - centralized Owner, Admin, Manager, Analyst, and Viewer permissions;
-- a Cognito-ready identity and membership boundary with the existing signed cookie retained as a transitional adapter;
+- a Cognito managed-login implementation with authorization code and PKCE, JWT verification, refresh, protected-route handling, and active membership resolution;
+- Cognito CloudFormation, environment contracts, deployment guidance, and an explicit first-Owner bootstrap command;
 - organization-scoped team, settings, audit, notification, and subscription APIs;
 - database-enforced immutable audit events;
 - durable, scoped, deduplicated notifications rendered in the application shell;
@@ -45,7 +46,8 @@ Implemented:
 
 Still required:
 
-- verified Cognito sessions, multi-user login, session revocation, and organization switching;
+- deployment and end-to-end verification against real development and production Cognito pools;
+- multi-organization selection, invitation-to-Cognito binding, and early centralized session revocation;
 - Settings, team, audit, notification-preference, feature-flag, and Billing user interfaces;
 - invitation delivery and acceptance routing;
 - ownership transfer and organization lifecycle workflows;
@@ -148,7 +150,7 @@ Still required:
 These concerns should be addressed within the sprint that first requires them:
 
 - AWS infrastructure and environment configuration;
-- Cognito verification and multi-user session lifecycle on the implemented organization tenancy model;
+- operational verification and lifecycle hardening of Cognito on the implemented organization tenancy model;
 - S3 artifact storage;
 - Stripe synchronization and billing workflows on the implemented subscription and entitlement model;
 - testing and linting infrastructure;

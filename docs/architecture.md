@@ -20,9 +20,9 @@ External systems:
   -> Stripe
 
 Identity:
-  -> current signed-cookie adapter
-  -> Cognito-ready identity boundary
-  -> Cognito verifier later
+  -> Amazon Cognito managed login (authorization code + PKCE)
+  -> MerchantFlare server session
+  -> Platform Core organization membership and RBAC
 ```
 
 This diagram is the target architecture, not a statement that the AWS resources are already provisioned.
@@ -46,7 +46,7 @@ This diagram is the target architecture, not a statement that the AWS resources 
 | Route | Current state |
 | --- | --- |
 | `/` | Marketing page; contains some legacy workforce positioning |
-| `/login` | Administrator login form |
+| `/login` | Cognito sign-in entry, recovery link, and user-safe authentication states |
 | `/dashboard` | Auth-gated Mercury conversation workspace with durable threads and deterministic message-linked plans when PostgreSQL is available |
 | `/workers` | Legacy intelligence-module prototype using workforce terminology; not a canonical product destination |
 
@@ -73,19 +73,18 @@ The shell is wired into `app/dashboard/layout.tsx`. The legacy `/workers` page r
 
 ### Authentication
 
-Current authentication uses a Cognito-ready principal boundary with a repository-local administrator adapter:
+The repository now contains a Cognito authentication implementation:
 
-- `lib/platform/identity.ts` separates verified identity, organization membership resolution, and the resulting authenticated principal;
-- `lib/platform/authorization.ts` centrally defines the Owner, Admin, Manager, Analyst, and Viewer permission matrix;
-- credentials for the active legacy adapter come from `ADMIN_EMAIL` and `ADMIN_PASSWORD`, with development-only fallbacks;
-- `lib/auth.ts` creates an HMAC-signed cookie containing an Owner principal and organization identifier;
-- `lib/server-auth.ts` idempotently provisions that transitional identity, organization, and membership when PostgreSQL is configured;
-- `/api/auth/login` creates the session;
-- `/api/auth/logout` clears it; and
-- the `/dashboard` layout validates the cookie; and
-- Mercury and Platform Core route handlers validate the session, enforce permissions server-side, and scope persistence by its organization identifier.
+- `infra/cognito.yaml` declares an email-sign-in user pool, public web client, callback/logout allowlists, token lifetimes, and managed-login domain;
+- `/api/auth/login` starts authorization code with PKCE, state, and nonce;
+- `/api/auth/callback` exchanges the code server-side and validates Cognito RS256 signatures, issuer, audience, token use, expiry, nonce, identity claims, and verified email;
+- encrypted HttpOnly refresh cookies and signed HttpOnly application-session cookies keep tokens out of browser JavaScript;
+- `/api/auth/refresh` renews the session and `/api/auth/logout` clears local state before Cognito logout;
+- `proxy.ts` protects authenticated pages and APIs, including the legacy `/workers` route;
+- `lib/server-auth.ts` re-resolves active organization membership for every server authorization boundary; and
+- `scripts/bootstrap-cognito-owner.ts` provides an explicit, guarded first-Owner bootstrap without auto-provisioning unknown identities.
 
-No Cognito token verifier or multi-user sign-in flow is implemented. The `/workers` prototype is not protected by the dashboard layout.
+The legacy administrator credential and cookie adapter has been removed. The implementation is not yet operationally verified because a real Cognito User Pool and Amplify configuration have not been created. Deployment and first-user operations are defined in [`deployment-authentication.md`](deployment-authentication.md). Multi-organization selection and early centralized revocation remain open.
 
 ### Platform Core
 
@@ -100,7 +99,7 @@ Sprint 4 introduces the foundational SaaS control plane:
 - typed feature flags with deterministic organization rollout and user/organization overrides; and
 - versioned subscription plans, plan entitlements, subscription projections, organization overrides, and trusted server-side entitlement evaluation.
 
-This is a domain and API foundation. There is no `/settings` or `/billing` page, Cognito verifier, organization selector, invitation delivery/acceptance route, flag-management surface, or live Stripe workflow.
+This is a domain and API foundation. There is no `/settings` or `/billing` page, organization selector, invitation delivery/acceptance route, flag-management surface, or live Stripe workflow. Cognito authentication code exists, but still requires real AWS deployment and verification.
 
 ### Mercury APIs
 
@@ -205,12 +204,12 @@ The following technologies are architectural commitments but are not implemented
 
 - AWS Amplify Hosting configuration;
 - API Gateway resources;
-- Lambda deployment packages or infrastructure-as-code;
+- Lambda deployment packages or general application infrastructure-as-code (Cognito is the first declared AWS resource set);
 - Aurora provisioning;
 - S3 buckets and object workflows;
 - live Stripe billing integration;
 - Amazon Ads API integration; and
-- Cognito token verification and hosted identity flows.
+- deployed and operationally verified Cognito and Amplify authentication.
 
 Add infrastructure declaratively and document environments, secrets, ownership, and failure behavior when those sprints begin.
 

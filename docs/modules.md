@@ -147,7 +147,7 @@ These are platform surfaces, not intelligence modules:
 
 Navigation entries exist for these surfaces, but their page routes are not currently implemented.
 
-Platform Core now supplies durable organization/team settings, immutable audit, notification, feature-flag, subscription, and entitlement contracts behind these surfaces. Organization, team, audit, notification, and billing read/update APIs exist, but the corresponding page experiences and external Cognito/Stripe adapters do not.
+Platform Core now supplies durable organization/team settings, immutable audit, notification, feature-flag, subscription, and entitlement contracts behind these surfaces. Organization, team, audit, notification, and billing read/update APIs exist. Cognito authentication code and infrastructure configuration exist but await real-pool verification; the corresponding settings experiences and external Stripe adapter do not exist.
 
 ## Internal terminology debt
 

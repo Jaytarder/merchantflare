@@ -11,7 +11,7 @@ This specification defines cross-cutting contracts that feature specifications i
 
 - Strict TypeScript is enabled in `tsconfig.json`.
 - `lib/platform/authorization.ts` centrally defines Owner, Admin, Manager, Analyst, and Viewer permissions and organization-scope guards.
-- `lib/platform/identity.ts` separates verified Cognito identity, membership resolution, and authenticated principals. `lib/auth.ts` remains the active signed administrator-cookie adapter, maps that administrator to Owner, and rejects credential or signing-secret fallbacks in production.
+- `lib/platform/identity.ts` separates verified Cognito identity, membership resolution, and authenticated principals. The Cognito flow validates JWTs, establishes signed application sessions, encrypts refresh tokens, and re-resolves active membership at server boundaries.
 - `lib/platform/organizations.ts` provides durable organization, membership, invitation, and settings services. Invitations expire, are single-use, bind a role and organization, and store only a token hash.
 - `lib/platform/audit.ts`, `notifications.ts`, `feature-flags.ts`, and `billing.ts` provide organization-scoped audit, notification, feature-flag, subscription, and entitlement boundaries.
 - `lib/db.ts` provides an optional PostgreSQL connection.
@@ -24,7 +24,7 @@ This specification defines cross-cutting contracts that feature specifications i
 - Amazon SP-API and Amazon Ads have typed evidence record/reader interfaces and normalization pipelines, but no production readers are registered.
 - Conversation turns, revisions, and plan-level approval decisions accept validated idempotency keys.
 - `scripts/migrate.ts` provides an ordered, checksum-enforced PostgreSQL migration boundary with line-ending-normalized checksums.
-- Platform and Mercury route handlers enforce server-side permissions and organization scope. Cognito verification, organization switching, live Stripe workflows, production provider synchronization, broader normalized commerce entities, queueing, observability, and AWS resource configuration remain incomplete.
+- Platform and Mercury route handlers enforce server-side permissions and organization scope. Cognito infrastructure and application code are present but not real-pool verified. Organization switching, live Stripe workflows, production provider synchronization, broader normalized commerce entities, queueing, and observability remain incomplete.
 
 ## Core domain boundaries
 
@@ -55,7 +55,7 @@ Persisted records MUST carry an organization boundary. Records tied to a provide
 - Provider credentials MUST remain server-side and be stored through an approved secret-management mechanism.
 - Security-sensitive events MUST be auditable.
 
-The current HMAC administrator cookie is an interim adapter behind the authenticated-principal contract. It is idempotently provisioned as an Owner membership when PostgreSQL is configured. Cognito verification, multi-user login, organization selection, session revocation, and the compatibility retirement path remain required before production multi-user use.
+The legacy administrator credential adapter has been removed. Cognito is the authentication source, while Platform Core membership remains the organization and role authority. Unknown Cognito users are denied, and the first Owner requires the guarded administrative bootstrap. Real-pool verification, organization selection, invitation binding, and early centralized session revocation remain required.
 
 ## Evidence and data provenance
 
