@@ -84,40 +84,39 @@
 .login-card-heading h2 { margin: 12px 0 0; font-size: 34px; letter-spacing: -.035em; }
 .login-card-heading p { margin: 12px 0 30px; color: #9ba6b6; line-height: 1.6; }
 
-.login-card label {
+.login-submit {
   display: grid;
-  gap: 9px;
-  margin-top: 18px;
-  color: #dfe4ec;
-  font-size: 13px;
-  font-weight: 800;
-}
-.login-card input {
-  width: 100%;
-  min-height: 52px;
-  padding: 0 15px;
-  border: 1px solid rgba(255,255,255,.11);
-  border-radius: 12px;
-  background: #0b1119;
-  color: white;
-}
-.login-card input:focus { border-color: rgba(255,106,0,.7); outline: none; box-shadow: 0 0 0 3px rgba(255,106,0,.1); }
-
-.login-card > button {
+  place-items: center;
   width: 100%;
   min-height: 52px;
   margin-top: 24px;
   border: 0;
   border-radius: 12px;
-  background: linear-gradient(135deg, #ff6a00, #ff9b3d);
+  background: #ff6a00;
   color: white;
   font-weight: 850;
   cursor: pointer;
-  box-shadow: 0 16px 34px rgba(255,106,0,.2);
+  text-decoration: none;
 }
-.login-card > button:disabled { opacity: .55; cursor: wait; }
+.login-submit:hover { background: #ff7b1a; }
+.login-submit:focus-visible { outline: 3px solid rgba(255,155,61,.45); outline-offset: 3px; }
+.login-recovery {
+  display: block;
+  margin-top: 17px;
+  color: #ff9b3d;
+  text-align: center;
+  text-underline-offset: 3px;
+}
 .login-card > small { display: block; margin-top: 18px; text-align: center; color: #687386; }
 .login-error { margin: 16px 0 0; color: #ff858a; font-size: 13px; }
+.login-configuration {
+  margin: 24px 0 0;
+  padding: 14px;
+  border: 1px solid rgba(255,155,61,.35);
+  border-radius: 12px;
+  color: #f2c79f;
+  line-height: 1.55;
+}
 
 @media (max-width: 900px) {
   .login-page { grid-template-columns: 1fr; }

@@ -1,41 +1,28 @@
-"use client";
-
-import { FormEvent, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Logo } from "../../components/brand/Logo";
+import { isAuthenticationConfigured, safeRedirectPath } from "../../lib/auth";
 import "./login.css";
 
-export default function LoginPage() {
-  const router = useRouter();
-  const [email, setEmail] = useState("jmartin@merchantflare.com");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [submitting, setSubmitting] = useState(false);
+const errorMessages: Record<string, string> = {
+  authorization_cancelled: "Sign-in was cancelled. You can try again when ready.",
+  callback_invalid: "This sign-in link is invalid or has expired. Start a new sign-in.",
+  callback_failed: "Cognito could not complete sign-in. Try again or contact your administrator.",
+  configuration_unavailable: "Authentication has not been configured for this environment.",
+  email_unverified: "Verify your email address in Cognito before signing in.",
+  membership_required: "Your identity is verified, but it is not assigned to a MerchantFlare organization. Contact an organization Owner.",
+  service_unavailable: "MerchantFlare could not resolve your organization. Try again later.",
+  session_expired: "Your session expired. Sign in again to continue.",
+};
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (submitting) return;
-
-    setSubmitting(true);
-    setError("");
-
-    try {
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-      const payload = await response.json();
-      if (!response.ok) throw new Error(payload.error || "Unable to sign in.");
-      router.replace(payload.redirectTo || "/dashboard");
-      router.refresh();
-    } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Unable to sign in.");
-    } finally {
-      setSubmitting(false);
-    }
-  }
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string; returnTo?: string }>;
+}) {
+  const query = await searchParams;
+  const configured = isAuthenticationConfigured();
+  const returnTo = safeRedirectPath(query.returnTo);
+  const error = query.error ? errorMessages[query.error] ?? errorMessages.callback_failed : null;
 
   return (
     <main className="login-page">
@@ -52,28 +39,31 @@ export default function LoginPage() {
       </section>
 
       <section className="login-form-panel">
-        <form className="login-card" onSubmit={handleSubmit}>
+        <div className="login-card">
           <div className="login-card-heading">
-            <span>ADMIN ACCESS</span>
+            <span>SECURE ACCESS</span>
             <h2>Sign in to MerchantFlare</h2>
-            <p>Use your MerchantFlare administrator credentials.</p>
+            <p>Continue through the MerchantFlare identity service.</p>
           </div>
-
-          <label>
-            Email address
-            <input type="email" autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} required />
-          </label>
-
-          <label>
-            Password
-            <input type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required />
-          </label>
 
           {error && <p className="login-error" role="alert">{error}</p>}
 
-          <button type="submit" disabled={submitting}>{submitting ? "Signing in…" : "Sign in"}</button>
-          <small>Protected administrative environment · merchantflare.com</small>
-        </form>
+          {configured ? (
+            <>
+              <a className="login-submit" href={`/api/auth/login?returnTo=${encodeURIComponent(returnTo)}`}>
+                Continue with Cognito
+              </a>
+              <a className="login-recovery" href="/api/auth/forgot-password">
+                Forgot or reset your password
+              </a>
+            </>
+          ) : (
+            <p className="login-configuration" role="status">
+              An administrator must configure Cognito before sign-in is available.
+            </p>
+          )}
+          <small>Protected organization environment · merchantflare.com</small>
+        </div>
       </section>
     </main>
   );

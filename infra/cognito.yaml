@@ -1,0 +1,101 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: MerchantFlare Cognito authentication resources
+
+Parameters:
+  EnvironmentName:
+    Type: String
+    Default: production
+    AllowedPattern: "^[a-z0-9-]+$"
+  ProductionBaseUrl:
+    Type: String
+    Default: https://merchantflare.com
+    AllowedPattern: "^https://.+[^/]$"
+  CognitoDomainPrefix:
+    Type: String
+    AllowedPattern: "^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$"
+    Description: Globally unique Amazon Cognito domain prefix.
+
+Resources:
+  MerchantFlareUserPool:
+    Type: AWS::Cognito::UserPool
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      UserPoolName: !Sub merchantflare-${EnvironmentName}
+      UsernameAttributes:
+        - email
+      AutoVerifiedAttributes:
+        - email
+      AdminCreateUserConfig:
+        AllowAdminCreateUserOnly: true
+      AccountRecoverySetting:
+        RecoveryMechanisms:
+          - Name: verified_email
+            Priority: 1
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 12
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireSymbols: true
+          RequireUppercase: true
+          TemporaryPasswordValidityDays: 7
+      UserAttributeUpdateSettings:
+        AttributesRequireVerificationBeforeUpdate:
+          - email
+      VerificationMessageTemplate:
+        DefaultEmailOption: CONFIRM_WITH_CODE
+      MfaConfiguration: OPTIONAL
+      EnabledMfas:
+        - SOFTWARE_TOKEN_MFA
+  MerchantFlareWebClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      UserPoolId: !Ref MerchantFlareUserPool
+      ClientName: !Sub merchantflare-web-${EnvironmentName}
+      GenerateSecret: false
+      PreventUserExistenceErrors: ENABLED
+      EnableTokenRevocation: true
+      AllowedOAuthFlowsUserPoolClient: true
+      AllowedOAuthFlows:
+        - code
+      AllowedOAuthScopes:
+        - openid
+        - email
+        - profile
+      SupportedIdentityProviders:
+        - COGNITO
+      CallbackURLs:
+        - !Sub ${ProductionBaseUrl}/api/auth/callback
+        - http://localhost:3000/api/auth/callback
+      LogoutURLs:
+        - !Sub ${ProductionBaseUrl}/login
+        - http://localhost:3000/login
+      AccessTokenValidity: 60
+      IdTokenValidity: 60
+      RefreshTokenValidity: 30
+      TokenValidityUnits:
+        AccessToken: minutes
+        IdToken: minutes
+        RefreshToken: days
+
+  MerchantFlareManagedLoginDomain:
+    Type: AWS::Cognito::UserPoolDomain
+    Properties:
+      Domain: !Ref CognitoDomainPrefix
+      UserPoolId: !Ref MerchantFlareUserPool
+      ManagedLoginVersion: 1
+
+Outputs:
+  UserPoolId:
+    Value: !Ref MerchantFlareUserPool
+  AppClientId:
+    Value: !Ref MerchantFlareWebClient
+  IssuerUrl:
+    Value: !Sub https://cognito-idp.${AWS::Region}.amazonaws.com/${MerchantFlareUserPool}
+  CognitoDomain:
+    Value: !Sub https://${CognitoDomainPrefix}.auth.${AWS::Region}.amazoncognito.com
+  CallbackUrl:
+    Value: !Sub ${ProductionBaseUrl}/api/auth/callback
+  LogoutUrl:
+    Value: !Sub ${ProductionBaseUrl}/login

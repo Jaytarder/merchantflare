@@ -1,4 +1,4 @@
-import AppShell from "../components/layout/AppShell";
+import AuthenticatedAppShell from "../components/layout/AuthenticatedAppShell";
 
 const workers = [
   {
@@ -84,7 +84,7 @@ const queue = [
 
 export default function WorkersPage() {
   return (
-    <AppShell>
+    <AuthenticatedAppShell>
       <header className="topbar workers-header">
         <div>
           <div className="eyebrow">Mercury AI Workforce</div>
@@ -185,6 +185,6 @@ export default function WorkersPage() {
           ))}
         </div>
       </section>
-    </AppShell>
+    </AuthenticatedAppShell>
   );
 }

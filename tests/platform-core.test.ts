@@ -16,10 +16,6 @@ import {
   type FeatureFlag,
 } from "../lib/platform/feature-flags";
 import { principalFromVerifiedIdentity } from "../lib/platform/identity";
-import {
-  createAdminSession,
-  verifyAdminSession,
-} from "../lib/auth";
 
 test("role permissions preserve least privilege", () => {
   assert.equal(hasPermission({ role: "owner" }, "billing.manage"), true);
@@ -94,14 +90,6 @@ test("verified Cognito identities require active memberships", () => {
     }),
     null,
   );
-});
-
-test("legacy sessions map to an owner principal", () => {
-  const session = verifyAdminSession(createAdminSession());
-  assert.ok(session);
-  assert.equal(session.role, "owner");
-  assert.equal(session.authenticationMethod, "legacy-cookie");
-  assert.match(session.subjectId, /^legacy:/);
 });
 
 test("feature flags apply user then organization override precedence", () => {
