@@ -9,6 +9,7 @@ type ConversationSidebarProps = {
   status: ConversationStatus;
   loading: boolean;
   disabled: boolean;
+  canCreate: boolean;
   onSelect: (conversationId: string) => void;
   onNew: () => void;
   onStatusChange: (status: ConversationStatus) => void;
@@ -25,6 +26,7 @@ export default function ConversationSidebar({
   status,
   loading,
   disabled,
+  canCreate,
   onSelect,
   onNew,
   onStatusChange,
@@ -36,15 +38,17 @@ export default function ConversationSidebar({
           <span>Workspace</span>
           <h2>Conversations</h2>
         </div>
-        <button
-          type="button"
-          className="mercury-new-conversation"
-          onClick={onNew}
-          disabled={disabled}
-        >
-          <span aria-hidden="true">＋</span>
-          New
-        </button>
+        {canCreate ? (
+          <button
+            type="button"
+            className="mercury-new-conversation"
+            onClick={onNew}
+            disabled={disabled}
+          >
+            <span aria-hidden="true">＋</span>
+            New
+          </button>
+        ) : null}
       </div>
 
       <div className="mercury-conversation-tabs" aria-label="Conversation status">

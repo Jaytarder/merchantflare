@@ -7,7 +7,8 @@ import {
 import { mercuryApiError } from "../../../../../../lib/mercury/api-errors";
 import { getMercuryConversation } from "../../../../../../lib/mercury/conversation-repository";
 import { decideMercuryApproval } from "../../../../../../lib/mercury/repository";
-import { getAuthenticatedAdmin } from "../../../../../../lib/server-auth";
+import { requirePermission } from "../../../../../../lib/platform/authorization";
+import { getAuthenticatedPrincipal } from "../../../../../../lib/server-auth";
 
 type ApprovalRouteContext = {
   params: Promise<{ planId: string }>;
@@ -17,7 +18,7 @@ export async function POST(
   request: Request,
   context: ApprovalRouteContext,
 ) {
-  const session = await getAuthenticatedAdmin();
+  const session = await getAuthenticatedPrincipal();
   if (!session) {
     return apiError(
       "authentication_required",
@@ -27,6 +28,7 @@ export async function POST(
   }
 
   try {
+    requirePermission(session, "mercury.approve");
     const requestKey = readIdempotencyKey(request);
     if (!requestKey || !isValidIdempotencyKey(requestKey)) {
       return apiError(
@@ -73,6 +75,7 @@ export async function POST(
       planId,
       decision,
       organizationId: session.organizationId,
+      actorSubjectId: session.subjectId,
       decidedBy: session.email,
       decisionKey: requestKey,
       note,

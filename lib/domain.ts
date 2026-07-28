@@ -6,7 +6,12 @@ export type Organization = {
   createdAt: string;
 };
 
-export type UserRole = "owner" | "admin" | "operator" | "viewer";
+export type UserRole =
+  | "owner"
+  | "admin"
+  | "manager"
+  | "analyst"
+  | "viewer";
 
 export type User = {
   id: ID;

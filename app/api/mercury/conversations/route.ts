@@ -5,14 +5,15 @@ import {
   listMercuryConversations,
 } from "../../../../lib/mercury/conversation-repository";
 import { mercuryApiError } from "../../../../lib/mercury/api-errors";
-import { getAuthenticatedAdmin } from "../../../../lib/server-auth";
+import { requirePermission } from "../../../../lib/platform/authorization";
+import { getAuthenticatedPrincipal } from "../../../../lib/server-auth";
 import {
   isValidIdempotencyKey,
   readIdempotencyKey,
 } from "../../../../lib/idempotency";
 
 export async function GET(request: Request) {
-  const session = await getAuthenticatedAdmin();
+  const session = await getAuthenticatedPrincipal();
   if (!session) {
     return apiError(
       "authentication_required",
@@ -22,6 +23,7 @@ export async function GET(request: Request) {
   }
 
   try {
+    requirePermission(session, "mercury.read");
     const { searchParams } = new URL(request.url);
     const requestedLimit = Number(searchParams.get("limit") ?? "30");
     const limit = Number.isFinite(requestedLimit) ? requestedLimit : 30;
@@ -51,7 +53,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const session = await getAuthenticatedAdmin();
+  const session = await getAuthenticatedPrincipal();
   if (!session) {
     return apiError(
       "authentication_required",
@@ -61,6 +63,7 @@ export async function POST(request: Request) {
   }
 
   try {
+    requirePermission(session, "mercury.write");
     const requestKey = readIdempotencyKey(request);
     if (!isValidIdempotencyKey(requestKey)) {
       return apiError(

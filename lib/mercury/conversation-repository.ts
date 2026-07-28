@@ -1,6 +1,11 @@
 import { randomUUID } from "crypto";
 import { getDatabase } from "../db";
 import {
+  appendAuditEvent,
+  type OrganizationPrincipal,
+  userAuditActor,
+} from "../platform";
+import {
   CachedEvidenceQueryService,
   classifyEvidenceFreshness,
   freshnessPolicyFor,
@@ -57,10 +62,7 @@ export class MercuryConversationConflictError extends Error {
   }
 }
 
-type ConversationPrincipal = {
-  organizationId: string;
-  email: string;
-};
+type ConversationPrincipal = OrganizationPrincipal;
 
 function requireDatabase() {
   const sql = getDatabase();
@@ -617,6 +619,8 @@ export async function createMercuryConversationTurn(input: {
       supersedesPlanId: input.supersedesPlanId,
       version,
       evidence,
+      actorSubjectId: input.principal.subjectId,
+      actorEmail: input.principal.email,
     };
     await persistOrchestrationResult(tx, result, context);
 
@@ -720,22 +724,41 @@ export async function updateMercuryConversation(input: {
   const sql = requireDatabase();
   const title = input.title?.trim();
 
-  const rows = await sql<Array<{ id: string }>>`
-    update mercury_conversations
-    set
-      title = case
-        when ${title !== undefined} then ${title ?? ""}
-        else title
-      end,
-      status = case
-        when ${input.status !== undefined} then ${input.status ?? "active"}
-        else status
-      end,
-      updated_at = now()
-    where id = ${input.conversationId}
-      and organization_id = ${input.principal.organizationId}
-    returning id
-  `;
+  const rows = await sql.begin(async (tx) => {
+    const updated = await tx<Array<{ id: string }>>`
+      update mercury_conversations
+      set
+        title = case
+          when ${title !== undefined} then ${title ?? ""}
+          else title
+        end,
+        status = case
+          when ${input.status !== undefined} then ${input.status ?? "active"}
+          else status
+        end,
+        updated_at = now()
+      where id = ${input.conversationId}
+        and organization_id = ${input.principal.organizationId}
+      returning id
+    `;
+    if (updated[0]) {
+      await appendAuditEvent(tx, {
+        organizationId: input.principal.organizationId,
+        ...userAuditActor(input.principal),
+        action: "mercury.conversation_updated",
+        resourceType: "mercury_conversation",
+        resourceId: input.conversationId,
+        metadata: {
+          fields: [
+            ...(title !== undefined ? ["title"] : []),
+            ...(input.status !== undefined ? ["status"] : []),
+          ],
+          ...(input.status ? { status: input.status } : {}),
+        },
+      });
+    }
+    return updated;
+  });
 
   if (!rows[0]) throw new MercuryConversationNotFoundError();
   const conversation = await getMercuryConversation(

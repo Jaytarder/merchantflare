@@ -2,6 +2,10 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
+import type {
+  OrganizationRole,
+  PlatformNotification,
+} from "../../../lib/platform";
 import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
 import Workspace from "./Workspace";
@@ -9,11 +13,15 @@ import Workspace from "./Workspace";
 type AppShellProps = {
   children: ReactNode;
   userEmail?: string;
+  userRole?: OrganizationRole;
+  notifications?: PlatformNotification[];
 };
 
 export default function AppShell({
   children,
   userEmail = "jmartin@merchantflare.com",
+  userRole = "owner",
+  notifications = [],
 }: AppShellProps) {
   const pathname = usePathname();
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -42,6 +50,7 @@ export default function AppShell({
   return (
     <div className={`platform-shell ${tabletCollapsed ? "is-tablet-collapsed" : ""}`}>
       <Sidebar
+        userRole={userRole}
         drawerOpen={drawerOpen}
         tabletCollapsed={tabletCollapsed}
         onClose={() => setDrawerOpen(false)}
@@ -49,6 +58,8 @@ export default function AppShell({
       <div className="platform-main">
         <Topbar
           userEmail={userEmail}
+          userRole={userRole}
+          notifications={notifications}
           tabletCollapsed={tabletCollapsed}
           onToggleTablet={() => setTabletCollapsed((collapsed) => !collapsed)}
           onOpenDrawer={() => setDrawerOpen(true)}

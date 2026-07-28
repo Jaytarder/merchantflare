@@ -16,8 +16,11 @@ function toJsonValue(value: unknown): JSONValue {
   return JSON.parse(JSON.stringify(value)) as JSONValue;
 }
 
-export async function executeMercuryPlan(planId: string): Promise<ExecutionRun> {
-  const plan = await getMercuryPlan(planId);
+export async function executeMercuryPlan(
+  planId: string,
+  organizationId: string,
+): Promise<ExecutionRun> {
+  const plan = await getMercuryPlan(planId, organizationId);
   if (!plan) throw new Error("Mercury plan not found.");
   if (plan.status === "running") {
     throw new Error("Mercury plan is already running.");
@@ -28,7 +31,7 @@ export async function executeMercuryPlan(planId: string): Promise<ExecutionRun> 
     );
   }
 
-  await updatePlanStatus(planId, "running");
+  await updatePlanStatus(planId, organizationId, "running");
 
   const results = new Map<string, TaskExecutionResult>();
   const runtimeEvents: ExecutionRun["events"] = [];
@@ -51,6 +54,7 @@ export async function executeMercuryPlan(planId: string): Promise<ExecutionRun> 
       results.set(task.id, result);
       await updateTaskExecution({
         planId,
+        organizationId,
         taskId: task.id,
         status: "blocked",
         error: result.error,
@@ -59,8 +63,13 @@ export async function executeMercuryPlan(planId: string): Promise<ExecutionRun> 
     }
 
     const startedAt = new Date().toISOString();
-    await updateTaskExecution({ planId, taskId: task.id, status: "running" });
-    await appendMercuryEvent({
+    await updateTaskExecution({
+      planId,
+      organizationId,
+      taskId: task.id,
+      status: "running",
+    });
+    await appendMercuryEvent(organizationId, {
       planId,
       taskId: task.id,
       type: "task.started",
@@ -88,11 +97,12 @@ export async function executeMercuryPlan(planId: string): Promise<ExecutionRun> 
       results.set(task.id, result);
       await updateTaskExecution({
         planId,
+        organizationId,
         taskId: task.id,
         status: "succeeded",
         output: toJsonValue(output),
       });
-      await appendMercuryEvent({
+      await appendMercuryEvent(organizationId, {
         planId,
         taskId: task.id,
         type: "task.succeeded",
@@ -114,11 +124,12 @@ export async function executeMercuryPlan(planId: string): Promise<ExecutionRun> 
       results.set(task.id, result);
       await updateTaskExecution({
         planId,
+        organizationId,
         taskId: task.id,
         status: "failed",
         error: message,
       });
-      await appendMercuryEvent({
+      await appendMercuryEvent(organizationId, {
         planId,
         taskId: task.id,
         type: "task.failed",
@@ -134,9 +145,9 @@ export async function executeMercuryPlan(planId: string): Promise<ExecutionRun> 
       ? "completed"
       : "failed";
 
-  await updatePlanStatus(planId, finalStatus);
+  await updatePlanStatus(planId, organizationId, finalStatus);
 
-  const refreshed = await getMercuryPlan(planId);
+  const refreshed = await getMercuryPlan(planId, organizationId);
   runtimeEvents.push(...(refreshed?.events ?? []));
 
   return {

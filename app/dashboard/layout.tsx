@@ -1,5 +1,7 @@
 import { redirect } from "next/navigation";
-import { getAuthenticatedAdmin } from "../../lib/server-auth";
+import { getDatabase } from "../../lib/db";
+import { PostgresNotificationService } from "../../lib/platform/notifications";
+import { getAuthenticatedPrincipal } from "../../lib/server-auth";
 import AppShell from "../components/layout/AppShell";
 
 export default async function DashboardLayout({
@@ -7,11 +9,24 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const session = await getAuthenticatedAdmin();
+  const session = await getAuthenticatedPrincipal();
 
   if (!session) {
     redirect("/login");
   }
 
-  return <AppShell userEmail={session.email}>{children}</AppShell>;
+  const sql = getDatabase();
+  const notifications = sql
+    ? await new PostgresNotificationService(sql).list(session, { limit: 10 })
+    : [];
+
+  return (
+    <AppShell
+      userEmail={session.email}
+      userRole={session.role}
+      notifications={notifications}
+    >
+      {children}
+    </AppShell>
+  );
 }

@@ -41,7 +41,9 @@ async function loadMigrations(): Promise<Migration[]> {
 
   return Promise.all(
     sqlFiles.map(async (name) => {
-      const sql = await readFile(resolve(migrationsDirectory, name), "utf8");
+      const sql = (
+        await readFile(resolve(migrationsDirectory, name), "utf8")
+      ).replace(/\r\n?/g, "\n");
       return {
         name,
         sql,

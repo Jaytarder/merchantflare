@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { navigationItems } from "./navigation";
+import type { OrganizationRole } from "../../../lib/platform";
+import { navigationForRole } from "./navigation";
 
 function SearchIcon() {
   return (
@@ -13,7 +14,7 @@ function SearchIcon() {
   );
 }
 
-export default function SearchBar() {
+export default function SearchBar({ role }: { role: OrganizationRole }) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState("");
@@ -23,10 +24,11 @@ export default function SearchBar() {
     const normalized = query.trim().toLowerCase();
     if (!normalized) return [];
 
-    return navigationItems
+    return navigationForRole(role)
+      .flatMap((section) => section.items)
       .filter((item) => [item.label, item.description, ...(item.keywords ?? [])].join(" ").toLowerCase().includes(normalized))
       .slice(0, 6);
-  }, [query]);
+  }, [query, role]);
 
   useEffect(() => {
     function focusSearch(event: KeyboardEvent) {

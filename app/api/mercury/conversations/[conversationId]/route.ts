@@ -6,7 +6,8 @@ import {
 } from "../../../../../lib/mercury/conversation-repository";
 import type { ConversationStatus } from "../../../../../lib/mercury/conversation-types";
 import { mercuryApiError } from "../../../../../lib/mercury/api-errors";
-import { getAuthenticatedAdmin } from "../../../../../lib/server-auth";
+import { requirePermission } from "../../../../../lib/platform/authorization";
+import { getAuthenticatedPrincipal } from "../../../../../lib/server-auth";
 
 type ConversationRouteContext = {
   params: Promise<{ conversationId: string }>;
@@ -16,7 +17,7 @@ export async function GET(
   _request: Request,
   context: ConversationRouteContext,
 ) {
-  const session = await getAuthenticatedAdmin();
+  const session = await getAuthenticatedPrincipal();
   if (!session) {
     return apiError(
       "authentication_required",
@@ -26,6 +27,7 @@ export async function GET(
   }
 
   try {
+    requirePermission(session, "mercury.read");
     const { conversationId } = await context.params;
     const conversation = await getMercuryConversation(
       conversationId,
@@ -54,7 +56,7 @@ export async function PATCH(
   request: Request,
   context: ConversationRouteContext,
 ) {
-  const session = await getAuthenticatedAdmin();
+  const session = await getAuthenticatedPrincipal();
   if (!session) {
     return apiError(
       "authentication_required",
@@ -64,6 +66,7 @@ export async function PATCH(
   }
 
   try {
+    requirePermission(session, "mercury.write");
     const { conversationId } = await context.params;
     const body = (await request.json()) as {
       title?: unknown;

@@ -2,10 +2,11 @@ import { NextResponse } from "next/server";
 import { apiError } from "../../../../lib/api-response";
 import { orchestrate } from "../../../../lib/mercury/orchestrator";
 import { saveOrchestrationResult } from "../../../../lib/mercury/repository";
-import { getAuthenticatedAdmin } from "../../../../lib/server-auth";
+import { requirePermission } from "../../../../lib/platform/authorization";
+import { getAuthenticatedPrincipal } from "../../../../lib/server-auth";
 
 export async function POST(request: Request) {
-  const session = await getAuthenticatedAdmin();
+  const session = await getAuthenticatedPrincipal();
   if (!session) {
     return apiError(
       "authentication_required",
@@ -15,6 +16,7 @@ export async function POST(request: Request) {
   }
 
   try {
+    requirePermission(session, "mercury.write");
     const body = (await request.json()) as { objective?: unknown };
     const objective = typeof body.objective === "string" ? body.objective.trim() : "";
 
@@ -37,6 +39,8 @@ export async function POST(request: Request) {
     const result = await orchestrate(objective);
     const persistence = await saveOrchestrationResult(result, {
       organizationId: session.organizationId,
+      actorSubjectId: session.subjectId,
+      actorEmail: session.email,
     });
 
     return NextResponse.json({

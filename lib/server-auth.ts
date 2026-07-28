@@ -4,8 +4,17 @@ import {
   type AdminSession,
   verifyAdminSession,
 } from "./auth";
+import { getDatabase } from "./db";
+import { ensureLegacyPrincipalProvisioned } from "./platform/legacy-bootstrap";
 
-export async function getAuthenticatedAdmin(): Promise<AdminSession | null> {
+export async function getAuthenticatedPrincipal(): Promise<AdminSession | null> {
   const cookieStore = await cookies();
-  return verifyAdminSession(cookieStore.get(ADMIN_COOKIE)?.value);
+  const principal = verifyAdminSession(cookieStore.get(ADMIN_COOKIE)?.value);
+  const sql = getDatabase();
+  if (principal && sql) {
+    await ensureLegacyPrincipalProvisioned(sql, principal);
+  }
+  return principal;
 }
+
+export const getAuthenticatedAdmin = getAuthenticatedPrincipal;

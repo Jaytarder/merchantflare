@@ -1,3 +1,9 @@
+import {
+  hasPermission,
+  type OrganizationRole,
+  type PlatformPermission,
+} from "../../../lib/platform/authorization";
+
 export type NavigationIcon =
   | "mercury"
   | "workers"
@@ -21,6 +27,7 @@ export type NavigationItem = {
   icon: NavigationIcon;
   description: string;
   keywords?: string[];
+  permission: PlatformPermission;
 };
 
 export type NavigationSection = {
@@ -44,40 +51,52 @@ export const navigation: NavigationSection[] = [
         icon: "mercury",
         description: "Commerce Intelligence workspace",
         keywords: ["home", "dashboard", "command", "conversation"],
+        permission: "mercury.read",
       },
     ],
   },
   {
     label: "Intelligence",
     items: [
-      { label: "Atlas", href: "/atlas", icon: "atlas", description: "Catalog intelligence" },
-      { label: "Vector", href: "/vector", icon: "vector", description: "Advertising control" },
-      { label: "Oracle", href: "/oracle", icon: "oracle", description: "Inventory forecasting" },
-      { label: "Sentinel", href: "/sentinel", icon: "sentinel", description: "Compliance defense" },
-      { label: "Forge", href: "/forge", icon: "forge", description: "Creative operations" },
-      { label: "Pulse", href: "/pulse", icon: "pulse", description: "Executive reporting" },
+      { label: "Atlas", href: "/atlas", icon: "atlas", description: "Catalog intelligence", permission: "mercury.read" },
+      { label: "Vector", href: "/vector", icon: "vector", description: "Advertising control", permission: "mercury.read" },
+      { label: "Oracle", href: "/oracle", icon: "oracle", description: "Inventory forecasting", permission: "mercury.read" },
+      { label: "Sentinel", href: "/sentinel", icon: "sentinel", description: "Compliance defense", permission: "mercury.read" },
+      { label: "Forge", href: "/forge", icon: "forge", description: "Creative operations", permission: "mercury.read" },
+      { label: "Pulse", href: "/pulse", icon: "pulse", description: "Executive reporting", permission: "mercury.read" },
     ],
   },
   {
     label: "Operations",
     items: [
-      { label: "Execution", href: "/execution", icon: "execution", description: "Staged and completed actions" },
-      { label: "Approvals", href: "/approvals", icon: "approvals", description: "Review approval-gated work" },
-      { label: "History", href: "/history", icon: "history", description: "Mercury plan history" },
-      { label: "Knowledge", href: "/knowledge", icon: "knowledge", description: "Business context and sources" },
+      { label: "Execution", href: "/execution", icon: "execution", description: "Staged and completed actions", permission: "mercury.write" },
+      { label: "Approvals", href: "/approvals", icon: "approvals", description: "Review approval-gated work", permission: "mercury.approve" },
+      { label: "History", href: "/history", icon: "history", description: "Mercury plan history", permission: "mercury.read" },
+      { label: "Knowledge", href: "/knowledge", icon: "knowledge", description: "Business context and sources", permission: "organization.read" },
     ],
   },
   {
     label: "Platform",
     items: [
-      { label: "Integrations", href: "/integrations", icon: "integrations", description: "Data and commerce connections" },
-      { label: "Billing", href: "/billing", icon: "billing", description: "Plan and usage" },
-      { label: "Settings", href: "/settings", icon: "settings", description: "Workspace preferences" },
+      { label: "Integrations", href: "/integrations", icon: "integrations", description: "Data and commerce connections", permission: "integrations.read" },
+      { label: "Billing", href: "/billing", icon: "billing", description: "Plan and usage", permission: "billing.read" },
+      { label: "Settings", href: "/settings", icon: "settings", description: "Workspace preferences", permission: "organization.read" },
     ],
   },
 ];
 
 export const navigationItems = navigation.flatMap((section) => section.items);
+
+export function navigationForRole(role: OrganizationRole) {
+  return navigation
+    .map((section) => ({
+      ...section,
+      items: section.items.filter((item) =>
+        hasPermission({ role }, item.permission),
+      ),
+    }))
+    .filter((section) => section.items.length > 0);
+}
 
 export const connections: PlatformConnection[] = [
   { label: "Amazon Vendor", status: "disconnected", detail: "Not configured" },

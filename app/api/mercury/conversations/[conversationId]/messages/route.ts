@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { apiError } from "../../../../../../lib/api-response";
 import { mercuryApiError } from "../../../../../../lib/mercury/api-errors";
 import { createMercuryConversationTurn } from "../../../../../../lib/mercury/conversation-repository";
-import { getAuthenticatedAdmin } from "../../../../../../lib/server-auth";
+import { requirePermission } from "../../../../../../lib/platform/authorization";
+import { getAuthenticatedPrincipal } from "../../../../../../lib/server-auth";
 import {
   isValidIdempotencyKey,
   readIdempotencyKey,
@@ -16,7 +17,7 @@ export async function POST(
   request: Request,
   context: ConversationMessageRouteContext,
 ) {
-  const session = await getAuthenticatedAdmin();
+  const session = await getAuthenticatedPrincipal();
   if (!session) {
     return apiError(
       "authentication_required",
@@ -26,6 +27,7 @@ export async function POST(
   }
 
   try {
+    requirePermission(session, "mercury.write");
     const { conversationId } = await context.params;
     const requestKey = readIdempotencyKey(request);
     if (!isValidIdempotencyKey(requestKey)) {

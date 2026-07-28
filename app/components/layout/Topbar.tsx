@@ -1,9 +1,15 @@
 import NotificationBell from "./NotificationBell";
 import SearchBar from "./SearchBar";
 import UserMenu from "./UserMenu";
+import type {
+  OrganizationRole,
+  PlatformNotification,
+} from "../../../lib/platform";
 
 type TopbarProps = {
   userEmail: string;
+  userRole: OrganizationRole;
+  notifications: PlatformNotification[];
   tabletCollapsed: boolean;
   onToggleTablet: () => void;
   onOpenDrawer: () => void;
@@ -36,6 +42,8 @@ function PanelIcon({ collapsed }: { collapsed: boolean }) {
 
 export default function Topbar({
   userEmail,
+  userRole,
+  notifications,
   tabletCollapsed,
   onToggleTablet,
   onOpenDrawer,
@@ -61,11 +69,11 @@ export default function Topbar({
         <PanelIcon collapsed={tabletCollapsed} />
       </button>
 
-      <SearchBar />
+      <SearchBar role={userRole} />
 
       <div className="platform-topbar-actions">
-        <NotificationBell />
-        <UserMenu email={userEmail} />
+        <NotificationBell notifications={notifications} />
+        <UserMenu email={userEmail} role={userRole} />
       </div>
     </header>
   );

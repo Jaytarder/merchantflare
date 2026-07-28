@@ -4,10 +4,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Logo } from "../../../components/brand/Logo";
 import SidebarSection from "./SidebarSection";
-import { connections, navigation } from "./navigation";
+import { connections, navigationForRole } from "./navigation";
+import type { OrganizationRole } from "../../../lib/platform";
 
 type SidebarProps = {
   drawerOpen: boolean;
+  userRole: OrganizationRole;
   tabletCollapsed: boolean;
   onClose: () => void;
 };
@@ -17,8 +19,14 @@ function isActive(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-export default function Sidebar({ drawerOpen, tabletCollapsed, onClose }: SidebarProps) {
+export default function Sidebar({
+  drawerOpen,
+  userRole,
+  tabletCollapsed,
+  onClose,
+}: SidebarProps) {
   const pathname = usePathname();
+  const authorizedNavigation = navigationForRole(userRole);
 
   return (
     <>
@@ -51,7 +59,7 @@ export default function Sidebar({ drawerOpen, tabletCollapsed, onClose }: Sideba
         </div>
 
         <nav className="platform-nav" aria-label="Primary navigation">
-          {navigation.map((section) => (
+          {authorizedNavigation.map((section) => (
             <SidebarSection
               key={section.label}
               section={section}

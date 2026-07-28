@@ -53,7 +53,13 @@ function formatMessageTime(value: string) {
   }).format(new Date(value));
 }
 
-export default function MercuryWorkspace() {
+export default function MercuryWorkspace({
+  canWrite,
+  canApprove,
+}: {
+  canWrite: boolean;
+  canApprove: boolean;
+}) {
   const messageRegionRef = useRef<HTMLDivElement>(null);
   const [conversationStatus, setConversationStatus] =
     useState<ConversationStatus>("active");
@@ -325,6 +331,7 @@ export default function MercuryWorkspace() {
         status={conversationStatus}
         loading={loadState === "loading"}
         disabled={unavailable || sending}
+        canCreate={canWrite}
         onSelect={selectConversation}
         onNew={startNewConversation}
         onStatusChange={(status) => {
@@ -364,7 +371,7 @@ export default function MercuryWorkspace() {
             )}
           </div>
 
-          {conversation ? (
+          {conversation && canWrite ? (
             <div className="mercury-thread-actions">
               <button
                 type="button"
@@ -395,7 +402,7 @@ export default function MercuryWorkspace() {
             <p>
               Configure <code>DATABASE_URL</code> and run{" "}
               <code>npm run migrate</code> to apply migrations through{" "}
-              <code>004</code>. Mercury will not
+              <code>006</code>. Mercury will not
               simulate conversation persistence or claim that unsaved plans are
               durable.
             </p>
@@ -440,6 +447,8 @@ export default function MercuryWorkspace() {
                       <MercuryPlanCard
                         plan={message.plan}
                         busy={archived || actionPlanId !== null}
+                        canWrite={canWrite}
+                        canApprove={canApprove}
                         onDecision={decideApproval}
                         onRevise={startRevision}
                       />
@@ -456,7 +465,8 @@ export default function MercuryWorkspace() {
                     plan, disclose its current evidence limits, and preserve the
                     conversation when PostgreSQL is configured.
                   </p>
-                  <div className="mercury-suggestions">
+                  {canWrite ? (
+                    <div className="mercury-suggestions">
                     {[
                       "Audit advertising efficiency and catalog conversion",
                       "Forecast inventory risk for the next eight weeks",
@@ -470,7 +480,8 @@ export default function MercuryWorkspace() {
                         {suggestion}
                       </button>
                     ))}
-                  </div>
+                    </div>
+                  ) : null}
                 </div>
               )}
             </div>
@@ -481,7 +492,7 @@ export default function MercuryWorkspace() {
               </p>
             ) : null}
 
-            {!archived ? (
+            {!archived && canWrite ? (
               <form className="mercury-composer" onSubmit={submitMessage}>
                 {revisionTarget ? (
                   <div className="mercury-revision-context">
@@ -539,7 +550,9 @@ export default function MercuryWorkspace() {
               </form>
             ) : (
               <div className="mercury-archived-state">
-                This conversation is archived and read-only.
+                {archived
+                  ? "This conversation is archived and read-only."
+                  : "Your organization role has read-only Mercury access."}
               </div>
             )}
           </>

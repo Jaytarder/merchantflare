@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { OrganizationRole } from "../../../lib/platform";
 
 function displayName(email: string) {
   return email
@@ -14,7 +15,17 @@ function initials(email: string) {
   return name.split(" ").map((part) => part[0]).join("").slice(0, 2) || "MF";
 }
 
-export default function UserMenu({ email }: { email: string }) {
+function roleLabel(role: OrganizationRole) {
+  return role.charAt(0).toUpperCase() + role.slice(1);
+}
+
+export default function UserMenu({
+  email,
+  role,
+}: {
+  email: string;
+  role: OrganizationRole;
+}) {
   const name = displayName(email);
 
   return (
@@ -23,7 +34,7 @@ export default function UserMenu({ email }: { email: string }) {
         <span className="platform-avatar" aria-hidden="true">{initials(email)}</span>
         <span className="platform-user-copy">
           <strong>{name}</strong>
-          <small>Administrator</small>
+          <small>{roleLabel(role)}</small>
         </span>
         <span className="platform-user-chevron" aria-hidden="true">⌄</span>
       </summary>

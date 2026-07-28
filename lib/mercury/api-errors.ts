@@ -1,4 +1,5 @@
 import { apiError } from "../api-response";
+import { platformApiError } from "../platform/api-errors";
 import {
   MercuryConversationConflictError,
   MercuryConversationNotFoundError,
@@ -10,6 +11,9 @@ import {
 } from "./workflow-errors";
 
 export function mercuryApiError(error: unknown) {
+  const platformResponse = platformApiError(error);
+  if (platformResponse) return platformResponse;
+
   if (error instanceof MercuryPersistenceUnavailableError) {
     return apiError(
       "persistence_unavailable",

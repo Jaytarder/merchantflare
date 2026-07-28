@@ -9,6 +9,8 @@ import type {
 type MercuryPlanCardProps = {
   plan: ConversationPlan;
   busy: boolean;
+  canWrite: boolean;
+  canApprove: boolean;
   onDecision: (
     planId: string,
     decision: "approved" | "rejected",
@@ -30,6 +32,8 @@ function routeLabel(task: ConversationPlanTask) {
 export default function MercuryPlanCard({
   plan,
   busy,
+  canWrite,
+  canApprove,
   onDecision,
   onRevise,
 }: MercuryPlanCardProps) {
@@ -149,7 +153,7 @@ export default function MercuryPlanCard({
         </div>
       )}
 
-      {decisionMode ? (
+      {decisionMode && canApprove ? (
         <form className="mercury-decision-form" onSubmit={submitDecision}>
           <strong>
             {decisionMode === "approved"
@@ -198,7 +202,7 @@ export default function MercuryPlanCard({
         </form>
       ) : (
         <div className="mercury-plan-actions">
-          {pendingApproval ? (
+          {pendingApproval && canApprove ? (
             <>
               <button
                 type="button"
@@ -216,7 +220,7 @@ export default function MercuryPlanCard({
               </button>
             </>
           ) : null}
-          {canRevise ? (
+          {canRevise && canWrite ? (
             <button type="button" disabled={busy} onClick={() => onRevise(plan)}>
               Revise plan
             </button>

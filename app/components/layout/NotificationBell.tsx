@@ -1,4 +1,15 @@
-export default function NotificationBell() {
+import Link from "next/link";
+import type { PlatformNotification } from "../../../lib/platform";
+
+export default function NotificationBell({
+  notifications,
+}: {
+  notifications: PlatformNotification[];
+}) {
+  const unreadCount = notifications.filter(
+    (notification) => !notification.readAt,
+  ).length;
+
   return (
     <details className="platform-popover platform-notifications">
       <summary className="platform-icon-button" aria-label="Open notifications">
@@ -10,13 +21,48 @@ export default function NotificationBell() {
       <div className="platform-popover-panel platform-notification-panel">
         <div className="platform-popover-heading">
           <strong>Notifications</strong>
-          <span>0 unread</span>
+          <span>{unreadCount} unread</span>
         </div>
-        <div className="platform-empty-state">
-          <span aria-hidden="true">✓</span>
-          <strong>You&apos;re all caught up</strong>
-          <p>Mercury will surface approvals and critical platform signals here.</p>
-        </div>
+        {notifications.length === 0 ? (
+          <div className="platform-empty-state">
+            <span aria-hidden="true">✓</span>
+            <strong>You&apos;re all caught up</strong>
+            <p>No active platform notifications.</p>
+          </div>
+        ) : (
+          <div className="platform-notification-list">
+            {notifications.map((notification) => {
+              const content = (
+                <>
+                  <span
+                    className={`platform-notification-severity is-${notification.severity}`}
+                    aria-hidden="true"
+                  />
+                  <span>
+                    <strong>{notification.title}</strong>
+                    <small>{notification.body}</small>
+                  </span>
+                </>
+              );
+              return notification.actionHref ? (
+                <Link
+                  className="platform-notification-item"
+                  href={notification.actionHref}
+                  key={notification.id}
+                >
+                  {content}
+                </Link>
+              ) : (
+                <div
+                  className="platform-notification-item"
+                  key={notification.id}
+                >
+                  {content}
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </details>
   );

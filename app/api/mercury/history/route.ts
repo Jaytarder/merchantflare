@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import { apiError } from "../../../../lib/api-response";
 import { listMercuryPlans } from "../../../../lib/mercury/repository";
-import { getAuthenticatedAdmin } from "../../../../lib/server-auth";
+import { requirePermission } from "../../../../lib/platform/authorization";
+import { getAuthenticatedPrincipal } from "../../../../lib/server-auth";
 
 export async function GET(request: Request) {
-  const session = await getAuthenticatedAdmin();
+  const session = await getAuthenticatedPrincipal();
   if (!session) {
     return apiError(
       "authentication_required",
@@ -14,6 +15,7 @@ export async function GET(request: Request) {
   }
 
   try {
+    requirePermission(session, "mercury.read");
     const { searchParams } = new URL(request.url);
     const requestedLimit = Number(searchParams.get("limit") ?? "25");
     const limit = Number.isFinite(requestedLimit) ? requestedLimit : 25;

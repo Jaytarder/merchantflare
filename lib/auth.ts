@@ -1,29 +1,48 @@
 import { createHmac, timingSafeEqual } from "crypto";
+import type { AuthenticatedPrincipal } from "./platform/identity";
 
 export const ADMIN_COOKIE = "merchantflare_admin";
 export const ADMIN_COOKIE_MAX_AGE = 60 * 60 * 8;
 
-export type AdminSession = {
-  email: string;
-  organizationId: string;
-  role: "super_admin";
+export type AdminSession = AuthenticatedPrincipal & {
   expiresAt: number;
 };
 
+function environmentValue(
+  key: string,
+  developmentFallback: string,
+) {
+  const value = process.env[key]?.trim();
+  if (value) return value;
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(`${key} must be configured in production.`);
+  }
+  return developmentFallback;
+}
+
 export function getAdminEmail() {
-  return (process.env.ADMIN_EMAIL ?? "jmartin@merchantflare.com").toLowerCase();
+  return environmentValue(
+    "ADMIN_EMAIL",
+    "jmartin@merchantflare.com",
+  ).toLowerCase();
 }
 
 export function getAdminPassword() {
-  return process.env.ADMIN_PASSWORD ?? "MerchantFlare2026!";
+  return environmentValue("ADMIN_PASSWORD", "MerchantFlare2026!");
 }
 
 export function getAdminOrganizationId() {
-  return process.env.ADMIN_ORGANIZATION_ID ?? "org_merchantflare";
+  return environmentValue(
+    "ADMIN_ORGANIZATION_ID",
+    "org_merchantflare",
+  );
 }
 
 function getSessionSecret() {
-  return process.env.SESSION_SECRET ?? "merchantflare-development-session-secret-change-me";
+  return environmentValue(
+    "SESSION_SECRET",
+    "merchantflare-development-session-secret-change-me",
+  );
 }
 
 function sign(value: string) {
@@ -44,9 +63,12 @@ export function validateAdminCredentials(email: string, password: string) {
 
 export function createAdminSession() {
   const session: AdminSession = {
+    subjectId: `legacy:${getAdminEmail()}`,
     email: getAdminEmail(),
     organizationId: getAdminOrganizationId(),
-    role: "super_admin",
+    role: "owner",
+    authenticationMethod: "legacy-cookie",
+    sessionExpiresAt: Date.now() + ADMIN_COOKIE_MAX_AGE * 1000,
     expiresAt: Date.now() + ADMIN_COOKIE_MAX_AGE * 1000,
   };
   const payload = Buffer.from(JSON.stringify(session)).toString("base64url");
@@ -62,8 +84,14 @@ export function verifyAdminSession(value?: string | null): AdminSession | null {
     const session = JSON.parse(
       Buffer.from(payload, "base64url").toString("utf8"),
     ) as Partial<AdminSession>;
+    const legacyRole = (session as { role?: string }).role;
     if (
-      session.role !== "super_admin" ||
+      legacyRole !== "super_admin" &&
+      legacyRole !== "owner"
+    ) {
+      return null;
+    }
+    if (
       typeof session.expiresAt !== "number" ||
       session.expiresAt <= Date.now() ||
       typeof session.email !== "string"
@@ -72,12 +100,18 @@ export function verifyAdminSession(value?: string | null): AdminSession | null {
     }
 
     return {
+      subjectId:
+        typeof session.subjectId === "string"
+          ? session.subjectId
+          : `legacy:${session.email.toLowerCase()}`,
       email: session.email,
       organizationId:
         typeof session.organizationId === "string"
           ? session.organizationId
           : getAdminOrganizationId(),
-      role: session.role,
+      role: "owner",
+      authenticationMethod: "legacy-cookie",
+      sessionExpiresAt: session.expiresAt,
       expiresAt: session.expiresAt,
     };
   } catch {

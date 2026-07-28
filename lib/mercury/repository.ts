@@ -2,6 +2,9 @@ import { randomUUID } from "crypto";
 import type postgres from "postgres";
 import type { JSONValue } from "postgres";
 import { getDatabase } from "../db";
+import { appendAuditEvent } from "../platform/audit";
+import { OrganizationScopeError } from "../platform/authorization";
+import { createNotification } from "../platform/notifications";
 import type {
   OrchestrationEvent,
   OrchestrationResult,
@@ -30,6 +33,8 @@ export type PlanPersistenceContext = {
   supersedesPlanId?: string;
   version?: number;
   evidence?: MercuryEvidenceCoverage;
+  actorSubjectId?: string;
+  actorEmail?: string;
 };
 
 export type MercuryPlanSummary = {
@@ -86,7 +91,7 @@ export async function persistOrchestrationResult(
   const evidenceStatus = context.evidence?.status ?? "unavailable";
   const evidenceLimitation =
     context.evidence?.limitation ?? NO_EVIDENCE_LIMITATION;
-  await tx`
+  const persistedPlans = await tx<Array<{ id: string }>>`
       insert into mercury_plans (
         id,
         organization_id,
@@ -146,7 +151,10 @@ export async function persistOrchestrationResult(
         approval_reasons = excluded.approval_reasons,
         payload = excluded.payload,
         updated_at = now()
+      where mercury_plans.organization_id = excluded.organization_id
+      returning id
     `;
+  if (!persistedPlans[0]) throw new OrganizationScopeError();
 
   await tx`
     delete from mercury_plan_evidence
@@ -246,7 +254,41 @@ export async function persistOrchestrationResult(
         )
         on conflict do nothing
       `;
+    await createNotification(tx, {
+      organizationId: context.organizationId,
+      category: "approval",
+      severity: "warning",
+      title: "Mercury plan requires approval",
+      body: result.plan.summary,
+      actionHref: "/dashboard",
+      sourceType: "mercury_plan",
+      sourceId: result.plan.id,
+      deduplicationKey: `mercury-plan-approval:${result.plan.id}`,
+      metadata: {
+        planVersion: context.version ?? 1,
+      },
+    });
   }
+
+  await appendAuditEvent(tx, {
+    organizationId: context.organizationId,
+    actorType: context.actorSubjectId ? "user" : "service",
+    actorId: context.actorSubjectId ?? "mercury",
+    actorEmail: context.actorEmail,
+    action: context.supersedesPlanId
+      ? "mercury.plan_revised"
+      : "mercury.plan_created",
+    resourceType: "mercury_plan",
+    resourceId: result.plan.id,
+    metadata: {
+      version: context.version ?? 1,
+      requiresApproval: result.plan.requiresApproval,
+      evidenceStatus,
+      ...(context.supersedesPlanId
+        ? { supersedesPlanId: context.supersedesPlanId }
+        : {}),
+    },
+  });
 }
 
 export async function listMercuryPlans(
@@ -298,7 +340,7 @@ export async function listMercuryPlans(
 
 export async function getMercuryPlan(
   planId: string,
-  organizationId?: string,
+  organizationId: string,
 ): Promise<MercuryPlanDetail | null> {
   const sql = getDatabase();
   if (!sql) return null;
@@ -316,15 +358,11 @@ export async function getMercuryPlan(
     updated_at: Date;
   };
 
-  const plans = organizationId
-    ? await sql<Array<PlanRow>>`
-        select * from mercury_plans
-        where id = ${planId} and organization_id = ${organizationId}
-        limit 1
-      `
-    : await sql<Array<PlanRow>>`
-        select * from mercury_plans where id = ${planId} limit 1
-      `;
+  const plans = await sql<Array<PlanRow>>`
+    select * from mercury_plans
+    where id = ${planId} and organization_id = ${organizationId}
+    limit 1
+  `;
 
   const row = plans[0];
   if (!row) return null;
@@ -346,7 +384,12 @@ export async function getMercuryPlan(
     output: unknown;
     error: string | null;
   }>>`
-    select * from mercury_tasks where plan_id = ${planId} order by created_at asc
+    select task.*
+    from mercury_tasks task
+    join mercury_plans plan on plan.id = task.plan_id
+    where task.plan_id = ${planId}
+      and plan.organization_id = ${organizationId}
+    order by task.created_at asc
   `;
 
   const events = await sql<Array<{
@@ -357,7 +400,12 @@ export async function getMercuryPlan(
     message: string;
     created_at: Date;
   }>>`
-    select * from mercury_events where plan_id = ${planId} order by created_at asc
+    select event.*
+    from mercury_events event
+    join mercury_plans plan on plan.id = event.plan_id
+    where event.plan_id = ${planId}
+      and plan.organization_id = ${organizationId}
+    order by event.created_at asc
   `;
 
   const approvals = await sql<Array<{
@@ -371,7 +419,11 @@ export async function getMercuryPlan(
     decided_at: Date | null;
     created_at: Date;
   }>>`
-    select * from mercury_approvals where plan_id = ${planId} order by created_at desc
+    select approval.*
+    from mercury_approvals approval
+    where approval.plan_id = ${planId}
+      and approval.organization_id = ${organizationId}
+    order by approval.created_at desc
   `;
 
   return {
@@ -429,6 +481,7 @@ export async function decideMercuryApproval(input: {
   planId: string;
   decision: "approved" | "rejected";
   organizationId: string;
+  actorSubjectId: string;
   decidedBy: string;
   decisionKey: string;
   note?: string;
@@ -575,6 +628,41 @@ export async function decideMercuryApproval(input: {
         now()
       )
     `;
+    await appendAuditEvent(tx, {
+      organizationId: input.organizationId,
+      actorType: "user",
+      actorId: input.actorSubjectId,
+      actorEmail: input.decidedBy,
+      action:
+        input.decision === "approved"
+          ? "mercury.approval_approved"
+          : "mercury.approval_rejected",
+      resourceType: "mercury_plan",
+      resourceId: input.planId,
+      metadata: {
+        approvalId: updated[0].id,
+        decision: input.decision,
+        ...(input.note ? { note: input.note } : {}),
+      },
+    });
+    await createNotification(tx, {
+      organizationId: input.organizationId,
+      category: "approval",
+      severity: input.decision === "approved" ? "success" : "warning",
+      title:
+        input.decision === "approved"
+          ? "Mercury plan approved"
+          : "Mercury plan rejected",
+      body:
+        input.decision === "approved"
+          ? "The plan is approved for a future execution workflow. No action has been executed."
+          : "The plan was rejected. No action has been executed.",
+      actionHref: "/dashboard",
+      sourceType: "mercury_plan",
+      sourceId: input.planId,
+      deduplicationKey: `mercury-plan-approval:${input.planId}`,
+      metadata: { decision: input.decision },
+    });
 
     return {
       approvalId: updated[0].id,
@@ -585,14 +673,26 @@ export async function decideMercuryApproval(input: {
   });
 }
 
-export async function updatePlanStatus(planId: string, status: OrchestrationStatus) {
+export async function updatePlanStatus(
+  planId: string,
+  organizationId: string,
+  status: OrchestrationStatus,
+) {
   const sql = getDatabase();
   if (!sql) throw new Error("DATABASE_URL is not configured.");
-  await sql`update mercury_plans set status = ${status}, updated_at = now() where id = ${planId}`;
+  const rows = await sql<Array<{ id: string }>>`
+    update mercury_plans
+    set status = ${status}, updated_at = now()
+    where id = ${planId}
+      and organization_id = ${organizationId}
+    returning id
+  `;
+  if (!rows[0]) throw new MercuryPlanNotFoundError();
 }
 
 export async function updateTaskExecution(input: {
   planId: string;
+  organizationId: string;
   taskId: string;
   status: TaskExecutionResult["status"];
   output?: JSONValue;
@@ -605,7 +705,7 @@ export async function updateTaskExecution(input: {
   const completed = input.status === "succeeded" || input.status === "failed";
   const outputJson = input.output === undefined ? null : sql.json(input.output);
 
-  await sql`
+  const rows = await sql<Array<{ id: string }>>`
     update mercury_tasks
     set
       execution_status = ${input.status},
@@ -615,18 +715,44 @@ export async function updateTaskExecution(input: {
       output = case when ${input.output !== undefined} then ${outputJson} else output end,
       error = ${input.error ?? null},
       updated_at = now()
-    where id = ${input.taskId} and plan_id = ${input.planId}
+    where id = ${input.taskId}
+      and plan_id = ${input.planId}
+      and exists (
+        select 1
+        from mercury_plans plan
+        where plan.id = ${input.planId}
+          and plan.organization_id = ${input.organizationId}
+      )
+    returning id
   `;
+  if (!rows[0]) throw new MercuryPlanNotFoundError();
 }
 
-export async function appendMercuryEvent(event: Omit<OrchestrationEvent, "id" | "createdAt">) {
+export async function appendMercuryEvent(
+  organizationId: string,
+  event: Omit<OrchestrationEvent, "id" | "createdAt">,
+) {
   const sql = getDatabase();
   if (!sql) throw new Error("DATABASE_URL is not configured.");
 
   const id = randomUUID();
-  await sql`
+  const rows = await sql<Array<{ id: string }>>`
     insert into mercury_events (id, plan_id, task_id, event_type, message, created_at)
-    values (${id}, ${event.planId}, ${event.taskId ?? null}, ${event.type}, ${event.message}, now())
+    select
+      ${id},
+      ${event.planId},
+      ${event.taskId ?? null},
+      ${event.type},
+      ${event.message},
+      now()
+    where exists (
+      select 1
+      from mercury_plans plan
+      where plan.id = ${event.planId}
+        and plan.organization_id = ${organizationId}
+    )
+    returning id
   `;
+  if (!rows[0]) throw new MercuryPlanNotFoundError();
   return id;
 }
