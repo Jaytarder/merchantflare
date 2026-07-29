@@ -1,0 +1,192 @@
+name: Deploy MerchantFlare to ECS Express
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: merchantflare-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  AWS_REGION: us-east-1
+  AWS_ACCOUNT_ID: "432181126458"
+  ECR_REPOSITORY: merchantflare
+  ECS_SERVICE: merchantflare
+  ECS_CLUSTER: default
+  ECS_EXECUTION_ROLE_ARN: arn:aws:iam::432181126458:role/merchantflare-ecs-task-execution
+  ECS_INFRASTRUCTURE_ROLE_ARN: arn:aws:iam::432181126458:role/merchantflare-ecs-express-infrastructure
+  ECS_DEPLOY_ROLE_ARN: arn:aws:iam::432181126458:role/merchantflare-github-actions-ecs
+  PUBLIC_SUBNETS: subnet-017d37dc72c4d4a53,subnet-085479ef6658dcc37
+  SERVICE_SECURITY_GROUP: sg-0cc3bc77cba3c9cdf
+  DATABASE_SECRET_ARN: arn:aws:secretsmanager:us-east-1:432181126458:secret:merchantflare/production/database-url-rhVtRT
+  AUTH_SECRET_ARN: arn:aws:secretsmanager:us-east-1:432181126458:secret:merchantflare/production/auth-session-secret-tpPl0w
+  COGNITO_USER_POOL_ID: us-east-1_Ltn0AeNJD
+  COGNITO_APP_CLIENT_ID: 3s5cv1v92ltlerhuvo53p42cg
+
+jobs:
+  validate-build-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Validate application
+        run: |
+          npm run typecheck
+          npm test
+          npm run build
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          role-to-assume: ${{ env.ECS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Sign in to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push immutable container image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build --pull -t "$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" .
+          docker push "$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+          echo "IMAGE_URI=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> "$GITHUB_ENV"
+
+      - name: Create or update temporary ECS Express service
+        id: initial-deploy
+        uses: aws-actions/amazon-ecs-deploy-express-service@v1
+        with:
+          service-name: ${{ env.ECS_SERVICE }}
+          cluster: ${{ env.ECS_CLUSTER }}
+          image: ${{ env.IMAGE_URI }}
+          execution-role-arn: ${{ env.ECS_EXECUTION_ROLE_ARN }}
+          infrastructure-role-arn: ${{ env.ECS_INFRASTRUCTURE_ROLE_ARN }}
+          container-port: "3000"
+          health-check-path: /api/health
+          cpu: "256"
+          memory: "512"
+          min-task-count: "1"
+          max-task-count: "2"
+          auto-scaling-metric: AVERAGE_CPU
+          auto-scaling-target-value: "70"
+          subnets: ${{ env.PUBLIC_SUBNETS }}
+          security-groups: ${{ env.SERVICE_SECURITY_GROUP }}
+          environment-variables: |
+            [
+              {"name":"NODE_ENV","value":"production"},
+              {"name":"COGNITO_AWS_REGION","value":"us-east-1"},
+              {"name":"COGNITO_USER_POOL_ID","value":"us-east-1_Ltn0AeNJD"},
+              {"name":"COGNITO_APP_CLIENT_ID","value":"3s5cv1v92ltlerhuvo53p42cg"},
+              {"name":"COGNITO_ISSUER_URL","value":"https://cognito-idp.us-east-1.amazonaws.com/us-east-1_Ltn0AeNJD"},
+              {"name":"COGNITO_DOMAIN","value":"https://merchantflare-app.auth.us-east-1.amazoncognito.com"},
+              {"name":"APPLICATION_BASE_URL","value":"https://main.d2wkvdawpeotl8.amplifyapp.com"}
+            ]
+          secrets: |
+            [
+              {"name":"DATABASE_URL","valueFrom":"${{ env.DATABASE_SECRET_ARN }}"},
+              {"name":"AUTH_SESSION_SECRET","valueFrom":"${{ env.AUTH_SECRET_ARN }}"}
+            ]
+          tags: |
+            [
+              {"key":"Project","value":"MerchantFlare"},
+              {"key":"Environment","value":"temporary-validation"},
+              {"key":"ManagedBy","value":"GitHubActions"}
+            ]
+
+      - name: Register temporary URL with Cognito
+        id: endpoint
+        env:
+          DEPLOYED_ENDPOINT: ${{ steps.initial-deploy.outputs.endpoint }}
+        run: |
+          if [[ "$DEPLOYED_ENDPOINT" == http://* || "$DEPLOYED_ENDPOINT" == https://* ]]; then
+            SERVICE_URL="${DEPLOYED_ENDPOINT%/}"
+          else
+            SERVICE_URL="https://${DEPLOYED_ENDPOINT%/}"
+          fi
+
+          aws cognito-idp update-user-pool-client \
+            --user-pool-id "$COGNITO_USER_POOL_ID" \
+            --client-id "$COGNITO_APP_CLIENT_ID" \
+            --refresh-token-validity 30 \
+            --access-token-validity 60 \
+            --id-token-validity 60 \
+            --token-validity-units AccessToken=minutes,IdToken=minutes,RefreshToken=days \
+            --supported-identity-providers COGNITO \
+            --callback-urls \
+              https://merchantflare.com/api/auth/callback \
+              https://main.d2wkvdawpeotl8.amplifyapp.com/api/auth/callback \
+              http://localhost:3000/api/auth/callback \
+              "$SERVICE_URL/api/auth/callback" \
+            --logout-urls \
+              https://merchantflare.com/login \
+              https://main.d2wkvdawpeotl8.amplifyapp.com/login \
+              http://localhost:3000/login \
+              "$SERVICE_URL/login" \
+            --allowed-o-auth-flows code \
+            --allowed-o-auth-scopes openid email profile \
+            --allowed-o-auth-flows-user-pool-client \
+            --prevent-user-existence-errors ENABLED \
+            --enable-token-revocation >/dev/null
+
+          echo "SERVICE_URL=$SERVICE_URL" >> "$GITHUB_ENV"
+          echo "url=$SERVICE_URL" >> "$GITHUB_OUTPUT"
+
+      - name: Apply the ECS service URL to MerchantFlare
+        uses: aws-actions/amazon-ecs-deploy-express-service@v1
+        with:
+          service-name: ${{ env.ECS_SERVICE }}
+          cluster: ${{ env.ECS_CLUSTER }}
+          image: ${{ env.IMAGE_URI }}
+          execution-role-arn: ${{ env.ECS_EXECUTION_ROLE_ARN }}
+          infrastructure-role-arn: ${{ env.ECS_INFRASTRUCTURE_ROLE_ARN }}
+          container-port: "3000"
+          health-check-path: /api/health
+          cpu: "256"
+          memory: "512"
+          min-task-count: "1"
+          max-task-count: "2"
+          auto-scaling-metric: AVERAGE_CPU
+          auto-scaling-target-value: "70"
+          subnets: ${{ env.PUBLIC_SUBNETS }}
+          security-groups: ${{ env.SERVICE_SECURITY_GROUP }}
+          environment-variables: |
+            [
+              {"name":"NODE_ENV","value":"production"},
+              {"name":"COGNITO_AWS_REGION","value":"us-east-1"},
+              {"name":"COGNITO_USER_POOL_ID","value":"us-east-1_Ltn0AeNJD"},
+              {"name":"COGNITO_APP_CLIENT_ID","value":"3s5cv1v92ltlerhuvo53p42cg"},
+              {"name":"COGNITO_ISSUER_URL","value":"https://cognito-idp.us-east-1.amazonaws.com/us-east-1_Ltn0AeNJD"},
+              {"name":"COGNITO_DOMAIN","value":"https://merchantflare-app.auth.us-east-1.amazoncognito.com"},
+              {"name":"APPLICATION_BASE_URL","value":"${{ env.SERVICE_URL }}"}
+            ]
+          secrets: |
+            [
+              {"name":"DATABASE_URL","valueFrom":"${{ env.DATABASE_SECRET_ARN }}"},
+              {"name":"AUTH_SESSION_SECRET","valueFrom":"${{ env.AUTH_SECRET_ARN }}"}
+            ]
+
+      - name: Verify temporary deployment health
+        run: |
+          curl --fail --show-error --silent --retry 12 --retry-delay 5 \
+            "$SERVICE_URL/api/health"
+          echo "Temporary MerchantFlare deployment: $SERVICE_URL" >> "$GITHUB_STEP_SUMMARY"
