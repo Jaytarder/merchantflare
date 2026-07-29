@@ -122,13 +122,18 @@ async function main() {
         continue;
       }
 
-      await connection.begin(async (transaction) => {
-        await transaction.unsafe(migration.sql);
-        await transaction`
+      await connection.unsafe("begin");
+      try {
+        await connection.unsafe(migration.sql);
+        await connection`
           insert into merchantflare_schema_migrations (name, checksum)
           values (${migration.name}, ${migration.checksum})
         `;
-      });
+        await connection.unsafe("commit");
+      } catch (error) {
+        await connection.unsafe("rollback");
+        throw error;
+      }
       console.log(`Applied ${migration.name}`);
     }
   } finally {
@@ -147,3 +152,4 @@ main().catch((error: unknown) => {
   console.error(error instanceof Error ? error.message : "Migration failed.");
   process.exitCode = 1;
 });
+
