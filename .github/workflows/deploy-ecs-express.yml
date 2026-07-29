@@ -53,6 +53,23 @@ jobs:
           npm test
           npm run build
 
+      - name: Report non-sensitive GitHub OIDC claims
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const token = await core.getIDToken("sts.amazonaws.com");
+            core.setSecret(token);
+            const claims = JSON.parse(
+              Buffer.from(token.split(".")[1], "base64url").toString("utf8"),
+            );
+            console.log(JSON.stringify({
+              issuer: claims.iss,
+              audience: claims.aud,
+              subject: claims.sub,
+              repository: claims.repository,
+              ref: claims.ref,
+            }));
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v5
         with:
@@ -190,3 +207,4 @@ jobs:
           curl --fail --show-error --silent --retry 12 --retry-delay 5 \
             "$SERVICE_URL/api/health"
           echo "Temporary MerchantFlare deployment: $SERVICE_URL" >> "$GITHUB_STEP_SUMMARY"
+
