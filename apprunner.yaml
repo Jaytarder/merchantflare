@@ -1,0 +1,15 @@
+version: 1.0
+runtime: nodejs22
+build:
+  commands:
+    build:
+      - npm install
+      - npm run typecheck
+      - npm test
+      - npm run build
+run:
+  runtime-version: 22
+  command: npm start
+  network:
+    port: 3000
+    env: PORT
