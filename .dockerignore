@@ -1,0 +1,12 @@
+.git
+.github
+.next
+.npm-cache
+.test-dist
+.tools-dist
+node_modules
+work
+*.log
+.env
+.env.*
+!.env.example
