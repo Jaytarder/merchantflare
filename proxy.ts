@@ -1,23 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getCognitoAuthConfig } from "./lib/auth/config";
 import { protectedRouteDecision } from "./lib/auth/protection";
-import { verifySession } from "./lib/auth/session";
 
 const SESSION_COOKIE = "merchantflare_session";
 const REFRESH_COOKIE = "merchantflare_refresh";
 
 export function proxy(request: NextRequest) {
   const returnTo = `${request.nextUrl.pathname}${request.nextUrl.search}`;
-  let hasSession = false;
-  try {
-    const config = getCognitoAuthConfig();
-    hasSession = Boolean(verifySession(
-      request.cookies.get(SESSION_COOKIE)?.value,
-      config.sessionSecret,
-    ));
-  } catch {
-    hasSession = false;
-  }
+  // Runtime secrets are intentionally injected only when the container starts.
+  // The proxy bundle can be built before those secrets exist, so this gateway
+  // performs presence-based routing only. Every protected server page and API
+  // cryptographically verifies the session and re-resolves active organization
+  // membership through getAuthenticatedPrincipal().
+  const hasSession = Boolean(request.cookies.get(SESSION_COOKIE)?.value);
   const decision = protectedRouteDecision({
     pathname: request.nextUrl.pathname,
     returnTo,
