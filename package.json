@@ -10,7 +10,8 @@
     "test": "tsc -p tsconfig.test.json && node --test .test-dist/tests/*.test.js",
     "migrate": "tsc -p tsconfig.tools.json && node .tools-dist/scripts/migrate.js",
     "migrate:dry-run": "tsc -p tsconfig.tools.json && node .tools-dist/scripts/migrate.js --dry-run",
-    "auth:bootstrap": "tsc -p tsconfig.tools.json && node .tools-dist/scripts/bootstrap-cognito-owner.js"
+    "auth:bootstrap": "tsc -p tsconfig.tools.json && node .tools-dist/scripts/bootstrap-cognito-owner.js",
+    "deployment:audit": "tsc -p tsconfig.tools.json && node .tools-dist/scripts/deployment-audit.js"
   },
   "dependencies": {
     "next": "latest",
