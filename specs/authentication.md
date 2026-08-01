@@ -2,7 +2,7 @@
 
 **Status:** Scaffolded
 
-The Cognito application flow, JWT verifier, organization-membership resolution, protected-route gateway, session refresh, infrastructure template, and owner-bootstrap tooling are implemented. The status remains scaffolded because no real Cognito User Pool has been deployed or exercised from this repository session.
+The Cognito application flow, JWT verifier, organization-membership resolution, protected-route gateway, session refresh, infrastructure template, and owner-bootstrap tooling are implemented. A real Cognito authorization endpoint and the app-subdomain callback configuration were observed on 2026-08-01. The status remains scaffolded because callback completion, session lifecycle, recovery, production database membership, Owner bootstrap, and RBAC were not exercised with an authenticated user.
 
 ## Implemented contract
 
@@ -30,7 +30,7 @@ Authentication becomes implemented only after a real development and production 
 
 ## Open gaps
 
-- Real Cognito and Amplify deployment/verification.
+- Credentialed Cognito callback/session/recovery/logout verification and AWS control-plane verification of the observed Amplify deployment.
 - Multi-organization selection for a user with more than one active membership.
 - Central session revocation before the Cognito refresh token expires.
 - Invitation acceptance that atomically binds an invited email to a Cognito subject.

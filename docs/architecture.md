@@ -25,7 +25,7 @@ Identity:
   -> Platform Core organization membership and RBAC
 ```
 
-This diagram is the target architecture, not a statement that the AWS resources are already provisioned.
+This diagram is the target architecture. An existing Amplify application is observable at `https://main.d2wkvdawpeotl8.amplifyapp.com` and `https://app.merchantflare.com`, but the remaining managed services and their production configuration are not inferred from that public surface.
 
 ## Current repository implementation
 
@@ -84,7 +84,7 @@ The repository now contains a Cognito authentication implementation:
 - `lib/server-auth.ts` re-resolves active organization membership for every server authorization boundary; and
 - `scripts/bootstrap-cognito-owner.ts` provides an explicit, guarded first-Owner bootstrap without auto-provisioning unknown identities.
 
-The legacy administrator credential and cookie adapter has been removed. The implementation is not yet operationally verified because a real Cognito User Pool and Amplify configuration have not been created. Deployment and first-user operations are defined in [`deployment-authentication.md`](deployment-authentication.md). Multi-organization selection and early centralized revocation remain open.
+The legacy administrator credential and cookie adapter has been removed. The live login entry currently redirects to a real Cognito managed-login domain using PKCE and the exact `https://app.merchantflare.com/api/auth/callback` URI. Authentication is still not operationally verified because callback completion, session refresh, recovery, logout, database-backed membership, and role boundaries have not been exercised with an authenticated test user. Deployment and first-user operations are defined in [`deployment-authentication.md`](deployment-authentication.md). Multi-organization selection and early centralized revocation remain open.
 
 ### Platform Core
 
@@ -99,7 +99,7 @@ Sprint 4 introduces the foundational SaaS control plane:
 - typed feature flags with deterministic organization rollout and user/organization overrides; and
 - versioned subscription plans, plan entitlements, subscription projections, organization overrides, and trusted server-side entitlement evaluation.
 
-This is a domain and API foundation. There is no `/settings` or `/billing` page, organization selector, invitation delivery/acceptance route, flag-management surface, or live Stripe workflow. Cognito authentication code exists, but still requires real AWS deployment and verification.
+This is a domain and API foundation. There is no `/settings` or `/billing` page, organization selector, invitation delivery/acceptance route, flag-management surface, or live Stripe workflow. Cognito authentication code and a reachable authorization endpoint exist, but authenticated application and database-backed authorization still require verification.
 
 ### Mercury APIs
 
@@ -198,18 +198,17 @@ Aurora PostgreSQL is the target managed database, but the repository contains no
 
 This helper is not wired into a route, UI, or the Commerce Evidence engine. The repository does not demonstrate a complete live SP-API request-signing and production credential flow. Amazon Ads has a typed evidence interface and normalizer, not an API client. Do not mark live Amazon integrations complete.
 
-## Planned infrastructure
+## Infrastructure state
 
-The following technologies are architectural commitments but are not implemented in this repository:
+AWS Amplify Hosting and a Cognito managed-login endpoint are externally observable but were not verified through the AWS control plane on 2026-08-01. The following technologies remain architectural commitments not provisioned by this repository:
 
-- AWS Amplify Hosting configuration;
 - API Gateway resources;
 - Lambda deployment packages or general application infrastructure-as-code (Cognito is the first declared AWS resource set);
 - Aurora provisioning;
 - S3 buckets and object workflows;
 - live Stripe billing integration;
 - Amazon Ads API integration; and
-- deployed and operationally verified Cognito and Amplify authentication.
+- operationally verified Cognito, database, and Amplify authentication.
 
 Add infrastructure declaratively and document environments, secrets, ownership, and failure behavior when those sprints begin.
 
