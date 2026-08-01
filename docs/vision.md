@@ -2,107 +2,181 @@
 
 ## What MerchantFlare is
 
-MerchantFlare is a Commerce Intelligence Platform for understanding, prioritizing, and improving commerce operations.
+MerchantFlare is an **Amazon-first Scientific Decision Platform for commerce**.
 
-The platform brings catalog, advertising, demand, compliance, creative, and executive intelligence into one governed operating environment. It should help an operator move from a business question to evidence, a decision, an approved action, and a measurable outcome without stitching together disconnected tools.
+Its purpose is to reduce uncertainty, improve decision quality, and learn from measured outcomes. The platform connects commerce evidence, competing explanations, governed interventions, and observed results in a durable decision record.
+
+MerchantFlare is not a generic chatbot, an AI workforce, an agent marketplace, or another dashboard. Large language models are replaceable components. The product value is the decision system around them.
 
 The public domain is `merchantflare.com`.
 
-## Mercury
+## Core promise
 
-Mercury is the Commerce Intelligence Engine and the primary conversational workspace.
+Every material recommendation should answer:
 
-Mercury should:
+- What do we know?
+- What do we currently believe?
+- What evidence supports that belief?
+- What evidence contradicts it?
+- How confident are we?
+- What would change our mind?
+- What reversible test should happen next?
+- What actually happened after the intervention?
+- How should that outcome update future decisions?
 
-- accept business questions and objectives in natural language;
-- interpret signals across intelligence modules;
-- explain findings and tradeoffs;
-- produce coordinated plans;
-- route proposed actions through approval policies;
-- preserve history, evidence, and outcomes; and
-- make the state of the commerce operation understandable from one workspace.
+The platform must distinguish projected impact from measured impact and correlation from causation.
 
-Mercury is not a persona that manages a workforce of assistants. It is the unifying intelligence and orchestration layer of the platform.
+## Decision Lab
 
-## Intelligence model
+**Decision Lab** is the primary workspace.
 
-MerchantFlare has six intelligence modules:
+It should help operators:
 
-| Module | Product name | Responsibility |
-| --- | --- | --- |
-| Atlas | Catalog Intelligence | Product content, discoverability, catalog structure, and conversion quality |
-| Vector | Advertising Intelligence | Media efficiency, targeting, bids, budgets, and advertising contribution |
-| Oracle | Demand Intelligence | Demand forecasting, inventory exposure, replenishment, and availability |
-| Sentinel | Compliance Intelligence | Policy, documentation, suppression, and account-health risk |
-| Forge | Creative Intelligence | Creative strategy, asset requirements, messaging, and performance insight |
-| Pulse | Executive Intelligence | Cross-functional synthesis, business performance, priorities, and reporting |
+- define a business problem or objective;
+- inspect observed evidence and freshness;
+- compare competing hypotheses;
+- surface supporting and opposing evidence;
+- identify assumptions, missing evidence, and confounders;
+- choose a measurable intervention;
+- route material changes through approval policies;
+- record execution and outcomes; and
+- update the organization’s reusable decision knowledge.
 
-The modules are parts of one platform. They are not standalone AI tools, assistants, employees, or workers.
+Conversation remains available inside each Decision Case, but chat is not the canonical application object.
+
+## Canonical Decision Case
+
+A Decision Case contains, where available:
+
+1. problem or objective;
+2. observed evidence;
+3. current belief;
+4. competing hypotheses;
+5. supporting evidence;
+6. counter-evidence;
+7. confidence and freshness;
+8. assumptions and confounders;
+9. proposed experiment or intervention;
+10. risk and reversibility;
+11. approval requirements;
+12. measured outcome;
+13. updated belief; and
+14. reusable lesson.
+
+Evidence should be graded honestly as:
+
+- observed;
+- correlated;
+- controlled;
+- quasi-causal;
+- experimental; or
+- replicated.
+
+## Capability areas
+
+MerchantFlare organizes work through functional capability areas rather than anthropomorphic agents:
+
+| Capability area | Responsibility |
+| --- | --- |
+| Catalog Diagnostics | Product content, discoverability, structure, conversion friction, and catalog interventions |
+| Media Diagnostics | Advertising efficiency, targeting, bids, budgets, incrementality, and media interventions |
+| Demand & Availability | Forecasting, inventory exposure, replenishment, and availability decisions |
+| Risk & Compliance | Policy, documentation, suppression, account-health, and operational risk |
+| Creative Experiments | Creative hypotheses, asset changes, controlled tests, and measured creative outcomes |
+| Executive Outcomes | Cross-functional synthesis, decision quality, priorities, and measured business impact |
+
+Legacy internal names may remain temporarily for compatibility, but new user-facing work should use the functional capability names above.
 
 ## Product principles
 
-### Intelligence before automation
+### Evidence before assertion
 
-MerchantFlare should first explain what is happening, why it matters, and what evidence supports the conclusion. Automation follows understanding.
+Important claims must be traceable to observable evidence, source, freshness, and ownership.
 
-### One operating context
+### Challenge every belief
 
-Mercury and every module should share business definitions, account context, goals, approvals, and history rather than creating isolated experiences.
+The platform must surface counter-evidence and state what would change the conclusion.
 
-### Governed execution
+### Reduce uncertainty
 
-Material changes require explicit policy checks, approvals, audit history, and clear ownership. The platform must distinguish recommendations, approved actions, and completed execution.
+MerchantFlare optimizes for better decisions, not more AI output.
+
+### Experiment before automation
+
+Prefer reversible, measurable interventions over opaque action. High-risk or irreversible changes require stronger evidence and explicit approval.
 
 ### Outcome accountability
 
-The system should connect activity to commercial outcomes. Reports must distinguish projected impact from measured impact.
+Every completed intervention should create an outcome record that can strengthen, weaken, or leave unchanged the underlying belief.
 
-### Enterprise clarity
+### Calibrated confidence
 
-The interface and copy should be direct, restrained, and credible. Avoid novelty language, anthropomorphism, and inflated claims.
+Confidence is not decoration. If the platform repeatedly claims 80% confidence, approximately 80% of comparable, well-defined predictions should succeed under the stated criteria.
+
+### Governed execution
+
+Material changes require policy checks, approvals, audit history, ownership, and clear separation between proposed, approved, executed, and validated states.
+
+### Human capability growth
+
+MerchantFlare is designed to automate tasks, not eliminate people. The product should increase judgment, explain reasoning, and help teams redeploy time toward higher-value work.
+
+### Privacy by design
+
+Customer data remains organization-scoped unless explicit permission permits aggregated learning. Isolation commitments must be treated as absolute.
+
+### No attachment to ideas
+
+Product claims, architecture, and strategy must change when evidence contradicts them.
 
 ## Canonical navigation
 
-- Mercury
-- Intelligence
-  - Atlas
-  - Vector
-  - Oracle
-  - Sentinel
-  - Forge
-  - Pulse
-- Execution
+- Decision Lab
+- Diagnostics
+  - Catalog Diagnostics
+  - Media Diagnostics
+  - Demand & Availability
+  - Risk & Compliance
+  - Creative Experiments
+  - Executive Outcomes
+- Experiments
 - Approvals
-- History
-- Knowledge
+- Decision History
+- Evidence
 - Integrations
 - Billing
 - Settings
 
-Navigation configuration may precede route implementation. A navigation entry does not by itself mean the destination is complete.
+Navigation configuration may precede route implementation. A navigation entry does not prove that the destination is complete.
 
 ## Language guardrails
 
 Use:
 
-- Commerce Intelligence Platform
-- Commerce Intelligence Engine
-- conversational workspace
-- intelligence module
-- recommendation
-- plan
-- approval
-- execution
+- Scientific Decision Platform
+- Decision Lab
+- Decision Case
 - evidence
+- belief
+- competing hypothesis
+- counter-evidence
+- confidence
+- assumption
+- confounder
+- experiment
+- intervention
+- approval
 - outcome
+- reusable lesson
 
 Avoid:
 
 - AI workforce
 - AI worker
-- AI assistant
 - autonomous employee
-- collection of AI tools
+- collection of AI agents
+- AI operating system
 - “replace your team” positioning
+- causal claims unsupported by controlled evidence
 
-Some existing source files and application surfaces still contain legacy workforce language. That copy is not the product direction and should be migrated during an appropriately scoped product-language or surface sprint.
+Some existing source files, routes, database fields, and application surfaces retain legacy terminology. Treat that as migration debt and preserve compatibility until a dedicated migration updates the entire boundary safely.
