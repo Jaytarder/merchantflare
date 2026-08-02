@@ -14,7 +14,7 @@ env:
   AWS_DEPLOY_ROLE_ARN: arn:aws:iam::432181126458:role/merchantflare-github-actions-ecs
   AMPLIFY_APP_ID: d2wkvdawpeotl8
   AMPLIFY_BRANCH: main
-  TARGET_COMMIT: ff018942b66adbd87b8a985a66dc320ce89e5fce
+  TARGET_COMMIT: 9ffe4061ff2ac14db542fe42d4617cc75186b11d
 
 jobs:
   monitor:
