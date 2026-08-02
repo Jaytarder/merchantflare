@@ -16,6 +16,7 @@ import {
 } from "../evidence";
 import { orchestrate } from "./orchestrator";
 import { enrichOrchestrationWithAtlas } from "../atlas";
+import { getMercuryDecisionContexts } from "../decision/mercury";
 import {
   persistOrchestrationResult,
   type PlanPersistenceContext,
@@ -390,6 +391,11 @@ export async function getMercuryConversation(
     evidenceByPlan.set(evidence.plan_id, items);
   }
 
+  const decisionContexts = await getMercuryDecisionContexts({
+    sql,
+    organizationId: principal.organizationId,
+    conversationId,
+  });
   const plans = new Map<string, ConversationPlan>();
   for (const plan of planRows) {
     const evidenceItems = evidenceByPlan.get(plan.id) ?? [];
@@ -414,6 +420,7 @@ export async function getMercuryConversation(
               : plan.evidence_limitation,
         },
         atlasAssessment: plan.payload.atlasAssessment,
+        decisionContext: decisionContexts.get(plan.id),
         approval: approvalsByPlan.get(plan.id),
         createdAt: plan.created_at.toISOString(),
       });

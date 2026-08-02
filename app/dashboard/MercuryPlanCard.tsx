@@ -117,6 +117,35 @@ export default function MercuryPlanCard({
         </div>
       ) : null}
 
+      {plan.decisionContext?.length ? (
+        <div className="mercury-evidence-notice is-available">
+          <strong>Decision Case learning</strong>
+          <ul className="mercury-evidence-list">
+            {plan.decisionContext.map((decisionCase) => (
+              <li key={decisionCase.decisionCaseId}>
+                <strong>{decisionCase.title}</strong>
+                <span>
+                  {words(decisionCase.status)} · {decisionCase.evidenceCount} evidence ·{" "}
+                  {decisionCase.hypothesisCount} hypotheses ·{" "}
+                  {decisionCase.experimentCount} experiments
+                </span>
+                {decisionCase.currentBelief ? (
+                  <p>
+                    Current belief ({Math.round(decisionCase.currentBelief.confidence * 100)}%):{" "}
+                    {decisionCase.currentBelief.statement}
+                  </p>
+                ) : (
+                  <p>No current belief has been recorded.</p>
+                )}
+                <small>
+                  {decisionCase.outcomeCount} outcomes · {decisionCase.lessonCount} reusable lessons
+                </small>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
       <div className="mercury-plan-tasks">
         {plan.tasks.map((task, index) => (
           <article className="mercury-plan-task" key={task.id}>
