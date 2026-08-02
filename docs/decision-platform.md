@@ -12,19 +12,25 @@
 - Approval-pending defaults for high-risk experiments. Approval records authority; it does not execute an intervention.
 - Authenticated APIs for the full decision lifecycle.
 - Optional, backward-compatible Decision Case context in Mercury plan responses and plan cards.
+- Migration `008_decision_learning_engine.sql` adds immutable predictions, idempotent execution records, and lesson-reuse links without changing migration `007`.
+- Experiment creation freezes the current belief confidence as a prediction. Outcome recording atomically resolves that prediction, versions the belief, creates the lesson, and appends history.
+- Mercury includes a compact Decision Case authoring workbench; existing conversation and plan workflows remain unchanged.
+- Owner/Admin audit permission exposes an internal engineering metrics view calculated from resolved organization predictions.
+- Deterministic self-challenge reports counter-evidence, unresolved assumptions, alternatives, missing evidence, and the experiment most likely to reduce uncertainty.
 
 ### Verified locally
 
 - TypeScript typecheck.
-- Forty-two automated tests covering reasoning, confidence calibration, RBAC, causal claims, posterior beliefs, and migration safety.
-- Ordered dry-run checksums for migrations `001` through `007`.
+- Forty-eight automated tests covering reasoning, calibration, RBAC, causal claims, lifecycle transitions, Atlas rollback, posterior beliefs, and migration safety.
+- Ordered dry-run checksums for migrations `001` through `008`.
 
 ### Planned or unverified
 
 - Migration `007` has not been applied to production by this sprint branch.
 - The APIs have not been exercised against production PostgreSQL or a production browser.
-- There is no full Decision Case authoring UI, execution queue, automated intervention, or live outcome collector.
-- Cross-case semantic search and lesson reuse recommendations remain planned.
+- Provider execution and automated outcome collection are not implemented. Manual execution may be recorded only for an approved tenant-matched intervention.
+- Cross-case semantic retrieval and automatic lesson reuse recommendations remain planned; reuse persistence exists.
+- PostgreSQL transaction and concurrency verification remains blocked until an independently verified isolated development database is available.
 
 ## Canonical lifecycle
 
@@ -70,6 +76,11 @@ Every row carries `organization_id`. Composite foreign keys keep related records
 | `/api/decisions/outcomes` | `GET`, `POST` | Retrieve or record measured outcomes |
 | `/api/decisions/lessons` | `GET`, `POST` | Retrieve or preserve reusable lessons |
 | `/api/decisions/history` | `GET` | Search organization or case history |
+| `/api/decisions/cases/[caseId]/transition` | `POST` | Guard and persist a lifecycle transition |
+| `/api/decisions/cases/[caseId]/challenge` | `GET` | Return deterministic self-challenge gaps |
+| `/api/decisions/executions` | `POST` | Idempotently record an approved manual execution |
+| `/api/decisions/metrics` | `GET` | Return internal organization learning metrics |
+| `/api/decisions/atlas-pilot` | `POST` | Prepare the reversible Atlas title pilot contract |
 
 Existing `/api/mercury/*`, `/api/platform/*`, and `/api/atlas/*` routes remain unchanged.
 
@@ -79,4 +90,4 @@ Evidence grade constrains the claim MerchantFlare may make. Observed and Correla
 
 ## Rollout and rollback
 
-Apply migration `007` to isolated development PostgreSQL first, run database integration tests for two organizations, and verify authenticated browser behavior before production. Rollback is application-first: redeploy the prior revision so it stops reading additive tables. The tables should remain intact to preserve learning and audit history; removal would require a separate destructive migration.
+Apply migrations `007` and `008` only to an independently identified isolated development PostgreSQL database after taking a snapshot. Rollback is application-first: redeploy the prior revision so it stops reading additive tables. Preserve the additive tables and immutable learning history; removal requires a separately reviewed destructive migration restored from the pre-migration snapshot if necessary.

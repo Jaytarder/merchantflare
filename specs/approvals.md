@@ -11,6 +11,8 @@ Approvals provide human authority over material commerce actions. An approval mu
 
 Approval navigation, capability policy rules, versioned policy decisions, and plan-level approval persistence exist. Pending requests bind an immutable proposal snapshot and plan version. An authenticated, organization-scoped, idempotent API and inline Mercury confirmation UI authorize `mercury.approve` roles, approve or reject a pending request, record the actor identity, note, policy version, and timestamp, append a Platform Core audit event, and do not execute the plan. Superseding a pending plan supersedes its approval. There is no `/approvals` route, separation of duties, expiry, delegation, bulk workflow, or task-level approval.
 
+Decision experiments add a separate `decisions.approve` boundary. An approval is rejected until an exact intervention and rollback plan exist. Approval marks that recorded intervention as approved but never executes it; later intervention mutation is rejected after the approval decision.
+
 ## Functional requirements
 
 - Policies MUST determine when approval is required and record the policy version.

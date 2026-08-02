@@ -11,6 +11,8 @@ History provides an auditable, searchable record of conversations, plans, eviden
 
 Migration `007_scientific_decision_platform.sql` adds append-only Decision History plus separate belief-version and confidence-history records. `GET /api/decisions/history` provides an authenticated, organization-scoped bounded feed with optional Decision Case filtering. This foundation covers beliefs, evidence links, experiments, approvals, interventions, outcomes, lessons, and confidence revisions; a unified cross-module product route remains planned.
 
+Migration `008_decision_learning_engine.sql` adds immutable prediction records and durable execution/reuse records. Outcome learning appends both outcome and generated-lesson events in the same transaction as prediction resolution and belief revision. The history feed remains backward compatible.
+
 History navigation exists. Authenticated, organization-scoped `GET /api/mercury/history` returns bounded plan summaries from PostgreSQL, repository code can load plan detail with tasks, events, and approvals, and the Mercury workspace retrieves organization-scoped conversation history with linked, immutable plan versions, evidence coverage, supersession, and approval decisions. Platform Core adds typed audit events, database-enforced update/delete rejection, bounded permission-protected `GET /api/platform/audit`, and audit writes for material Mercury, organization, invitation, and membership mutations. There is no `/history` route, unified history feed, search/filter UI, export, retention policy, or database-backed integration test proving immutability.
 
 ## Functional requirements

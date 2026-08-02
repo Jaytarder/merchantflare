@@ -137,9 +137,11 @@ These are foundations, not the completed Mercury orchestration engine. There are
 
 Migration `007_scientific_decision_platform.sql` adds organization-scoped Decision Cases, graded evidence, versioned beliefs, competing hypotheses, evidence relationships, experiments, interventions, outcomes, lessons, confidence history, and immutable decision history. It is additive: existing Mercury, Platform Core, evidence, authentication, and approval tables remain unchanged.
 
+Migration `008_decision_learning_engine.sql` adds immutable prediction cohorts, organization-scoped idempotent execution records, and explicit lesson reuse. Experiment creation freezes the current belief confidence and success criteria. Outcome recording resolves that prediction, versions the belief, creates a bounded lesson, completes the experiment, and appends history in a single transaction. Lifecycle transitions use an optimistic status predicate so concurrent state changes fail closed.
+
 Authenticated handlers under `/api/decisions/` expose the lifecycle without removing current endpoints. Central permissions distinguish read, investigation, measurement, and experiment approval. High-risk experiments require approval, and approval does not execute an intervention.
 
-Mercury conversation reads optionally attach linked Decision Case context to a plan. Older clients and plans without a Decision Case retain existing behavior. See [Scientific Decision Platform](decision-platform.md).
+Mercury conversation reads optionally attach linked Decision Case context to a plan. The existing dashboard also hosts a compact authoring workbench and an audit-permission-gated engineering metrics overlay; navigation and conversation APIs are unchanged. Older clients and plans without a Decision Case retain existing behavior. See [Scientific Decision Platform](decision-platform.md), [Decision Lifecycle](decision-lifecycle.md), and [Confidence Calibration](calibration.md).
 
 Legacy internal types use `Worker`, `WorkerKey`, `workerRegistry`, and related names. New user-facing work must use intelligence-module language. Renaming internal contracts should be a deliberate compatibility migration rather than a casual search-and-replace.
 

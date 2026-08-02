@@ -8,7 +8,7 @@ This file is the current implementation record for MerchantFlare. Product direct
 
 MerchantFlare is an early-stage Scientific Decision Platform built with the Next.js App Router and TypeScript. Mercury remains the primary conversational interface into commerce evidence, governed plans, and the new decision-learning foundation.
 
-Sprint 1, the application shell, is implemented. Sprint 2 has an organization-scoped conversation, governance, and Commerce Evidence foundation. Sprint 4 adds the Platform Core foundation. Sprint 5 adds the Atlas foundation. Sprint 5B adds Cognito authentication code and infrastructure. On 2026-08-02, the validated `main` application was deployed through Amplify to the generated and app-subdomain URLs. Real Owner sign-in, callback, session refresh, organization resolution, Mercury history, and logout passed live QA. Atlas can only assess normalized evidence already present in the Commerce Evidence Layer; no live catalog provider or publishing adapter is implemented.
+Sprint 1, the application shell, is implemented. Sprint 2 has an organization-scoped conversation, governance, and Commerce Evidence foundation. Sprint 4 adds the Platform Core foundation. Sprint 5 adds the Atlas foundation. Sprint 5B adds Cognito authentication code and infrastructure. The Decision Learning sprint now adds guarded lifecycle transitions, immutable calibrated predictions, atomic outcome-to-belief learning, reusable lessons, deterministic self-challenge, a minimal Mercury authoring workbench, and internal engineering metrics. Production remains on `main`; this branch has not been deployed and its migrations are prohibited from production.
 
 ## Completed work
 
@@ -129,7 +129,7 @@ Production is on `main` commit `9ffe4061ff2ac14db542fe42d4617cc75186b11d`; appli
 
 ## Known gaps and blockers
 
-- Production persistence currently has migrations `001` through `006`. Decision Platform persistence requires unapplied migration `007` and a development-database integration gate before production.
+- Production persistence currently has migrations `001` through `006`. Decision Platform migrations `007` and `008` are intentionally unapplied to production. Their isolated-development application and PostgreSQL integration gate remain blocked until the database target is independently verified.
 - Mercury responses are deterministic planning summaries. Normalized evidence retrieval and citation attachment are implemented, but no provider reader populates evidence, and there is no model-backed reasoning, attachments, or streaming.
 - Atlas has a production-quality foundation and route, but it has no connected source, provider ingestion, field-level diffing, publication adapter, or outcome measurement. Vector, Oracle, Sentinel, Forge, and Pulse remain scaffolds only.
 - Navigation links for Execution, Approvals, History, Knowledge, Integrations, Billing, Settings, and five intelligence module pages currently lead to unimplemented routes.
@@ -144,14 +144,14 @@ Production is on `main` commit `9ffe4061ff2ac14db542fe42d4617cc75186b11d`; appli
 - Stripe billing, S3 artifact storage, API Gateway, Lambda, and Aurora provisioning are not implemented in this repository. Amplify, Cognito, and the PostgreSQL RDS instance were verified through the AWS control plane, but only Cognito has repository infrastructure-as-code.
 - Mercury has separate `executor.ts` and `runtime.ts` execution paths. Neither is exposed as a complete authenticated application workflow, and the boundary between them is not finalized.
 - Plan-level approval decisions have an application API and inline Mercury UI, but there is no `/approvals` queue, multi-user reviewer authorization, separation of duties, expiry, delegation, or task-level policy.
-- Unit tests cover selected Mercury and Commerce Evidence domain contracts. There is no lint script, database integration suite, API test suite, or browser automation suite.
+- Unit and in-process integration tests cover Mercury, Commerce Evidence, decision lifecycle, calibration, and Atlas pilot contracts. Live PostgreSQL integration, authenticated API, and browser automation suites remain gaps.
 - The legacy `/workers` surface and internal compatibility identifiers still use worker terminology. The canonical shell navigation and Mercury workspace no longer do.
 
 ## Next sprint
 
-The recommended Sprint 8 milestone is a controlled Decision Learning Pilot, followed by the first authorized catalog evidence provider:
+The recommended Sprint 9 milestone is an isolated-database Atlas calibration cohort followed by the first authorized catalog evidence provider:
 
-- Apply migration `007` to isolated development PostgreSQL after a snapshot and verify all composite organization constraints.
+- Apply migrations `007` and `008` to independently verified isolated development PostgreSQL after a snapshot and verify all composite organization constraints.
 - Add database integration tests for two organizations, belief-version concurrency, approval races, append-only history, evidence links, outcomes, and lessons.
 - Add authenticated API tests and browser QA for Owner, Manager, Analyst, and Viewer roles.
 - Build a minimal internal Decision Case authoring flow inside the existing Mercury workspace without redesigning navigation.
@@ -176,7 +176,7 @@ The recommended Sprint 8 milestone is a controlled Decision Learning Pilot, foll
 | 1. Application Shell | Complete | Responsive shell components are wired into the application |
 | 2. Mercury Command Center | In progress | Durable conversations, versioned deterministic plans, normalized evidence lookup and citations, plan-level approval decisions, and the responsive workspace exist; a connected provider, model-grounded reasoning, execution, and outcomes remain |
 | Platform Core | Foundation implemented | Multi-organization persistence, RBAC, identity abstraction, team services, immutable audit, notifications, flags, and subscription entitlements exist; external identity/billing adapters and management UI remain |
-| Scientific Decision Platform | Foundation implemented; production unverified | Canonical decision objects, graded evidence, competing hypotheses, experiments, outcomes, lessons, calibrated confidence, APIs, and Mercury context exist; migration and live QA remain |
+| Scientific Decision Platform | Learning engine implemented locally; database unverified | Lifecycle guards, predictions, atomic posterior updates, lessons, self-challenge, calibration metrics, APIs, and Mercury authoring exist; isolated PostgreSQL application and browser QA remain |
 | 3. Atlas | Foundation implemented | Explainable normalized-evidence assessment, health scoring, findings, recommendations, opportunities, governed plans, Mercury integration, and `/atlas` exist; live ingestion, diffs, execution, and outcomes remain |
 | 4. Vector | Not started | Navigation, types, routing, and output scaffolding only |
 | 5. Oracle | Not started | Navigation, types, routing, and output scaffolding only |
@@ -195,9 +195,9 @@ Validation was run against this branch on 2026-08-02. Decision Platform database
 | TypeScript typecheck (`npm run typecheck`) | Passed |
 | Production build (`npm run build`) | Passed |
 | Lint | Unavailable: no lint script is defined |
-| Automated tests (`npm test`) | Passed: 44 tests, including authentication, RBAC, organization scope, Atlas, Mercury, Evidence, decision reasoning, causal claims, posterior beliefs, calibration, and migration safety |
-| Decision integration tests (`npm run test:integration`) | Passed: in-process decision lifecycle and organization-boundary tests; PostgreSQL integration remains unverified |
-| Migration validation (`npm run migrate:dry-run`) | Passed: migrations `001` through `007` validated locally; only `001` through `006` are applied in production |
+| Automated tests (`npm test`) | Passed: 48 tests, including authentication, RBAC, organization scope, Atlas, Mercury, evidence, lifecycle, causal claims, posterior beliefs, calibration, and migration safety |
+| Decision integration tests (`npm run test:integration`) | Passed: 3 in-process lifecycle, organization-boundary, and Atlas learning fixtures; PostgreSQL integration remains unverified |
+| Migration validation (`npm run migrate:dry-run`) | Passed: migrations `001` through `008` validated locally; only `001` through `006` are applied in production |
 | Markdown relative links | Passed across `AGENTS.md`, `PROJECT_STATUS.md`, `docs/`, and `specs/` |
 | Public deployment smoke QA | Passed: generated Amplify URL and `app.merchantflare.com` returned HTTPS 200, `/api/health` returned `ok`, `/login` rendered without application console errors, login initiated Cognito PKCE with the exact app callback, and unauthenticated `/dashboard` returned a safe internal login redirect |
 | Apex marketing availability | Failed pre-change: `merchantflare.com` had no resolvable A, AAAA, or CNAME record from the test environment; no apex DNS record was changed |
@@ -211,6 +211,7 @@ Validation was run against this branch on 2026-08-02. Decision Platform database
 | Date | Change |
 | --- | --- |
 | 2026-08-02 | Added the locally verified Scientific Decision Platform foundation: migration `007`, canonical decision objects, evidence and belief guardrails, experiments/interventions/outcomes/lessons, immutable history, RBAC APIs, optional Mercury context, and decision tests. Production migration and browser QA remain unverified. |
+| 2026-08-02 | Added the Decision Learning engine: migration `008`, immutable predictions, idempotent manual execution records, guarded transitions, atomic posterior learning, generated lessons, self-challenge, calibration metrics, an Atlas title pilot contract, and minimal Mercury authoring/internal metrics. Isolated PostgreSQL application remains unverified. |
 | 2026-08-02 | Deployed `main` to Amplify job `13`, verified generated/custom HTTPS, Cognito Owner login/callback/refresh/logout, organization and Mercury APIs, production migration checksums and isolation, and recorded the encrypted predeployment RDS snapshot and rollback state. |
 | 2026-08-01 | Prepared the canonical app-subdomain deployment configuration, added a non-secret deployment audit, hardened reproducible Amplify installs, and documented the observed live surfaces and unresolved AWS/database/credentialed-QA blockers. |
 | 2026-07-28 | Added Sprint 5B Cognito authentication architecture: PKCE managed login, JWT verification, encrypted refresh and signed sessions, protected routes, membership enforcement, first-Owner bootstrap, Cognito CloudFormation, Amplify configuration, tests, and deployment operations. Real-pool verification remains required. |

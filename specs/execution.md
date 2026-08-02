@@ -9,7 +9,7 @@ Execution is the operational surface for approved and running actions. It must s
 
 ## Current implementation evidence
 
-Execution navigation exists. Mercury types, migrations, repository functions, a generic mock executor, and a database-backed deterministic runtime provide scaffolding. No execution route or authenticated execution API exists. No production provider mutation adapter is wired.
+Execution navigation exists. Mercury types, migrations, repository functions, a generic mock executor, and a database-backed deterministic runtime provide scaffolding. The Decision Platform adds `POST /api/decisions/executions` to durably record an organization-matched approved manual intervention with an idempotency key. It rejects provider mode because no production provider mutation adapter is wired. Recording manual execution is not evidence that Amazon changed.
 
 ## Functional requirements
 
