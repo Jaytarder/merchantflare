@@ -26,6 +26,10 @@ export const platformPermissions = [
   "mercury.read",
   "mercury.write",
   "mercury.approve",
+  "decisions.read",
+  "decisions.write",
+  "decisions.approve",
+  "decisions.measure",
 ] as const;
 
 export type PlatformPermission = (typeof platformPermissions)[number];
@@ -52,6 +56,10 @@ const permissionsByRole: Record<
     "mercury.read",
     "mercury.write",
     "mercury.approve",
+    "decisions.read",
+    "decisions.write",
+    "decisions.approve",
+    "decisions.measure",
   ]),
   manager: new Set([
     "organization.read",
@@ -63,6 +71,10 @@ const permissionsByRole: Record<
     "mercury.read",
     "mercury.write",
     "mercury.approve",
+    "decisions.read",
+    "decisions.write",
+    "decisions.approve",
+    "decisions.measure",
   ]),
   analyst: new Set([
     "organization.read",
@@ -73,6 +85,9 @@ const permissionsByRole: Record<
     "atlas.assess",
     "mercury.read",
     "mercury.write",
+    "decisions.read",
+    "decisions.write",
+    "decisions.measure",
   ]),
   viewer: new Set([
     "organization.read",
@@ -81,6 +96,7 @@ const permissionsByRole: Record<
     "integrations.read",
     "atlas.read",
     "mercury.read",
+    "decisions.read",
   ]),
 };
 
