@@ -1,5 +1,7 @@
 # Design System
 
+Release 1.0 adds a dark-first scientific component layer documented in [Component Library](component-library.md). It uses existing shell tokens, no gradients, semantic native controls, visible focus inherited from the shell, AA-target contrast, responsive single-column collapse, and reduced-motion handling. It represents real persisted work or an explicit empty state; decorative metrics are prohibited.
+
 ## Brand direction
 
 MerchantFlare uses a black, white, and orange visual system with an enterprise aesthetic.

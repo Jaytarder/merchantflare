@@ -1,5 +1,9 @@
 # Scientific Decision Platform
 
+## Release 1.0 reasoning layer
+
+Migration `009` adds immutable organization-scoped Belief Graph edges and explainable reasoning snapshots without changing migrations `001` through `008`. `/api/decisions/cases/[caseId]/reasoning` returns formulas, components, self-critique, ranked experiments, and reusable knowledge; `persist=true` requires decision-write permission and appends the snapshot and history. `/dashboard` becomes Decision Lab while Mercury remains available at `/dashboard/mercury` and existing APIs remain compatible.
+
 ## Status
 
 ### Implemented
@@ -21,8 +25,8 @@
 ### Verified locally
 
 - TypeScript typecheck.
-- Forty-eight automated tests covering reasoning, calibration, RBAC, causal claims, lifecycle transitions, Atlas rollback, posterior beliefs, and migration safety.
-- Ordered dry-run checksums for migrations `001` through `008`.
+- Fifty-one automated tests covering reasoning, calibration, RBAC, causal claims, lifecycle transitions, Atlas rollback, posterior beliefs, contradiction handling, and migration safety.
+- Ordered dry-run checksums for migrations `001` through `009`; migration `009` is not production-applied until the Release 1.0 snapshot gate passes.
 
 ### Planned or unverified
 

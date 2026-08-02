@@ -6,6 +6,12 @@ This file is the current implementation record for MerchantFlare. Product direct
 
 ## Current project summary
 
+### Release 1.0 — Scientific Decision Platform
+
+Implemented on `release/scientific-decision-platform-1.0`: additive migration `009`, persistent Belief Graph relationships, deterministic explainable reasoning and uncertainty metrics, ranked reversible experiments, labeled gap hypotheses, self-critique, knowledge-reuse metrics, reusable scientific components, and an authenticated Decision Lab at `/dashboard`. Mercury is preserved at `/dashboard/mercury`; its APIs, authentication, RBAC, organization isolation, and existing Decision Platform contracts are unchanged.
+
+Verified status must be read from the validation table below. Production deployment, migration application, authenticated browser QA, accessibility inspection, and performance observation remain **planned/unverified** until this release passes the full validation and guarded production sequence. No production-complete claim is made by this section.
+
 MerchantFlare is an early-stage Scientific Decision Platform built with the Next.js App Router and TypeScript. Mercury remains the primary conversational interface into commerce evidence, governed plans, and the new decision-learning foundation.
 
 Sprint 1, the application shell, is implemented. Sprint 2 has an organization-scoped conversation, governance, and Commerce Evidence foundation. Sprint 4 adds the Platform Core foundation. Sprint 5 adds the Atlas foundation. Sprint 5B adds Cognito authentication code and infrastructure. The Decision Learning sprint now adds guarded lifecycle transitions, immutable calibrated predictions, atomic outcome-to-belief learning, reusable lessons, deterministic self-challenge, a minimal Mercury authoring workbench, and internal engineering metrics. Production application code remains on `main`; migrations `007` and `008` were applied to `merchantflare-dev` after the new recovery snapshot, while this branch still awaits live application deployment and authenticated QA.
@@ -195,9 +201,9 @@ Validation was run against this branch on 2026-08-02. Decision Platform migratio
 | TypeScript typecheck (`npm run typecheck`) | Passed |
 | Production build (`npm run build`) | Passed |
 | Lint | Unavailable: no lint script is defined |
-| Automated tests (`npm test`) | Passed: 48 tests, including authentication, RBAC, organization scope, Atlas, Mercury, evidence, lifecycle, causal claims, posterior beliefs, calibration, and migration safety |
+| Automated tests (`npm test`) | Passed: 51 tests, including authentication, RBAC, organization scope, Atlas, Mercury, evidence, lifecycle, causal claims, posterior beliefs, calibration, explainable reasoning, contradiction handling, and migration safety |
 | Decision integration tests (`npm run test:integration`) | Passed: 3 in-process lifecycle, organization-boundary, and Atlas learning fixtures; PostgreSQL integration remains unverified |
-| Migration validation (`npm run migrate:dry-run`) | Passed: migrations `001` through `008` validated locally and applied through the snapshot-gated CloudShell runner with checksum/index verification |
+| Migration validation (`npm run migrate:dry-run`) | Passed locally: migrations `001` through `009` validated; `001` through `008` are applied in production, while additive migration `009` remains unapplied pending a new snapshot and guarded release |
 | Markdown relative links | Passed across `AGENTS.md`, `PROJECT_STATUS.md`, `docs/`, and `specs/` |
 | Public deployment smoke QA | Passed: generated Amplify URL and `app.merchantflare.com` returned HTTPS 200, `/api/health` returned `ok`, `/login` rendered without application console errors, login initiated Cognito PKCE with the exact app callback, and unauthenticated `/dashboard` returned a safe internal login redirect |
 | Apex marketing availability | Failed pre-change: `merchantflare.com` had no resolvable A, AAAA, or CNAME record from the test environment; no apex DNS record was changed |

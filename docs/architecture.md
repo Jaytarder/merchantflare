@@ -135,6 +135,8 @@ These are foundations, not the completed Mercury orchestration engine. There are
 
 ### Scientific Decision Platform
 
+Release 1.0 adds an explainable Scientific Reasoning Engine and a persistent Belief Graph through additive migration `009_scientific_reasoning_engine.sql`. Read-only reasoning computes evidence coverage, freshness, knowledge completeness, contradictions, confidence, uncertainty, and experiment priority from an organization-scoped Decision Case. An explicit recalculation appends a reasoning snapshot, materializes only explicit graph relationships, and records Decision History. See [Reasoning Engine](reasoning-engine.md), [Belief Graph](belief-graph.md), [Knowledge Engine](knowledge-engine.md), and [Decision Lab](decision-lab.md).
+
 Migration `007_scientific_decision_platform.sql` adds organization-scoped Decision Cases, graded evidence, versioned beliefs, competing hypotheses, evidence relationships, experiments, interventions, outcomes, lessons, confidence history, and immutable decision history. It is additive: existing Mercury, Platform Core, evidence, authentication, and approval tables remain unchanged.
 
 Migration `008_decision_learning_engine.sql` adds immutable prediction cohorts, organization-scoped idempotent execution records, and explicit lesson reuse. Experiment creation freezes the current belief confidence and success criteria. Outcome recording resolves that prediction, versions the belief, creates a bounded lesson, completes the experiment, and appends history in a single transaction. Lifecycle transitions use an optimistic status predicate so concurrent state changes fail closed.
