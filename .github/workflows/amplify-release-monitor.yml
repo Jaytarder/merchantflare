@@ -31,6 +31,23 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          for name in AUTH_SESSION_SECRET DATABASE_URL; do
+            value="$(aws amplify get-branch \
+              --app-id "$AMPLIFY_APP_ID" \
+              --branch-name "$AMPLIFY_BRANCH" \
+              --query "branch.environmentVariables.${name}" \
+              --output text)"
+            if [[ -z "$value" || "$value" == "None" ]]; then
+              value="$(aws amplify get-app \
+                --app-id "$AMPLIFY_APP_ID" \
+                --query "app.environmentVariables.${name}" \
+                --output text)"
+            fi
+            if [[ -n "$value" && "$value" != "None" ]]; then
+              echo "::add-mask::$value"
+            fi
+          done
+
           for attempt in $(seq 1 120); do
             job="$(aws amplify list-jobs \
               --app-id "$AMPLIFY_APP_ID" \
@@ -59,6 +76,34 @@ jobs:
                 ;;
               FAILED|CANCELLED)
                 echo "Amplify release failed with status $status." >&2
+                job_id="$(JOB="$job" node -e '
+                  const job = JSON.parse(process.env.JOB);
+                  process.stdout.write(job.jobId);
+                ')"
+                detail="$(aws amplify get-job \
+                  --app-id "$AMPLIFY_APP_ID" \
+                  --branch-name "$AMPLIFY_BRANCH" \
+                  --job-id "$job_id" \
+                  --output json)"
+                DETAIL="$detail" node -e '
+                  const detail = JSON.parse(process.env.DETAIL);
+                  console.log(JSON.stringify(detail.job.steps.map((step) => ({
+                    stepName: step.stepName,
+                    status: step.status,
+                  }))));
+                '
+                DETAIL="$detail" node -e '
+                  const detail = JSON.parse(process.env.DETAIL);
+                  for (const step of detail.job.steps) {
+                    if (step.logUrl) process.stdout.write(`${step.stepName}\t${step.logUrl}\n`);
+                  }
+                ' | while IFS=$'\t' read -r step_name log_url; do
+                  echo "::add-mask::$log_url"
+                  echo "--- Amplify step: $step_name (error excerpt) ---"
+                  curl --fail --silent --show-error "$log_url" \
+                    | grep -Ei 'error|failed|failure|npm ERR|cannot|missing|invalid|unsupported' \
+                    | tail -n 80 || true
+                done
                 exit 1
                 ;;
             esac
