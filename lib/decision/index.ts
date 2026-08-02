@@ -4,3 +4,7 @@ export * from "./repository";
 export * from "./service";
 export * from "./mercury";
 export * from "./reasoning";
+export * from "./calibration";
+export * from "./lifecycle";
+export * from "./challenge";
+export * from "./atlas-pilot";

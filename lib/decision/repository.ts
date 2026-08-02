@@ -231,6 +231,28 @@ export class PostgresDecisionRepository {
     return mapCase(rows[0]);
   }
 
+  async reuseApplicableLessons(input: { organizationId: string; decisionCaseId: string; text: string; reusedBy: string }) {
+    const rows = await this.sql<Array<any>>`
+      insert into decision_lesson_reuse (
+        organization_id, lesson_id, source_decision_case_id,
+        target_decision_case_id, rationale, reused_by
+      )
+      select lesson.organization_id, lesson.id, lesson.decision_case_id,
+        ${input.decisionCaseId}, 'Applicability matched the new Decision Case authoring context.',
+        ${input.reusedBy}
+      from decision_lessons lesson
+      where lesson.organization_id = ${input.organizationId}
+        and lesson.decision_case_id <> ${input.decisionCaseId}
+        and exists (
+          select 1 from jsonb_array_elements_text(lesson.applicability) tag
+          where length(trim(tag)) >= 3 and position(lower(trim(tag)) in lower(${input.text})) > 0
+        )
+      on conflict (organization_id, lesson_id, target_decision_case_id) do nothing
+      returning lesson_id
+    `;
+    return rows.map((row) => String(row.lesson_id));
+  }
+
   async createEvidence(input: Omit<Evidence, "createdAt">) {
     const rows = await this.sql<Array<any>>`
       insert into decision_evidence (
@@ -386,6 +408,128 @@ export class PostgresDecisionRepository {
     return mapExperiment(rows[0]);
   }
 
+  async createPrediction(input: {
+    id: string; organizationId: string; decisionCaseId: string; beliefId: string;
+    experimentId: string; confidence: number; predictedAt: string;
+    successCriteria: Experiment["successCriteria"]; createdBy: string;
+  }) {
+    const rows = await this.sql<Array<any>>`
+      insert into decision_predictions (
+        id, organization_id, decision_case_id, belief_id, experiment_id,
+        confidence, predicted_at, success_criteria, created_by
+      ) values (
+        ${input.id}, ${input.organizationId}, ${input.decisionCaseId}, ${input.beliefId},
+        ${input.experimentId}, ${input.confidence}, ${input.predictedAt},
+        ${this.sql.json(input.successCriteria)}, ${input.createdBy}
+      ) returning *
+    `;
+    return rows[0];
+  }
+
+  async resolvePrediction(input: {
+    organizationId: string; experimentId: string; succeeded: boolean;
+    posteriorConfidence: number; resolvedAt: string;
+  }) {
+    const rows = await this.sql<Array<any>>`
+      update decision_predictions
+      set succeeded = ${input.succeeded}, posterior_confidence = ${input.posteriorConfidence},
+          resolved_at = ${input.resolvedAt}
+      where organization_id = ${input.organizationId}
+        and experiment_id = ${input.experimentId}
+        and resolved_at is null
+      returning *
+    `;
+    return rows[0] ?? null;
+  }
+
+  async updateCaseStatus(input: {
+    organizationId: string; caseId: string; from: DecisionCase["status"];
+    to: DecisionCase["status"];
+  }) {
+    const rows = await this.sql<Array<any>>`
+      update decision_cases set status = ${input.to}, updated_at = now(),
+        closed_at = case when ${input.to} = 'closed' then now() else closed_at end
+      where organization_id = ${input.organizationId} and id = ${input.caseId}
+        and status = ${input.from}
+      returning *
+    `;
+    return rows[0] ? mapCase(rows[0]) : null;
+  }
+
+  async recordExecution(input: {
+    id: string; organizationId: string; decisionCaseId: string; experimentId: string;
+    interventionId: string; idempotencyKey: string; executionMode: "manual" | "provider";
+    result: Record<string, unknown>; executedBy: string; startedAt: string;
+  }) {
+    const rows = await this.sql<Array<any>>`
+      insert into decision_executions (
+        id, organization_id, decision_case_id, experiment_id, intervention_id,
+        idempotency_key, status, execution_mode, result, executed_by, started_at, completed_at
+      )
+      select ${input.id}, ${input.organizationId}, ${input.decisionCaseId},
+        experiment.id, intervention.id, ${input.idempotencyKey}, 'completed',
+        ${input.executionMode}, ${this.sql.json(input.result as Json)}, ${input.executedBy},
+        ${input.startedAt}, ${input.startedAt}
+      from decision_experiments experiment
+      join decision_interventions intervention
+        on intervention.experiment_id = experiment.id and intervention.organization_id = experiment.organization_id
+      where experiment.id = ${input.experimentId}
+        and intervention.id = ${input.interventionId}
+        and experiment.organization_id = ${input.organizationId}
+        and experiment.decision_case_id = ${input.decisionCaseId}
+        and intervention.status = 'approved'
+        and (experiment.approval_status = 'approved' or experiment.approval_status = 'not_required')
+        and experiment.status in ('approved', 'draft', 'running')
+      on conflict (organization_id, idempotency_key) do nothing
+      returning *
+    `;
+    let execution = rows[0];
+    if (!execution) {
+      const existing = await this.sql<Array<any>>`
+        select * from decision_executions
+        where organization_id = ${input.organizationId}
+          and idempotency_key = ${input.idempotencyKey}
+          and decision_case_id = ${input.decisionCaseId}
+          and experiment_id = ${input.experimentId}
+          and intervention_id = ${input.interventionId}
+        limit 1
+      `;
+      execution = existing[0];
+    }
+    if (!execution) return null;
+    await this.sql`
+      update decision_experiments set status = 'running', execution_time = ${input.startedAt}, updated_at = now()
+      where id = ${input.experimentId} and organization_id = ${input.organizationId}
+    `;
+    await this.sql`
+      update decision_interventions set status = 'executed', executed_by = ${input.executedBy}, executed_at = ${input.startedAt}
+      where id = ${input.interventionId} and organization_id = ${input.organizationId}
+    `;
+    return execution;
+  }
+
+  async calibrationData(organizationId: string) {
+    const [predictions, counts] = await Promise.all([
+      this.sql<Array<any>>`
+        select confidence, succeeded, predicted_at, resolved_at, posterior_confidence
+        from decision_predictions where organization_id = ${organizationId} and resolved_at is not null
+        order by predicted_at
+      `,
+      this.sql<Array<any>>`
+        select
+          (select count(*)::int from decision_cases where organization_id = ${organizationId}) as case_count,
+          (select count(*)::int from decision_evidence where organization_id = ${organizationId}) as evidence_count,
+          (select count(*)::int from decision_experiments where organization_id = ${organizationId}) as experiment_count,
+          (select count(*)::int from decision_lessons where organization_id = ${organizationId}) as lesson_count,
+          (select count(*)::int from decision_lesson_reuse where organization_id = ${organizationId}) as reuse_count,
+          (select count(*)::int from decision_evidence where organization_id = ${organizationId} and freshness in ('stale','unavailable')) as stale_evidence_count,
+          (select avg(extract(epoch from (closed_at - created_at)) / 3600) from decision_cases where organization_id = ${organizationId} and closed_at is not null) as latency_hours,
+          (select count(*)::int from decision_cases where organization_id = ${organizationId} and created_at >= now() - interval '30 days') as throughput_30d
+      `,
+    ]);
+    return { predictions, counts: counts[0] };
+  }
+
   async decideExperimentApproval(input: {
     organizationId: string;
     experimentId: string;
@@ -404,6 +548,14 @@ export class PostgresDecisionRepository {
         and approval_status = 'pending'
       returning *
     `;
+    if (rows[0] && input.decision === "approved") {
+      await this.sql`
+        update decision_interventions set status = 'approved'
+        where organization_id = ${input.organizationId}
+          and experiment_id = ${input.experimentId}
+          and status = 'proposed'
+      `;
+    }
     return rows[0] ? mapExperiment(rows[0]) : null;
   }
 
@@ -510,7 +662,7 @@ export class PostgresDecisionRepository {
   async getCaseDetail(organizationId: string, caseId: string): Promise<DecisionCaseDetail | null> {
     const decisionCase = await this.findCase(organizationId, caseId);
     if (!decisionCase) return null;
-    const [evidence, evidenceLinks, beliefs, hypotheses, experiments, interventions, outcomes, lessons] =
+    const [evidence, evidenceLinks, beliefs, hypotheses, experiments, interventions, outcomes, lessons, reusedLessons] =
       await Promise.all([
         this.sql<Array<any>>`select * from decision_evidence where organization_id = ${organizationId} and decision_case_id = ${caseId} order by observed_at desc`,
         this.sql<Array<any>>`select link.* from decision_evidence_links link join decision_evidence evidence on evidence.id = link.evidence_id and evidence.organization_id = link.organization_id where link.organization_id = ${organizationId} and evidence.decision_case_id = ${caseId} order by link.created_at`,
@@ -520,6 +672,7 @@ export class PostgresDecisionRepository {
         this.sql<Array<any>>`select intervention.* from decision_interventions intervention join decision_experiments experiment on experiment.id = intervention.experiment_id and experiment.organization_id = intervention.organization_id where intervention.organization_id = ${organizationId} and experiment.decision_case_id = ${caseId} order by intervention.created_at`,
         this.sql<Array<any>>`select * from decision_outcomes where organization_id = ${organizationId} and decision_case_id = ${caseId} order by observed_at`,
         this.sql<Array<any>>`select * from decision_lessons where organization_id = ${organizationId} and decision_case_id = ${caseId} order by created_at`,
+        this.sql<Array<any>>`select lesson.* from decision_lesson_reuse reuse join decision_lessons lesson on lesson.id = reuse.lesson_id and lesson.organization_id = reuse.organization_id where reuse.organization_id = ${organizationId} and reuse.target_decision_case_id = ${caseId} order by reuse.reused_at`,
       ]);
     return {
       ...decisionCase,
@@ -531,6 +684,7 @@ export class PostgresDecisionRepository {
       interventions: interventions.map(mapIntervention),
       outcomes: outcomes.map(mapOutcome),
       lessons: lessons.map(mapLesson),
+      reusedLessons: reusedLessons.map(mapLesson),
     };
   }
 }

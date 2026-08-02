@@ -180,6 +180,7 @@ export type DecisionCaseDetail = DecisionCase & {
   interventions: Intervention[];
   outcomes: Outcome[];
   lessons: Lesson[];
+  reusedLessons: Lesson[];
 };
 
 export type RecommendationBelief = Belief & {

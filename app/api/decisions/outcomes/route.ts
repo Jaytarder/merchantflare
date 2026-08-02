@@ -13,9 +13,8 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   return decisionRequest(
-    async (repository, principal) => ({
-      outcome: await createDecisionOutcome(repository, principal, await request.json()),
-    }),
+    async (repository, principal) =>
+      createDecisionOutcome(repository, principal, await request.json()),
     { successStatus: 201, failureMessage: "Outcome could not be recorded." },
   );
 }

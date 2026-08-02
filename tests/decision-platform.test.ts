@@ -7,6 +7,10 @@ import {
   calibrationSummary,
   classifyOutcomeClaim,
   posteriorBelief,
+  calculateCalibration,
+  classifyPredictionQuality,
+  createAtlasTitlePilot,
+  assertLifecycleTransition,
   type Belief,
   type Evidence,
   type Hypothesis,
@@ -157,5 +161,40 @@ test("migration 007 is additive, organization-scoped, and makes history immutabl
   assert.match(sql, /create table if not exists decision_cases/);
   assert.match(sql, /references platform_organizations\(id\) on delete restrict/g);
   assert.match(sql, /decision history is append-only/);
+  assert.doesNotMatch(sql, /\bdrop table\b|\btruncate\b/i);
+});
+
+test("calibration engine reports bins, accuracy, drift, and Brier score", () => {
+  const metrics = calculateCalibration([
+    { confidence: 0.8, succeeded: true, posteriorConfidence: 0.9, predictedAt: timestamp, resolvedAt: timestamp },
+    { confidence: 0.8, succeeded: false, posteriorConfidence: 0.4, predictedAt: timestamp, resolvedAt: timestamp },
+    { confidence: 0.2, succeeded: false, posteriorConfidence: 0.1, predictedAt: timestamp, resolvedAt: timestamp },
+  ]);
+  assert.equal(metrics.count, 3);
+  assert.equal(metrics.curve.length, 2);
+  assert.equal(metrics.predictionAccuracy, 2 / 3);
+  assert.ok(metrics.brierScore !== null && metrics.brierScore > 0);
+  assert.equal(classifyPredictionQuality(0.9, true).quality, "well_calibrated");
+});
+
+test("lifecycle rejects skipped states and Atlas pilot preserves exact rollback", () => {
+  assert.doesNotThrow(() => assertLifecycleTransition("draft", "investigating"));
+  assert.throws(() => assertLifecycleTransition("draft", "running"), PlatformValidationError);
+  const pilot = createAtlasTitlePilot({
+    workflow: "atlas_title_optimization", currentTitle: "Original verified title", proposedTitle: "Verified title with attribute",
+    productReference: "ASIN-TEST", metric: "conversion_rate", baseline: 0.1, minimumLift: 0.01, observationDays: 14,
+  });
+  assert.deepEqual(pilot.exactIntent, { productReference: "ASIN-TEST", field: "title", from: "Original verified title", to: "Verified title with attribute" });
+  assert.match(pilot.rollbackPlan, /Original verified title/);
+  assert.match(pilot.executionBoundary, /do not publish/);
+});
+
+test("migration 008 is additive, tenant-scoped, immutable, and concurrency-safe", async () => {
+  const sql = await readFile(resolve("db/migrations/008_decision_learning_engine.sql"), "utf8");
+  assert.match(sql, /decision_predictions/);
+  assert.match(sql, /unique \(organization_id, experiment_id\)/);
+  assert.match(sql, /unique \(organization_id, idempotency_key\)/);
+  assert.match(sql, /resolved predictions are immutable/);
+  assert.match(sql, /foreign key \(decision_case_id, organization_id\)/);
   assert.doesNotMatch(sql, /\bdrop table\b|\btruncate\b/i);
 });

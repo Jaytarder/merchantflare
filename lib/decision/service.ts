@@ -3,6 +3,9 @@ import type { OrganizationPrincipal } from "../platform/authorization";
 import { requirePermission } from "../platform/authorization";
 import { PlatformNotFoundError, PlatformValidationError } from "../platform/errors";
 import { PostgresDecisionRepository } from "./repository";
+import { calculateCalibration } from "./calibration";
+import { assertLifecycleReady } from "./lifecycle";
+import { challengeDecision } from "./challenge";
 import type {
   ApprovalStatus,
   DecisionCase,
@@ -128,6 +131,22 @@ export async function createDecisionCase(
       summary: "Decision Case created.",
       metadata: { risk, reversibility, approvalStatus },
     });
+    const reusedLessonIds = await tx.reuseApplicableLessons({
+      organizationId: principal.organizationId,
+      decisionCaseId: id,
+      text: `${decisionCase.title} ${decisionCase.problem} ${decisionCase.objective}`,
+      reusedBy: principal.subjectId,
+    });
+    for (const lessonId of reusedLessonIds) {
+      await history(tx, principal, {
+        caseId: id,
+        eventType: "lesson.reused",
+        entityType: "lesson",
+        entityId: lessonId,
+        summary: "An applicable prior lesson was linked to the new Decision Case.",
+        metadata: { lessonId },
+      });
+    }
     return decisionCase;
   });
 }
@@ -421,6 +440,10 @@ export async function createDecisionExperiment(
   const approvalStatus: ApprovalStatus =
     expectedRisk === "high" || expectedRisk === "critical" ? "pending" : "not_required";
   const id = randomUUID();
+  const currentBelief = detail.beliefs.find((belief) => belief.id === detail.currentBeliefId) ?? detail.beliefs[0];
+  if (!currentBelief) {
+    throw new PlatformValidationError("An experiment requires a current belief prediction.");
+  }
   return repository.transaction(async (tx) => {
     const experiment = await tx.createExperiment({
       id,
@@ -441,13 +464,25 @@ export async function createDecisionExperiment(
     if (experiment.expectedLift !== undefined && !Number.isFinite(experiment.expectedLift)) {
       throw new PlatformValidationError("expectedLift must be a finite number.");
     }
+    const predictionId = randomUUID();
+    await tx.createPrediction({
+      id: predictionId,
+      organizationId: principal.organizationId,
+      decisionCaseId,
+      beliefId: currentBelief.id,
+      experimentId: id,
+      confidence: currentBelief.confidence,
+      predictedAt: new Date().toISOString(),
+      successCriteria: experiment.successCriteria,
+      createdBy: principal.subjectId,
+    });
     await history(tx, principal, {
       caseId: decisionCaseId,
       eventType: "experiment.created",
       entityType: "experiment",
       entityId: id,
       summary: "A measurable experiment was proposed.",
-      metadata: { approvalStatus, expectedRisk },
+      metadata: { approvalStatus, expectedRisk, predictionId, confidence: currentBelief.confidence },
     });
     return experiment;
   });
@@ -466,6 +501,9 @@ export async function decideDecisionExperiment(
   if (!detail) throw new PlatformNotFoundError("Decision Case");
   if (!detail.experiments.some((candidate) => candidate.id === experimentId)) {
     throw new PlatformNotFoundError("Experiment");
+  }
+  if (!detail.interventions.some((candidate) => candidate.experimentId === experimentId)) {
+    throw new PlatformValidationError("Approval requires an exact intervention intent and rollback plan.");
   }
   const decision = oneOf(
     body.decision,
@@ -509,6 +547,9 @@ export async function createDecisionIntervention(
   const experimentId = requireText(body.experimentId, "experimentId", 64);
   const experiment = detail.experiments.find((candidate) => candidate.id === experimentId);
   if (!experiment) throw new PlatformNotFoundError("Experiment");
+  if (experiment.approvalStatus === "approved" || experiment.approvalStatus === "rejected") {
+    throw new PlatformValidationError("Intervention intent cannot be added after an approval decision.");
+  }
   const id = randomUUID();
   return repository.transaction(async (tx) => {
     const intervention: Omit<Intervention, "createdAt"> = {
@@ -523,7 +564,7 @@ export async function createDecisionIntervention(
         "reversibility",
       ),
       rollbackPlan: requireText(body.rollbackPlan, "rollbackPlan"),
-      status: "proposed",
+      status: experiment.approvalStatus === "not_required" ? "approved" : "proposed",
       createdBy: principal.subjectId,
     };
     const created = await tx.createIntervention(intervention);
@@ -550,16 +591,48 @@ export async function createDecisionOutcome(
   const detail = await repository.getCaseDetail(principal.organizationId, decisionCaseId);
   if (!detail) throw new PlatformNotFoundError("Decision Case");
   const experimentId = requireText(body.experimentId, "experimentId", 64);
-  if (!detail.experiments.some((candidate) => candidate.id === experimentId)) {
+  const experiment = detail.experiments.find((candidate) => candidate.id === experimentId);
+  if (!experiment) {
     throw new PlatformNotFoundError("Experiment");
   }
+  if (experiment.status !== "running") {
+    throw new PlatformValidationError("An outcome can only resolve a running experiment.");
+  }
+  const currentBelief = detail.beliefs.find((belief) => belief.id === detail.currentBeliefId) ?? detail.beliefs[0];
+  if (!currentBelief) throw new PlatformValidationError("A current belief is required.");
   const evidenceGrade = requireEvidenceGrade(body.evidenceGrade);
   const observedResult = classifyOutcomeClaim(
     evidenceGrade,
     requireText(body.observedResult, "observedResult"),
   );
   const id = randomUUID();
+  const posteriorConfidence = requireConfidence(body.posteriorConfidence, "posteriorConfidence");
+  if (typeof body.succeeded !== "boolean") {
+    throw new PlatformValidationError("succeeded must be a boolean resolved against predefined success criteria.");
+  }
+  const succeeded = body.succeeded;
+  const observedAt = requireIsoTimestamp(body.observedAt, "observedAt");
   return repository.transaction(async (tx) => {
+    const belief = await tx.reviseBelief({
+      previous: currentBelief,
+      statement: optionalText(body.updatedBelief, "updatedBelief") ?? currentBelief.statement,
+      confidence: posteriorConfidence,
+      missingEvidence: requireStringList(body.missingEvidence ?? currentBelief.missingEvidence, "missingEvidence"),
+      assumptions: requireStringList(body.assumptions ?? currentBelief.assumptions, "assumptions"),
+      whatWouldChange: optionalText(body.whatWouldChange, "whatWouldChange") ?? currentBelief.whatWouldChange,
+      changedBy: principal.subjectId,
+      changeReason: `Experiment outcome: ${observedResult}`,
+      evidenceIds: requireStringList(body.evidenceIds ?? [], "evidenceIds"),
+    });
+    if (!belief) throw new PlatformValidationError("The belief changed concurrently. Reload before recording the outcome.");
+    const prediction = await tx.resolvePrediction({
+      organizationId: principal.organizationId,
+      experimentId,
+      succeeded,
+      posteriorConfidence,
+      resolvedAt: observedAt,
+    });
+    if (!prediction) throw new PlatformValidationError("The experiment prediction is missing or already resolved.");
     const outcome = await tx.createOutcome({
       id,
       organizationId: principal.organizationId,
@@ -572,13 +645,21 @@ export async function createDecisionOutcome(
         body.unexpectedEffects ?? [],
         "unexpectedEffects",
       ),
-      posteriorConfidence: requireConfidence(
-        body.posteriorConfidence,
-        "posteriorConfidence",
-      ),
-      updatedBeliefId: optionalText(body.updatedBeliefId, "updatedBeliefId", 64),
-      observedAt: requireIsoTimestamp(body.observedAt, "observedAt"),
+      posteriorConfidence,
+      updatedBeliefId: belief.id,
+      observedAt,
       recordedBy: principal.subjectId,
+    });
+    const lesson = await tx.createLesson({
+      id: randomUUID(),
+      organizationId: principal.organizationId,
+      decisionCaseId,
+      outcomeId: outcome.id,
+      statement: requireText(body.lesson, "lesson"),
+      applicability: requireStringList(body.applicability ?? [], "applicability"),
+      limitations: requireStringList(body.lessonLimitations ?? [], "lessonLimitations"),
+      confidence: posteriorConfidence,
+      createdBy: principal.subjectId,
     });
     await history(tx, principal, {
       caseId: decisionCaseId,
@@ -590,10 +671,99 @@ export async function createDecisionOutcome(
         experimentId,
         evidenceGrade,
         posteriorConfidence: outcome.posteriorConfidence,
+        priorConfidence: currentBelief.confidence,
+        succeeded,
+        beliefVersion: belief.version,
+        lessonId: lesson.id,
       },
     });
-    return outcome;
+    await history(tx, principal, {
+      caseId: decisionCaseId,
+      eventType: "lesson.created",
+      entityType: "lesson",
+      entityId: lesson.id,
+      summary: "A reusable lesson was generated from the resolved experiment.",
+      metadata: { outcomeId: outcome.id, confidence: lesson.confidence },
+    });
+    return { outcome, belief, lesson, predictionQuality: { confidence: Number(prediction.confidence), succeeded } };
   });
+}
+
+export async function transitionDecisionCase(
+  repository: PostgresDecisionRepository,
+  principal: OrganizationPrincipal,
+  caseIdValue: string,
+  raw: unknown,
+) {
+  requirePermission(principal, "decisions.write");
+  const body = object(raw, "request");
+  const detail = await repository.getCaseDetail(principal.organizationId, caseIdValue);
+  if (!detail) throw new PlatformNotFoundError("Decision Case");
+  const target = oneOf(body.status, ["draft", "investigating", "proposed", "approved", "running", "measuring", "closed", "archived"] as const, "status");
+  assertLifecycleReady(detail, target);
+  return repository.transaction(async (tx) => {
+    const updated = await tx.updateCaseStatus({ organizationId: principal.organizationId, caseId: caseIdValue, from: detail.status, to: target });
+    if (!updated) throw new PlatformValidationError("The Decision Case changed concurrently. Reload before transitioning it.");
+    await history(tx, principal, { caseId: caseIdValue, eventType: "decision_case.transitioned", entityType: "decision_case", entityId: caseIdValue, summary: `Decision Case transitioned from ${detail.status} to ${target}.`, metadata: { from: detail.status, to: target } });
+    return updated;
+  });
+}
+
+export async function executeDecisionIntervention(
+  repository: PostgresDecisionRepository,
+  principal: OrganizationPrincipal,
+  raw: unknown,
+) {
+  requirePermission(principal, "decisions.write");
+  const body = object(raw, "request");
+  const decisionCaseId = caseId(body);
+  const detail = await repository.getCaseDetail(principal.organizationId, decisionCaseId);
+  if (!detail) throw new PlatformNotFoundError("Decision Case");
+  const experimentId = requireText(body.experimentId, "experimentId", 64);
+  const interventionId = requireText(body.interventionId, "interventionId", 64);
+  const intervention = detail.interventions.find((item) => item.id === interventionId && item.experimentId === experimentId);
+  if (!intervention) throw new PlatformNotFoundError("Intervention");
+  const executionMode = oneOf(body.executionMode, ["manual", "provider"] as const, "executionMode");
+  if (executionMode === "provider") {
+    throw new PlatformValidationError("No Atlas provider publisher is configured; provider execution is not available.");
+  }
+  const id = randomUUID();
+  return repository.transaction(async (tx) => {
+    const execution = await tx.recordExecution({ id, organizationId: principal.organizationId, decisionCaseId, experimentId, interventionId, idempotencyKey: requireText(body.idempotencyKey, "idempotencyKey", 200), executionMode, result: object(body.result ?? {}, "result"), executedBy: principal.subjectId, startedAt: requireIsoTimestamp(body.executedAt, "executedAt") });
+    if (!execution) throw new PlatformValidationError("Execution requires a tenant-matched approved experiment and intervention.");
+    await history(tx, principal, { caseId: decisionCaseId, eventType: "intervention.executed", entityType: "intervention", entityId: interventionId, summary: "An approved intervention execution was durably recorded.", metadata: { experimentId, executionId: execution.id, executionMode } });
+    return execution;
+  });
+}
+
+export async function getDecisionChallenge(repository: PostgresDecisionRepository, principal: OrganizationPrincipal, caseIdValue: string) {
+  requirePermission(principal, "decisions.read");
+  const detail = await repository.getCaseDetail(principal.organizationId, caseIdValue);
+  if (!detail) throw new PlatformNotFoundError("Decision Case");
+  return challengeDecision(detail);
+}
+
+export async function getDecisionMetrics(repository: PostgresDecisionRepository, principal: OrganizationPrincipal) {
+  requirePermission(principal, "audit.read");
+  const data = await repository.calibrationData(principal.organizationId);
+  const predictions = data.predictions.map((row: any) => ({ confidence: Number(row.confidence), succeeded: Boolean(row.succeeded), predictedAt: new Date(row.predicted_at).toISOString(), resolvedAt: new Date(row.resolved_at).toISOString(), posteriorConfidence: Number(row.posterior_confidence) }));
+  const calibration = calculateCalibration(predictions);
+  const counts = data.counts;
+  const caseCount = Number(counts.case_count);
+  const evidenceCount = Number(counts.evidence_count);
+  return {
+    calibration,
+    evidenceCoverage: caseCount ? evidenceCount / caseCount : null,
+    evidenceFreshness: evidenceCount ? 1 - Number(counts.stale_evidence_count) / evidenceCount : null,
+    experimentSuccessRate: calibration.decisionSuccessRate,
+    falsePositiveRate: predictions.filter((item) => item.confidence >= 0.5).length ? predictions.filter((item) => item.confidence >= 0.5 && !item.succeeded).length / predictions.filter((item) => item.confidence >= 0.5).length : null,
+    falseNegativeRate: predictions.filter((item) => item.confidence < 0.5).length ? predictions.filter((item) => item.confidence < 0.5 && item.succeeded).length / predictions.filter((item) => item.confidence < 0.5).length : null,
+    decisionLatencyHours: counts.latency_hours === null ? null : Number(counts.latency_hours),
+    decisionThroughput30d: Number(counts.throughput_30d),
+    knowledgeGrowth: Number(counts.lesson_count),
+    decisionReuse: Number(counts.reuse_count),
+    generatedAt: new Date().toISOString(),
+  };
 }
 
 export async function createDecisionLesson(

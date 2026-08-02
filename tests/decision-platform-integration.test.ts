@@ -7,6 +7,9 @@ import {
   type Belief,
   type Evidence,
   type Hypothesis,
+  createAtlasTitlePilot,
+  calculateCalibration,
+  classifyPredictionQuality,
 } from "../lib/decision";
 import {
   OrganizationScopeError,
@@ -112,4 +115,14 @@ test("organization boundary rejects cross-tenant decision access", () => {
       ),
     OrganizationScopeError,
   );
+});
+
+test("Atlas pilot prediction becomes measurable learning without fabricating provider execution", () => {
+  const pilot = createAtlasTitlePilot({ workflow: "atlas_title_optimization", currentTitle: "A", proposedTitle: "A verified attribute", productReference: "atlas-fixture", metric: "conversion_rate", baseline: 0.1, minimumLift: 0.01, observationDays: 14 });
+  const resolved = { confidence: 0.65, succeeded: true, posteriorConfidence: 0.74, predictedAt: "2026-08-02T00:00:00.000Z", resolvedAt: "2026-08-16T00:00:00.000Z" };
+  const metrics = calculateCalibration([resolved]);
+  assert.equal(metrics.decisionSuccessRate, 1);
+  assert.equal(classifyPredictionQuality(resolved.confidence, resolved.succeeded).classificationCorrect, true);
+  assert.equal(pilot.successCriteria[0].value, 0.11);
+  assert.match(pilot.executionBoundary, /separate authenticated action/);
 });

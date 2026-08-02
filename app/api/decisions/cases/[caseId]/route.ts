@@ -1,6 +1,7 @@
 import { requirePermission } from "../../../../../lib/platform/authorization";
 import { PlatformNotFoundError } from "../../../../../lib/platform/errors";
 import { decisionRequest } from "../../../../../lib/decision/http";
+import { challengeDecision } from "../../../../../lib/decision/challenge";
 
 export async function GET(
   _request: Request,
@@ -15,7 +16,7 @@ export async function GET(
         caseId,
       );
       if (!decisionCase) throw new PlatformNotFoundError("Decision Case");
-      return { decisionCase };
+      return { decisionCase, challenge: challengeDecision(decisionCase) };
     },
     { failureMessage: "Decision Case could not be loaded." },
   );
