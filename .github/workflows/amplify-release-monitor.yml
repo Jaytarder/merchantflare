@@ -1,0 +1,68 @@
+name: Monitor MerchantFlare Amplify release
+
+on:
+  push:
+    branches:
+      - agent/app-subdomain-deployment-audit
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  AWS_REGION: us-east-1
+  AWS_DEPLOY_ROLE_ARN: arn:aws:iam::432181126458:role/merchantflare-github-actions-ecs
+  AMPLIFY_APP_ID: d2wkvdawpeotl8
+  AMPLIFY_BRANCH: main
+  TARGET_COMMIT: 3c8a8f2eb08719edf1a07c4570ca23af2408a07b
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          role-to-assume: ${{ env.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Wait for exact Amplify commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 120); do
+            job="$(aws amplify list-jobs \
+              --app-id "$AMPLIFY_APP_ID" \
+              --branch-name "$AMPLIFY_BRANCH" \
+              --max-results 20 \
+              --query "jobSummaries[?commitId=='$TARGET_COMMIT'] | [0]" \
+              --output json)"
+            status="$(JOB="$job" node -e '
+              const job = JSON.parse(process.env.JOB);
+              process.stdout.write(job?.status ?? "NOT_FOUND");
+            ')"
+            echo "Amplify job status: $status"
+            case "$status" in
+              SUCCEED)
+                JOB="$job" node -e '
+                  const job = JSON.parse(process.env.JOB);
+                  console.log(JSON.stringify({
+                    jobId: job.jobId,
+                    commitId: job.commitId,
+                    status: job.status,
+                    startTime: job.startTime,
+                    endTime: job.endTime,
+                  }));
+                '
+                exit 0
+                ;;
+              FAILED|CANCELLED)
+                echo "Amplify release failed with status $status." >&2
+                exit 1
+                ;;
+            esac
+            sleep 20
+          done
+          echo "Timed out waiting for the Amplify job for $TARGET_COMMIT." >&2
+          exit 1
