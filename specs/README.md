@@ -43,6 +43,7 @@ Static data, navigation configuration, legacy prototypes, deterministic example 
 | [Approvals](approvals.md) | Scaffolded | Material-action review and decision records |
 | [History](history.md) | Scaffolded | Conversations, plans, decisions, execution, and outcomes |
 | [Knowledge](knowledge.md) | Planned | Governed business context and evidence |
+| [Scientific Decision Platform](scientific-decision-platform.md) | Foundation implemented; production unverified | Decision Cases, evidence, beliefs, experiments, outcomes, and learning |
 | [Integrations](integrations.md) | Scaffolded | Provider connection, sync, and health management |
 | [Billing](billing.md) | Scaffolded | Subscription and entitlement domain; live Stripe and billing experience remain |
 | [Settings](settings.md) | Scaffolded | Durable organization, access, invitation, preference, audit, notification, and flag foundations |

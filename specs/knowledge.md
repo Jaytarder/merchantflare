@@ -9,6 +9,8 @@ Knowledge stores the governed business context Mercury and intelligence modules 
 
 ## Current implementation evidence
 
+Decision Lessons now provide the first reusable, organization-scoped learning record. Each lesson links to an immutable outcome, carries applicability, limitations, and confidence, and remains searchable through its Decision Case history. Cross-case retrieval, semantic indexing, governance UI, and automated lesson recommendations remain planned.
+
 Knowledge navigation exists, but there is no route, schema, ingestion workflow, retrieval boundary, source/version model, or user interface.
 
 ## In scope

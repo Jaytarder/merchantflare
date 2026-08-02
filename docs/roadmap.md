@@ -88,6 +88,26 @@ Still required:
 
 ## 3. Atlas — Foundation implemented
 
+## Scientific Decision Platform — Foundation implemented
+
+Implemented:
+
+- additive canonical decision-domain models;
+- evidence grading and causal-language guardrails;
+- versioned belief and confidence history;
+- authenticated organization-scoped APIs and RBAC;
+- append-only searchable decision history;
+- optional Mercury Decision Case context; and
+- local reasoning, calibration, migration-safety, and compatibility tests.
+
+Next:
+
+- apply migration `007` to isolated development PostgreSQL;
+- add transaction, concurrency, and two-organization integration tests;
+- add gradual Decision Case authoring without redesigning navigation;
+- automate outcome collection and cohort calibration; and
+- verify the authenticated browser lifecycle before production rollout.
+
 Atlas now has a provider-neutral domain, explainable assessment and health scoring, evidence-backed findings and recommendations, confidence-degraded opportunities, governed improvement plans, an authenticated responsive route, and Mercury integration. It consumes only normalized Commerce Evidence Layer records. The milestone is not complete because no authorized catalog source, product filtering, field-level diff, execution adapter, or outcome measurement exists.
 
 ## 4. Vector — Not started

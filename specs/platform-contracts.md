@@ -28,6 +28,8 @@ This specification defines cross-cutting contracts that feature specifications i
 
 ## Core domain boundaries
 
+The Scientific Decision Platform adds canonical, organization-scoped Decision Case, Evidence, Belief, Hypothesis, Counter-Evidence, Experiment, Intervention, Outcome, and Lesson objects. Recommendations are versioned beliefs, not facts. Experiments require competing hypotheses and measurable success criteria. Outcome evidence grade constrains causal language.
+
 The production domain MUST distinguish:
 
 - organization;
@@ -95,6 +97,7 @@ Status transitions MUST be validated at a domain boundary and recorded as append
 - Dates MUST use ISO 8601 UTC at transport boundaries.
 - Monetary values MUST include currency and avoid floating-point persistence.
 - API changes SHOULD remain backward compatible or be explicitly versioned.
+- `/api/decisions/*` extends the platform without removing or changing `/api/mercury/*`, `/api/platform/*`, or `/api/atlas/*` contracts.
 
 ## Reliability and operations
 

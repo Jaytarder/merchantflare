@@ -133,6 +133,14 @@ The repository contains an early Mercury foundation:
 
 These are foundations, not the completed Mercury orchestration engine. There are currently two execution paths (`executor.ts` and `runtime.ts`), and neither is exposed through a complete production API workflow.
 
+### Scientific Decision Platform
+
+Migration `007_scientific_decision_platform.sql` adds organization-scoped Decision Cases, graded evidence, versioned beliefs, competing hypotheses, evidence relationships, experiments, interventions, outcomes, lessons, confidence history, and immutable decision history. It is additive: existing Mercury, Platform Core, evidence, authentication, and approval tables remain unchanged.
+
+Authenticated handlers under `/api/decisions/` expose the lifecycle without removing current endpoints. Central permissions distinguish read, investigation, measurement, and experiment approval. High-risk experiments require approval, and approval does not execute an intervention.
+
+Mercury conversation reads optionally attach linked Decision Case context to a plan. Older clients and plans without a Decision Case retain existing behavior. See [Scientific Decision Platform](decision-platform.md).
+
 Legacy internal types use `Worker`, `WorkerKey`, `workerRegistry`, and related names. New user-facing work must use intelligence-module language. Renaming internal contracts should be a deliberate compatibility migration rather than a casual search-and-replace.
 
 ### Commerce Evidence layer
@@ -172,8 +180,9 @@ Migrations currently define:
 - normalized evidence cache entries;
 - mutation idempotency records;
 - commerce integration metadata.
+- Decision Cases, graded evidence, versioned beliefs, competing hypotheses, experiments, interventions, outcomes, lessons, confidence history, and immutable Decision History.
 
-Platform Core, conversation, and normalized evidence operations require `DATABASE_URL` and the committed migrations through `006_platform_core.sql`. `npm run migrate` applies unapplied migrations under a PostgreSQL advisory lock and rejects changed, missing, misnamed, or duplicate-sequence migration files; checksums normalize line endings for cross-platform stability. `npm run migrate:dry-run` validates ordering and checksums without a database. A submitted turn queries normalized evidence by capability dataset, then persists its user message, versioned plan, evidence links, tasks, events, approval requirements, notification, and audit event transactionally. When persistence is unavailable, the workspace presents an explicit unavailable state rather than fabricated conversation data.
+Platform Core, conversation, normalized evidence, and Decision Platform operations require `DATABASE_URL` and the committed migrations through `007_scientific_decision_platform.sql`. `npm run migrate` applies unapplied migrations under a PostgreSQL advisory lock and rejects changed, missing, misnamed, or duplicate-sequence migration files; checksums normalize line endings for cross-platform stability. `npm run migrate:dry-run` validates ordering and checksums without a database. A submitted turn queries normalized evidence by capability dataset, then persists its user message, versioned plan, evidence links, tasks, events, approval requirements, notification, and audit event transactionally. When persistence is unavailable, the workspace presents an explicit unavailable state rather than fabricated conversation data.
 
 The evidence engine and schemas are implemented boundaries, not evidence that a source is connected. No live provider reader currently populates normalized evidence.
 
