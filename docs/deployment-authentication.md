@@ -2,6 +2,8 @@
 
 MerchantFlare implements Amazon Cognito managed login with the OAuth 2.0 authorization-code flow and PKCE. The application client is public and has no client secret. Cognito authenticates users; MerchantFlare resolves the Cognito `sub` to an active Platform Core organization membership before it creates an application session.
 
+The canonical authenticated application origin is `https://app.merchantflare.com`. The public marketing origin remains `https://merchantflare.com`; do not attach the authenticated Amplify application to the apex record.
+
 The repository implementation is deployment-ready but is not considered operationally verified until the steps below have been completed against a real user pool in each environment.
 
 ## 1. Deploy the Cognito stack
@@ -14,7 +16,7 @@ aws cloudformation deploy \
   --stack-name merchantflare-auth-production \
   --parameter-overrides \
     EnvironmentName=production \
-    ProductionBaseUrl=https://merchantflare.com \
+    ProductionBaseUrl=https://app.merchantflare.com \
     CognitoDomainPrefix=merchantflare-production-unique \
   --no-fail-on-empty-changeset
 ```
@@ -42,7 +44,7 @@ In the Amplify app, add these server runtime variables for the production branch
 | `COGNITO_APP_CLIENT_ID` | CloudFormation `AppClientId` output |
 | `COGNITO_ISSUER_URL` | CloudFormation `IssuerUrl` output |
 | `COGNITO_DOMAIN` | CloudFormation `CognitoDomain` output |
-| `APPLICATION_BASE_URL` | `https://merchantflare.com` |
+| `APPLICATION_BASE_URL` | `https://app.merchantflare.com` |
 | `AUTH_SESSION_SECRET` | A cryptographically random value of at least 32 bytes |
 | `DATABASE_URL` | The migrated Platform Core PostgreSQL database connection |
 
@@ -53,18 +55,22 @@ The committed [`amplify.yml`](../amplify.yml) explicitly copies only the require
 The production app client callback URL must be exactly:
 
 ```text
-https://merchantflare.com/api/auth/callback
+https://app.merchantflare.com/api/auth/callback
 ```
 
 The production logout URL must be exactly:
 
 ```text
-https://merchantflare.com/login
+https://app.merchantflare.com/login
 ```
 
-If Amplify serves a different canonical hostname, update `ProductionBaseUrl`, redeploy the CloudFormation stack, and set `APPLICATION_BASE_URL` to that exact HTTPS origin. Branch preview URLs are not included by default; add only explicit, trusted preview URLs to the app client.
+Before attaching the custom domain, verify the generated Amplify branch URL for build completion, public rendering, health, protected-route behavior, and absence of browser errors. If authentication itself must be exercised on that generated hostname, temporarily add its exact callback and logout URLs to the Cognito allowlists and set `APPLICATION_BASE_URL` to that generated origin for the preview deployment. Restore the canonical app origin before custom-domain QA; PKCE cookies are host-scoped, so a login started on the generated hostname cannot safely complete on `app.merchantflare.com`.
+
+After generated-domain QA passes, attach only the `app` subdomain to the Amplify branch. Do not create, replace, or delete apex or unrelated DNS records. Set `APPLICATION_BASE_URL=https://app.merchantflare.com`, update the Cognito stack with that same origin, and verify the exact callback and logout URLs above.
 
 Run `npm run migrate` against the production database before enabling sign-in. Amplify must use a supported Node.js runtime and must not expose Cognito tokens in build logs.
+
+Before running migrations against a database that contains data, create a recoverable provider-level snapshot or approved `pg_dump`, record its identifier and retention, and verify that restoration is possible. `npm run migrate` validates the committed migration checksum for every already-applied migration and refuses changed or missing files.
 
 ## 3. Configure local development
 
@@ -126,3 +132,26 @@ Before calling authentication operational, verify in both localhost and Amplify:
 ## Troubleshooting
 
 `configuration_unavailable` means one or more required server variables are missing or `AUTH_SESSION_SECRET` is too short. `callback_invalid` indicates missing or expired PKCE state. `email_unverified` means Cognito did not issue a verified email claim. `membership_required` means the Cognito `sub` has no active organization membership. Server logs contain only stable diagnostic labels and error class names; they must never include tokens or credentials.
+
+## 6. Rollback
+
+Record the Amplify branch, deployed commit, prior successful Amplify job, Cognito callback/logout allowlists, database migration rows, backup identifier, and DNS values before release.
+
+To roll back safely:
+
+1. keep `app.merchantflare.com` on the last verified Amplify job until the replacement passes generated-domain QA;
+2. redeploy the previous successful Amplify revision from Amplify job history;
+3. restore the previous branch environment configuration without printing secret values;
+4. revert the Cognito stack parameter to the previously recorded application origin and confirm its callback/logout allowlists;
+5. if a migration changed data incompatibly, stop application writes and restore the recorded database snapshot according to the documented recovery impact; and
+6. detach only the `app` subdomain mapping when necessary. Preserve the apex and unrelated subdomains. If Amplify manages a multi-subdomain domain association, update the association to remove only `app` instead of deleting the whole association.
+
+Removing DNS is the last resort, not the primary rollback. Never point `app.merchantflare.com` at a failed build.
+
+## 7. Deployment state labels
+
+Use these labels in status documents and release reports:
+
+- **Deployed and verified:** HTTPS, Cognito callback, authenticated session, database access, Owner organization, logout, recovery, RBAC, responsive layouts, and browser logs were exercised successfully.
+- **Configured but unverified:** infrastructure or environment configuration exists, but one or more credentialed or data-backed checks were not run.
+- **Planned:** no deployed configuration was observed.

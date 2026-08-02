@@ -1,6 +1,6 @@
 # MerchantFlare Project Status
 
-Last verified against the repository: 2026-07-28
+Last verified against the repository and public deployment surfaces: 2026-08-01
 
 This file is the current implementation record for MerchantFlare. Product direction lives in `docs/`; this tracker records what the code actually supports today. Navigation entries, domain types, static data, and planned infrastructure are not treated as completed features.
 
@@ -8,7 +8,7 @@ This file is the current implementation record for MerchantFlare. Product direct
 
 MerchantFlare is an early-stage Commerce Intelligence Platform built with the Next.js App Router and TypeScript. Mercury is the Commerce Intelligence Engine and primary conversational workspace.
 
-Sprint 1, the application shell, is implemented. Sprint 2 has an organization-scoped conversation, governance, and Commerce Evidence foundation. Sprint 4 adds the Platform Core foundation. Sprint 5 adds the Atlas foundation. Sprint 5B adds deployment-ready Cognito authentication code and infrastructure, but it is not operationally complete because no real user pool has been deployed or tested. Atlas can only assess normalized evidence already present in the Commerce Evidence Layer; no live catalog provider or publishing adapter is implemented.
+Sprint 1, the application shell, is implemented. Sprint 2 has an organization-scoped conversation, governance, and Commerce Evidence foundation. Sprint 4 adds the Platform Core foundation. Sprint 5 adds the Atlas foundation. Sprint 5B adds Cognito authentication code and infrastructure. An existing Amplify deployment and Cognito redirect were observed on 2026-08-01, but authentication remains operationally unverified because credentialed login, database migrations, Owner membership, and RBAC could not be inspected with the available AWS access. Atlas can only assess normalized evidence already present in the Commerce Evidence Layer; no live catalog provider or publishing adapter is implemented.
 
 ## Completed work
 
@@ -70,7 +70,7 @@ Sprint 1, the application shell, is implemented. Sprint 2 has an organization-sc
 | Styling | Global CSS in `app/globals.css` and shell CSS in `app/components/app-shell.css`; a second `styles/design-system.css` token set exists but is not imported |
 | Pages | `/`, `/login`, `/dashboard`, `/atlas`, and legacy `/workers` |
 | API | Next.js route handlers for login, logout, Mercury conversations/messages and revisions, plan approval decisions, deterministic planning/history, Atlas assessment, and Platform Core |
-| Authentication | Cognito managed-login/PKCE application flow, RS256 JWT verifier, encrypted refresh token, signed session, protected-route gateway, and active Platform Core membership resolution; real-pool verification is pending |
+| Authentication | Cognito managed-login/PKCE application flow, RS256 JWT verifier, encrypted refresh token, signed session, protected-route gateway, and active Platform Core membership resolution; the live redirect is configured, while credentialed and database-backed verification is pending |
 | Authorization | Central Owner, Admin, Manager, Analyst, and Viewer permission matrix enforced by platform and Mercury server boundaries |
 | Domain services | `lib/platform/` for SaaS control-plane services, `lib/mercury/` for planning/governance, `lib/evidence/` for provider-neutral commerce evidence, and `lib/atlas/` for explainable catalog intelligence |
 | Data | Optional PostgreSQL connection via `DATABASE_URL`; six ordered SQL migrations and a cross-platform checksum-enforced migration runner |
@@ -78,9 +78,9 @@ Sprint 1, the application shell, is implemented. Sprint 2 has an organization-sc
 
 The implemented application is currently a single Next.js codebase. Platform Core, authentication membership resolution, conversation, governance, and normalized evidence operations require `DATABASE_URL` and migrations through `006_platform_core.sql`. Mercury queries normalized evidence and plan citations through the provider-neutral evidence boundary, but no live provider populates it.
 
-### Planned production architecture
+### Production deployment state
 
-The documented target uses AWS Amplify Hosting, API Gateway, Lambda, Aurora PostgreSQL, S3, Stripe, Amazon SP-API, Amazon Ads API, and Cognito. Cognito is the first AWS resource set represented as infrastructure-as-code. No resource was deployed from this workspace, and the broader target infrastructure remains unprovisioned here.
+The documented target uses AWS Amplify Hosting, API Gateway, Lambda, Aurora PostgreSQL, S3, Stripe, Amazon SP-API, Amazon Ads API, and Cognito. On 2026-08-01, the existing Amplify branch URL `https://main.d2wkvdawpeotl8.amplifyapp.com` and `https://app.merchantflare.com` both returned the application over HTTPS. The app login redirected to the configured Cognito domain with the exact app-subdomain callback and a public PKCE client. These observations do not prove the Amplify environment values, database state, Cognito user, Owner membership, callback completion, or authenticated APIs. No AWS resource was changed from this workspace because the audit branch was not authorized to assume the repository OIDC role.
 
 ## Implemented components
 
@@ -92,7 +92,7 @@ The documented target uses AWS Amplify Hosting, API Gateway, Lambda, Aurora Post
 | Brand | `components/brand/Logo.tsx`, `public/brand/` | Shared wordmark, monogram, and horizontal lockup variants for dark and light surfaces, plus favicon and app-icon assets |
 | Shared UI | `Button`, `Card`, `Badge`, `StatusDot`, `MetricTile` | Reusable styled presentation components |
 | Marketing | Root page plus components under `components/marketing/` | Public presentation only; the active page uses the shared brand component but does not use all newer marketing components |
-| Login | `/login`, `/api/auth/*`, `lib/auth/`, `proxy.ts` | Cognito PKCE initiation/callback, password-recovery entry, JWT validation, refresh, logout, safe redirects, protected routes, and organization membership enforcement; not real-pool verified |
+| Login | `/login`, `/api/auth/*`, `lib/auth/`, `proxy.ts` | Cognito PKCE initiation and the live hosted-login redirect were observed; callback completion, password recovery, refresh, logout, and membership enforcement remain credentialed-QA requirements |
 | Mercury workspace | `/dashboard`, `MercuryWorkspace`, `ConversationSidebar`, `MercuryPlanCard` | Creates and resumes durable conversations, submits messages, renders deterministic linked plans and evidence status, supports versioned revision and plan-level approval decisions, and supports rename/archive/restore |
 | Legacy prototype | `/workers` | Static AI-worker-oriented prototype retained as migration debt; it is not a completed intelligence-module experience |
 | Mercury API | `/api/mercury/conversations`, conversation detail/message routes, `/api/mercury/plans/[planId]/approval`, `POST /api/mercury/plan`, `GET /api/mercury/history` | Enforces the Cognito-derived principal and active membership, scopes reads/writes by organization, persists idempotent conversation turns and revisions, records approval decisions, and supports compatibility planning/history |
@@ -123,13 +123,13 @@ The documented target uses AWS Amplify Hosting, API Gateway, Lambda, Aurora Post
 - Navigation links for Execution, Approvals, History, Knowledge, Integrations, Billing, Settings, and five intelligence module pages currently lead to unimplemented routes.
 - Notifications are data-backed when PostgreSQL is configured. Sidebar provider entries remain static “Not configured” presentation rather than live health checks.
 - `/workers` is protected by the route gateway and authenticated shell but remains a legacy prototype.
-- Cognito code and CloudFormation exist, but no real user pool or Amplify environment was available for end-to-end login, logout, verification, reset, refresh, or first-user testing. Authentication must not be called operational until that verification is complete.
+- A real Amplify surface and Cognito authorization endpoint are reachable, but AWS control-plane inspection and credentialed login were unavailable. Login callback, logout, verification, reset, refresh, database access, first-Owner membership, and RBAC must not be called operational until verified.
 - Multi-organization selection, invitation-to-Cognito binding, and centralized early session revocation are not implemented.
 - Team persistence and authorized APIs exist, but there is no Settings UI, ownership-transfer workflow, invitation email delivery, or invitation acceptance route.
 - Subscription and entitlement persistence exists, but Stripe customer mapping is not synchronized and there are no signed webhooks, checkout/portal sessions, invoices, usage metering, plan catalog, or billing UI.
 - Feature flag evaluation and persistence exist, but there is no flag administration API/UI or external configuration provider.
 - Amazon SP-API and Amazon Ads have evidence contracts and normalizers only. No live reader, complete authentication/signing flow, connection management, scheduler, credential storage, or production synchronization is implemented.
-- Stripe billing, S3 artifact storage, API Gateway, Lambda, Aurora provisioning, and Amplify configuration are not implemented in this repository. Cognito IaC is implemented but not deployed.
+- Stripe billing, S3 artifact storage, API Gateway, Lambda, and Aurora provisioning are not implemented in this repository. Amplify configuration and Cognito IaC exist; the observed deployed resources remain configured but unverified from the AWS control plane.
 - Mercury has separate `executor.ts` and `runtime.ts` execution paths. Neither is exposed as a complete authenticated application workflow, and the boundary between them is not finalized.
 - Plan-level approval decisions have an application API and inline Mercury UI, but there is no `/approvals` queue, multi-user reviewer authorization, separation of duties, expiry, delegation, or task-level policy.
 - Unit tests cover selected Mercury and Commerce Evidence domain contracts. There is no lint script, database integration suite, API test suite, or browser automation suite.
@@ -168,7 +168,7 @@ The recommended next milestone is the first authorized catalog evidence provider
 
 ## Validation status
 
-Validation was run against this repository state on 2026-07-28.
+Validation was run against this repository state on 2026-08-01.
 
 | Check | Status |
 | --- | --- |
@@ -176,15 +176,18 @@ Validation was run against this repository state on 2026-07-28.
 | Production build (`npm run build`) | Passed |
 | Lint | Unavailable: no lint script is defined |
 | Automated tests (`npm test`) | Passed: 36 tests, including Cognito JWT issuer/audience/expiry validation, membership denial, protected routes, safe redirects, permissions, Atlas, Mercury, and Evidence domains |
-| Migration validation (`npm run migrate:dry-run`) | Passed: migrations `001` through `006` and checksums validated; no database application was attempted |
+| Migration validation (`npm run migrate:dry-run`) | Passed: migrations `001` through `006` and checksums validated; the target database was not inspected or mutated |
 | Markdown relative links | Passed across `AGENTS.md`, `PROJECT_STATUS.md`, `docs/`, and `specs/` |
-| Responsive browser QA | Passed: `/login` at 1440 × 900 and 390 × 844 with no horizontal overflow or console errors; missing Cognito configuration produced the explicit unavailable state |
-| Real Cognito/Amplify verification | Not run: no Cognito User Pool or configured Amplify runtime was available; authentication remains scaffolded rather than operationally complete |
+| Public deployment smoke QA | Passed: generated Amplify URL and `app.merchantflare.com` returned HTTPS 200, `/api/health` returned `ok`, `/login` rendered without application console errors, login initiated Cognito PKCE with the exact app callback, and unauthenticated `/dashboard` returned a safe internal login redirect |
+| Apex marketing availability | Failed pre-change: `merchantflare.com` had no resolvable A, AAAA, or CNAME record from the test environment; no apex DNS record was changed |
+| Credentialed Cognito/database QA | Blocked: no authenticated AWS control-plane access or test-user browser session was available; callback completion, session refresh, logout, recovery, Owner membership, RBAC, Mercury APIs, and responsive authenticated layouts remain unverified |
+| Dependency audit (`npm audit --omit=dev`) | Passed after pinning patched `postcss` and `sharp` transitive versions |
 
 ## Changelog
 
 | Date | Change |
 | --- | --- |
+| 2026-08-01 | Prepared the canonical app-subdomain deployment configuration, added a non-secret deployment audit, hardened reproducible Amplify installs, and documented the observed live surfaces and unresolved AWS/database/credentialed-QA blockers. |
 | 2026-07-28 | Added Sprint 5B Cognito authentication architecture: PKCE managed login, JWT verification, encrypted refresh and signed sessions, protected routes, membership enforcement, first-Owner bootstrap, Cognito CloudFormation, Amplify configuration, tests, and deployment operations. Real-pool verification remains required. |
 | 2026-07-28 | Added Atlas Foundations with provider-neutral catalog assessment, explainable health scoring, evidence-backed recommendations and opportunities, governed improvement plans, Mercury routing/rendering, and an authenticated responsive route. |
 | 2026-07-27 | Added the Sprint 4 Platform Core foundation with multi-organization persistence, RBAC, team services, Cognito-ready identity contracts, immutable audit, notifications, feature flags, subscription entitlements, and Mercury permission enforcement. |

@@ -8,8 +8,9 @@ Parameters:
     AllowedPattern: "^[a-z0-9-]+$"
   ProductionBaseUrl:
     Type: String
-    Default: https://merchantflare.com
+    Default: https://app.merchantflare.com
     AllowedPattern: "^https://.+[^/]$"
+    Description: Canonical authenticated application origin. Do not use the marketing apex.
   CognitoDomainPrefix:
     Type: String
     AllowedPattern: "^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$"
