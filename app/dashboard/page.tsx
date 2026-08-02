@@ -13,6 +13,7 @@ export default async function DashboardPage() {
       canApprove={
         principal ? hasPermission(principal, "mercury.approve") : false
       }
+      canAudit={principal ? hasPermission(principal, "audit.read") : false}
     />
   );
 }

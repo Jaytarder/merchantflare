@@ -15,6 +15,7 @@ import type {
 } from "../../lib/mercury/conversation-types";
 import ConversationSidebar from "./ConversationSidebar";
 import MercuryPlanCard from "./MercuryPlanCard";
+import DecisionWorkbench from "./DecisionWorkbench";
 
 type LoadState = "loading" | "ready" | "unavailable" | "error";
 
@@ -56,9 +57,11 @@ function formatMessageTime(value: string) {
 export default function MercuryWorkspace({
   canWrite,
   canApprove,
+  canAudit,
 }: {
   canWrite: boolean;
   canApprove: boolean;
+  canAudit: boolean;
 }) {
   const messageRegionRef = useRef<HTMLDivElement>(null);
   const [conversationStatus, setConversationStatus] =
@@ -81,6 +84,7 @@ export default function MercuryWorkspace({
     planId: string;
     version: number;
   } | null>(null);
+  const [decisionMode, setDecisionMode] = useState<"author" | "metrics" | null>(null);
 
   const loadConversations = useCallback(
     async (status: ConversationStatus, preferredId?: string) => {
@@ -393,7 +397,13 @@ export default function MercuryWorkspace({
               </button>
             </div>
           ) : null}
+          <div className="mercury-thread-actions">
+            {canWrite ? <button type="button" onClick={() => setDecisionMode("author")}>Decision Case</button> : null}
+            {canAudit ? <button type="button" onClick={() => setDecisionMode("metrics")}>Decision metrics</button> : null}
+          </div>
         </header>
+
+        {decisionMode ? <DecisionWorkbench mode={decisionMode} canWrite={canWrite} canApprove={canApprove} canAudit={canAudit} onClose={() => setDecisionMode(null)}/> : null}
 
         {unavailable ? (
           <div className="mercury-configuration-state" role="status">
