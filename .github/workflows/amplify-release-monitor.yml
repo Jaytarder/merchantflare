@@ -33,7 +33,7 @@ jobs:
           set -euo pipefail
           aws amplify get-app \
             --app-id "$AMPLIFY_APP_ID" \
-            --query 'app.{buildSpec:buildSpec,repository:repository,platform:platform}'
+            --query 'app.{buildSpec:buildSpec,repository:repository,platform:platform,appRoot:environmentVariables.AMPLIFY_MONOREPO_APP_ROOT,environmentVariableNames:keys(environmentVariables)}'
           aws amplify get-branch \
             --app-id "$AMPLIFY_APP_ID" \
             --branch-name "$AMPLIFY_BRANCH" \
@@ -108,8 +108,8 @@ jobs:
                   echo "::add-mask::$log_url"
                   echo "--- Amplify step: $step_name (error excerpt) ---"
                   curl --fail --silent --show-error "$log_url" \
-                    | grep -Ei 'error|failed|failure|npm ERR|cannot|missing|invalid|unsupported|buildspec|appRoot|preBuild|npm ci|executing command|cloning|checking out|source directory' \
-                    | tail -n 140 || true
+                    | grep -Ei 'error|failed|failure|npm ERR|cannot|missing|invalid|unsupported|buildspec|appRoot|preBuild|npm ci|executing command|cloning|checking out|source directory|commit|cache|directory' \
+                    | tail -n 180 || true
                 done
                 exit 1
                 ;;
