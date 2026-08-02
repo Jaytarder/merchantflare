@@ -8,7 +8,7 @@ This file is the current implementation record for MerchantFlare. Product direct
 
 MerchantFlare is an early-stage Scientific Decision Platform built with the Next.js App Router and TypeScript. Mercury remains the primary conversational interface into commerce evidence, governed plans, and the new decision-learning foundation.
 
-Sprint 1, the application shell, is implemented. Sprint 2 has an organization-scoped conversation, governance, and Commerce Evidence foundation. Sprint 4 adds the Platform Core foundation. Sprint 5 adds the Atlas foundation. Sprint 5B adds Cognito authentication code and infrastructure. The Decision Learning sprint now adds guarded lifecycle transitions, immutable calibrated predictions, atomic outcome-to-belief learning, reusable lessons, deterministic self-challenge, a minimal Mercury authoring workbench, and internal engineering metrics. Production remains on `main`; this branch has not been deployed and its migrations are prohibited from production.
+Sprint 1, the application shell, is implemented. Sprint 2 has an organization-scoped conversation, governance, and Commerce Evidence foundation. Sprint 4 adds the Platform Core foundation. Sprint 5 adds the Atlas foundation. Sprint 5B adds Cognito authentication code and infrastructure. The Decision Learning sprint now adds guarded lifecycle transitions, immutable calibrated predictions, atomic outcome-to-belief learning, reusable lessons, deterministic self-challenge, a minimal Mercury authoring workbench, and internal engineering metrics. Production application code remains on `main`; migrations `007` and `008` were applied to `merchantflare-dev` after the new recovery snapshot, while this branch still awaits live application deployment and authenticated QA.
 
 ## Completed work
 
@@ -68,7 +68,7 @@ Sprint 1, the application shell, is implemented. Sprint 2 has an organization-sc
 - Recommendations and experiments require competing hypotheses. Observed and Correlated outcomes cannot use causal language.
 - Decision read, write, measure, and approve permissions extend the existing role matrix.
 - Mercury plan payloads optionally include linked Decision Case context. Existing behavior remains compatible when no case is linked.
-- The foundation is locally verified but not deployed: migration `007` has not been applied to production and the APIs have not passed live database or authenticated browser QA.
+- The foundation code is locally verified but not yet deployed. Migrations `007` and `008` are applied with verified checksums and required indexes; the new APIs still require live authenticated browser QA.
 
 ## Current architecture
 
@@ -83,14 +83,14 @@ Sprint 1, the application shell, is implemented. Sprint 2 has an organization-sc
 | Authentication | Cognito managed-login/PKCE application flow, RS256 JWT verifier, encrypted refresh token, signed session, protected-route gateway, and active Platform Core membership resolution; the production Owner flow and database-backed membership were verified live on 2026-08-02 |
 | Authorization | Central Owner, Admin, Manager, Analyst, and Viewer permission matrix enforced by platform and Mercury server boundaries |
 | Domain services | `lib/platform/` for SaaS control-plane services, `lib/mercury/` for planning/governance, `lib/evidence/` for provider-neutral commerce evidence, `lib/decision/` for decision learning, and `lib/atlas/` for explainable catalog intelligence |
-| Data | Optional PostgreSQL connection via `DATABASE_URL`; seven ordered SQL migrations and a cross-platform checksum-enforced migration runner |
+| Data | PostgreSQL connection via `DATABASE_URL`; eight ordered SQL migrations and a cross-platform checksum-enforced migration runner |
 | Integrations | An incomplete legacy Amazon SP-API helper plus typed SP-API and Amazon Ads evidence interfaces; no provider reader or live integration is connected |
 
-The implemented application is a single Next.js codebase. Production uses migrations through `006_platform_core.sql`. This branch adds migration `007_scientific_decision_platform.sql`, which is locally validated but unapplied in production. Mercury queries normalized evidence through the provider-neutral boundary, but no live provider populates it.
+The implemented application is a single Next.js codebase. The production database uses migrations through `008_decision_learning_engine.sql`; the Scientific Decision Platform application code remains pending deployment. Mercury queries normalized evidence through the provider-neutral boundary, but no live provider populates it.
 
 ### Production deployment state
 
-Production is on `main` commit `9ffe4061ff2ac14db542fe42d4617cc75186b11d`; application code revision `ff018942b66adbd87b8a985a66dc320ce89e5fce` is in that commit's ancestry. Both `https://main.d2wkvdawpeotl8.amplifyapp.com` and `https://app.merchantflare.com` return the application over HTTPS. The eight required Amplify variables are configured without exposing values. Cognito uses a public PKCE client with exact app callback/logout allowlists and preserved localhost entries. PostgreSQL migrations `001` through `006` match their committed checksums; encrypted RDS snapshot `merchantflare-predeploy-20260802-070703` is the predeployment recovery point. The verified Cognito identity for `jmartin@merchantflare.com` resolves to one active Owner membership in organization `fa1a7c7e-7894-4af7-a136-9fc8a239bba0`. This Scientific Decision Platform branch is not deployed.
+Production is on `main` commit `9ffe4061ff2ac14db542fe42d4617cc75186b11d`; application code revision `ff018942b66adbd87b8a985a66dc320ce89e5fce` is in that commit's ancestry. Both `https://main.d2wkvdawpeotl8.amplifyapp.com` and `https://app.merchantflare.com` return the application over HTTPS. The eight required Amplify variables are configured without exposing values. Cognito uses a public PKCE client with exact app callback/logout allowlists and preserved localhost entries. PostgreSQL migrations `001` through `008` were applied through the snapshot-gated CloudShell runner, which verified migration checksums and required Decision Platform indexes. Encrypted RDS snapshot `merchantflare-pre-decision-platform-20260802` is the immediate pre-migration recovery point. The verified Cognito identity for `jmartin@merchantflare.com` resolves to one active Owner membership in organization `fa1a7c7e-7894-4af7-a136-9fc8a239bba0`. This Scientific Decision Platform application branch is not yet deployed.
 
 ## Implemented components
 
@@ -111,7 +111,7 @@ Production is on `main` commit `9ffe4061ff2ac14db542fe42d4617cc75186b11d`; appli
 | Atlas | `/atlas`, `/api/atlas/assessment`, `lib/atlas/`, `app/components/atlas/` | Organization-scoped evidence assessment, transparent component scoring, findings, recommendations, opportunities, approval-compatible plans, and responsive presentation |
 | Platform Core | `lib/platform/`, `/api/platform/*` | Organization and membership services, RBAC, identity abstraction, team invitations, settings, immutable audit, notifications, feature flags, and subscription entitlements |
 | Decision Platform | `lib/decision/`, `/api/decisions/*` | Canonical objects, graded evidence, competing hypotheses, belief/confidence history, experiments, interventions, outcomes, lessons, RBAC, and immutable history; production verification remains |
-| Database | `db/migrations/001_mercury_core.sql` through `007_scientific_decision_platform.sql`, `scripts/migrate.ts` | Additive PostgreSQL schemas; migration `007` is dry-run verified but not applied to production |
+| Database | `db/migrations/001_mercury_core.sql` through `008_decision_learning_engine.sql`, `scripts/migrate.ts` | Additive PostgreSQL schemas; migrations `007` and `008` are applied with verified checksums and required indexes |
 | Amazon provider boundaries | `lib/evidence/providers/amazon-sp-api.ts`, `lib/evidence/providers/amazon-ads.ts` | Typed provider records, reader interfaces, and normalization pipelines only; no live reader, authorization flow, or synchronization is registered |
 | Legacy Amazon helper | `lib/amazon/sp-api.ts` | LWA token exchange and request helper only; it is not a complete production SP-API integration and is not wired into the evidence engine |
 
@@ -129,7 +129,7 @@ Production is on `main` commit `9ffe4061ff2ac14db542fe42d4617cc75186b11d`; appli
 
 ## Known gaps and blockers
 
-- Production persistence currently has migrations `001` through `006`. Decision Platform migrations `007` and `008` are intentionally unapplied to production. Their isolated-development application and PostgreSQL integration gate remain blocked until the database target is independently verified.
+- Production persistence has migrations `001` through `008`. The snapshot-gated runner verified the target, checksums, and required indexes; full multi-tenant concurrency and authenticated lifecycle QA remain pending.
 - Mercury responses are deterministic planning summaries. Normalized evidence retrieval and citation attachment are implemented, but no provider reader populates evidence, and there is no model-backed reasoning, attachments, or streaming.
 - Atlas has a production-quality foundation and route, but it has no connected source, provider ingestion, field-level diffing, publication adapter, or outcome measurement. Vector, Oracle, Sentinel, Forge, and Pulse remain scaffolds only.
 - Navigation links for Execution, Approvals, History, Knowledge, Integrations, Billing, Settings, and five intelligence module pages currently lead to unimplemented routes.
@@ -176,7 +176,7 @@ The recommended Sprint 9 milestone is an isolated-database Atlas calibration coh
 | 1. Application Shell | Complete | Responsive shell components are wired into the application |
 | 2. Mercury Command Center | In progress | Durable conversations, versioned deterministic plans, normalized evidence lookup and citations, plan-level approval decisions, and the responsive workspace exist; a connected provider, model-grounded reasoning, execution, and outcomes remain |
 | Platform Core | Foundation implemented | Multi-organization persistence, RBAC, identity abstraction, team services, immutable audit, notifications, flags, and subscription entitlements exist; external identity/billing adapters and management UI remain |
-| Scientific Decision Platform | Learning engine implemented locally; database unverified | Lifecycle guards, predictions, atomic posterior updates, lessons, self-challenge, calibration metrics, APIs, and Mercury authoring exist; isolated PostgreSQL application and browser QA remain |
+| Scientific Decision Platform | Learning engine implemented; migrations applied | Lifecycle guards, predictions, atomic posterior updates, lessons, self-challenge, calibration metrics, APIs, and Mercury authoring exist; live application deployment and authenticated browser QA remain |
 | 3. Atlas | Foundation implemented | Explainable normalized-evidence assessment, health scoring, findings, recommendations, opportunities, governed plans, Mercury integration, and `/atlas` exist; live ingestion, diffs, execution, and outcomes remain |
 | 4. Vector | Not started | Navigation, types, routing, and output scaffolding only |
 | 5. Oracle | Not started | Navigation, types, routing, and output scaffolding only |
@@ -188,7 +188,7 @@ The recommended Sprint 9 milestone is an isolated-database Atlas calibration coh
 
 ## Validation status
 
-Validation was run against this branch on 2026-08-02. Decision Platform database and browser checks remain explicitly unverified because `DATABASE_URL` is not present locally and migration `007` has not been applied to production.
+Validation was run against this branch on 2026-08-02. Decision Platform migrations were subsequently applied by the snapshot-gated CloudShell runner. Authenticated application and full PostgreSQL lifecycle checks remain explicitly unverified until the new application revision is live.
 
 | Check | Status |
 | --- | --- |
@@ -197,12 +197,12 @@ Validation was run against this branch on 2026-08-02. Decision Platform database
 | Lint | Unavailable: no lint script is defined |
 | Automated tests (`npm test`) | Passed: 48 tests, including authentication, RBAC, organization scope, Atlas, Mercury, evidence, lifecycle, causal claims, posterior beliefs, calibration, and migration safety |
 | Decision integration tests (`npm run test:integration`) | Passed: 3 in-process lifecycle, organization-boundary, and Atlas learning fixtures; PostgreSQL integration remains unverified |
-| Migration validation (`npm run migrate:dry-run`) | Passed: migrations `001` through `008` validated locally; only `001` through `006` are applied in production |
+| Migration validation (`npm run migrate:dry-run`) | Passed: migrations `001` through `008` validated locally and applied through the snapshot-gated CloudShell runner with checksum/index verification |
 | Markdown relative links | Passed across `AGENTS.md`, `PROJECT_STATUS.md`, `docs/`, and `specs/` |
 | Public deployment smoke QA | Passed: generated Amplify URL and `app.merchantflare.com` returned HTTPS 200, `/api/health` returned `ok`, `/login` rendered without application console errors, login initiated Cognito PKCE with the exact app callback, and unauthenticated `/dashboard` returned a safe internal login redirect |
 | Apex marketing availability | Failed pre-change: `merchantflare.com` had no resolvable A, AAAA, or CNAME record from the test environment; no apex DNS record was changed |
 | Credentialed Cognito/database QA | Passed for the first Owner: callback returned to `/dashboard`, refresh preserved the session, active organization JSON resolved, Mercury history returned JSON without authorization/database errors, and logout returned to login. Password-recovery entry passed; code delivery and non-Owner role variants remain unverified |
-| Database recovery gate | Passed: encrypted snapshot `merchantflare-predeploy-20260802-070703` is available from `merchantflare-dev`; migrations, isolation, and Owner membership were re-audited afterward |
+| Database recovery gate | Passed: encrypted snapshot `merchantflare-pre-decision-platform-20260802` was confirmed available before migrations `007` and `008`; the runner verified the database target, checksums, and required indexes afterward |
 | Amplify release | Existing production remains on `main` commit `9ffe4061ff2ac14db542fe42d4617cc75186b11d`; this branch was not deployed |
 | Dependency audit (`npm audit --omit=dev`) | Passed after pinning patched `postcss` and `sharp` transitive versions |
 
@@ -210,7 +210,7 @@ Validation was run against this branch on 2026-08-02. Decision Platform database
 
 | Date | Change |
 | --- | --- |
-| 2026-08-02 | Added the locally verified Scientific Decision Platform foundation: migration `007`, canonical decision objects, evidence and belief guardrails, experiments/interventions/outcomes/lessons, immutable history, RBAC APIs, optional Mercury context, and decision tests. Production migration and browser QA remain unverified. |
+| 2026-08-02 | Added the locally verified Scientific Decision Platform foundation: migration `007`, canonical decision objects, evidence and belief guardrails, experiments/interventions/outcomes/lessons, immutable history, RBAC APIs, optional Mercury context, and decision tests. Migrations `007` and `008` were subsequently applied after snapshot `merchantflare-pre-decision-platform-20260802`; live application QA remains pending. |
 | 2026-08-02 | Added the Decision Learning engine: migration `008`, immutable predictions, idempotent manual execution records, guarded transitions, atomic posterior learning, generated lessons, self-challenge, calibration metrics, an Atlas title pilot contract, and minimal Mercury authoring/internal metrics. Isolated PostgreSQL application remains unverified. |
 | 2026-08-02 | Deployed `main` to Amplify job `13`, verified generated/custom HTTPS, Cognito Owner login/callback/refresh/logout, organization and Mercury APIs, production migration checksums and isolation, and recorded the encrypted predeployment RDS snapshot and rollback state. |
 | 2026-08-01 | Prepared the canonical app-subdomain deployment configuration, added a non-secret deployment audit, hardened reproducible Amplify installs, and documented the observed live surfaces and unresolved AWS/database/credentialed-QA blockers. |
