@@ -15,6 +15,7 @@ env:
   AMPLIFY_APP_ID: d2wkvdawpeotl8
   AMPLIFY_BRANCH: main
   DB_INSTANCE_IDENTIFIER: merchantflare-dev
+  PREDEPLOY_SNAPSHOT_IDENTIFIER: merchantflare-predeploy-20260802-070703
   COGNITO_USER_POOL_ID: us-east-1_Ltn0AeNJD
   TARGET_OWNER_EMAIL: jmartin@merchantflare.com
 
@@ -79,26 +80,26 @@ jobs:
           echo "::add-mask::$COGNITO_BOOTSTRAP_SUBJECT"
           echo "COGNITO_BOOTSTRAP_SUBJECT=$COGNITO_BOOTSTRAP_SUBJECT" >> "$GITHUB_ENV"
 
-      - name: Create and verify manual RDS snapshot
+      - name: Verify manual RDS snapshot
         shell: bash
         run: |
           set -euo pipefail
-          snapshot="merchantflare-predeploy-$(date -u +%Y%m%d-%H%M%S)"
-          aws rds create-db-snapshot \
-            --db-instance-identifier "$DB_INSTANCE_IDENTIFIER" \
-            --db-snapshot-identifier "$snapshot" \
-            --tags \
-              Key=Purpose,Value=MerchantFlarePredeployment \
-              Key=SourceCommit,Value="$GITHUB_SHA" \
-            --query 'DBSnapshot.{identifier:DBSnapshotIdentifier,status:Status,encrypted:Encrypted}'
-          aws rds wait db-snapshot-available \
-            --db-snapshot-identifier "$snapshot"
           aws rds describe-db-snapshots \
-            --db-snapshot-identifier "$snapshot" \
+            --db-snapshot-identifier "$PREDEPLOY_SNAPSHOT_IDENTIFIER" \
             --query 'DBSnapshots[0].{identifier:DBSnapshotIdentifier,status:Status,encrypted:Encrypted,engine:Engine,created:SnapshotCreateTime,source:DBInstanceIdentifier}'
-          echo "SNAPSHOT_IDENTIFIER=$snapshot" >> "$GITHUB_ENV"
+          snapshot_state="$(aws rds describe-db-snapshots \
+            --db-snapshot-identifier "$PREDEPLOY_SNAPSHOT_IDENTIFIER" \
+            --query 'DBSnapshots[0].[Status,Encrypted,DBInstanceIdentifier]' \
+            --output text)"
+          if [[ "$snapshot_state" != $'available\tTrue\tmerchantflare-dev' ]]; then
+            echo "The predeployment snapshot is not available, encrypted, and from the expected database." >&2
+            exit 1
+          fi
+          echo "SNAPSHOT_IDENTIFIER=$PREDEPLOY_SNAPSHOT_IDENTIFIER" >> "$GITHUB_ENV"
 
       - name: Apply checksum-enforced migrations
+        env:
+          NODE_ENV: production
         run: npm run migrate
 
       - name: Re-audit migrations, isolation, and Owner membership
