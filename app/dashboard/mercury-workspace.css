@@ -942,3 +942,38 @@
     scroll-behavior: auto;
   }
 }
+
+.decision-workbench {
+  position: absolute;
+  z-index: 20;
+  inset: 92px 24px 24px 316px;
+  overflow: auto;
+  padding: 20px;
+  border: 1px solid var(--line-strong);
+  border-radius: 14px;
+  background: #0d121a;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, .55);
+}
+
+.decision-workbench > header { display: flex; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
+.decision-workbench > header span { color: var(--accent-2); font-size: 9px; font-weight: 850; letter-spacing: .12em; text-transform: uppercase; }
+.decision-workbench h2 { margin: 6px 0 0; }
+.decision-workbench button { min-height: 36px; padding: 0 12px; border: 1px solid var(--line-strong); border-radius: 8px; background: #151b25; color: var(--text); cursor: pointer; }
+.decision-author-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.decision-author-form label { color: var(--muted); font-size: 10px; }
+.decision-author-form input, .decision-author-form textarea, .decision-author-form select { width: 100%; margin-top: 5px; padding: 9px; border: 1px solid var(--line); border-radius: 8px; background: #090d14; color: var(--text); font: inherit; }
+.decision-author-form textarea { min-height: 72px; resize: vertical; }
+.decision-author-form > button { grid-column: 1 / -1; background: var(--accent); border-color: var(--accent); }
+.decision-lifecycle-actions { margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--line); }
+.decision-lifecycle-actions summary { margin-bottom: 14px; color: var(--accent-2); font-size: 12px; font-weight: 800; cursor: pointer; }
+.decision-metric-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.decision-metric-grid article { padding: 14px; border: 1px solid var(--line); border-radius: 10px; background: rgba(255,255,255,.02); }
+.decision-metric-grid span, .decision-metric-grid strong { display: block; }
+.decision-metric-grid span { color: var(--subtle); font-size: 9px; text-transform: uppercase; }
+.decision-metric-grid strong { margin-top: 8px; font-size: 19px; }
+.decision-method-note, .decision-workbench-message { color: var(--muted); font-size: 11px; line-height: 1.5; }
+
+@media (max-width: 767px) {
+  .decision-workbench { position: fixed; inset: 12px; }
+  .decision-author-form, .decision-metric-grid { grid-template-columns: 1fr; }
+}

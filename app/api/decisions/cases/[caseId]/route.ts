@@ -1,0 +1,23 @@
+import { requirePermission } from "../../../../../lib/platform/authorization";
+import { PlatformNotFoundError } from "../../../../../lib/platform/errors";
+import { decisionRequest } from "../../../../../lib/decision/http";
+import { challengeDecision } from "../../../../../lib/decision/challenge";
+
+export async function GET(
+  _request: Request,
+  context: { params: Promise<{ caseId: string }> },
+) {
+  return decisionRequest(
+    async (repository, principal) => {
+      requirePermission(principal, "decisions.read");
+      const { caseId } = await context.params;
+      const decisionCase = await repository.getCaseDetail(
+        principal.organizationId,
+        caseId,
+      );
+      if (!decisionCase) throw new PlatformNotFoundError("Decision Case");
+      return { decisionCase, challenge: challengeDecision(decisionCase) };
+    },
+    { failureMessage: "Decision Case could not be loaded." },
+  );
+}

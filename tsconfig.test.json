@@ -15,6 +15,7 @@
     "lib/auth/**/*.ts",
     "lib/atlas/**/*.ts",
     "lib/evidence/**/*.ts",
+    "lib/decision/**/*.ts",
     "lib/idempotency.ts",
     "lib/mercury/**/*.ts",
     "lib/platform/**/*.ts"

@@ -37,6 +37,12 @@ Mercury is responsible for:
 
 Current code provides early objective planning, routing, approval, persistence, normalized evidence selection, and execution primitives. Mercury reads and writes through an authenticated organization principal, enforces centralized role permissions, and records material mutations in the Platform Core audit and notification services. Mercury can attach normalized evidence already stored in the Commerce Evidence layer, but no live provider currently populates that store. The full conversational and orchestration experience is not complete.
 
+Mercury can retrieve optional Decision Case context linked to a conversation and plan, including current belief, confidence, and evidence/hypothesis/experiment/outcome/lesson counts. This is additive to the existing response and UI.
+
+## Scientific Decision Platform
+
+The foundation under `lib/decision/`, `/api/decisions/`, and migration `007` makes Decision Cases, graded evidence, beliefs, competing hypotheses, counter-evidence, experiments, interventions, outcomes, and lessons canonical platform objects. Beliefs are versioned, confidence changes are preserved, and case events are append-only. A full authoring workspace, production database verification, live interventions, outcome collection, and cross-case learning remain planned.
+
 ## Atlas
 
 **Product name:** Atlas — Catalog Intelligence
