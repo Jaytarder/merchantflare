@@ -1,0 +1,112 @@
+name: Back up and migrate MerchantFlare production database
+
+on:
+  push:
+    branches:
+      - agent/app-subdomain-deployment-audit
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  AWS_REGION: us-east-1
+  AWS_DEPLOY_ROLE_ARN: arn:aws:iam::432181126458:role/merchantflare-github-actions-ecs
+  AMPLIFY_APP_ID: d2wkvdawpeotl8
+  AMPLIFY_BRANCH: main
+  DB_INSTANCE_IDENTIFIER: merchantflare-dev
+  COGNITO_USER_POOL_ID: us-east-1_Ltn0AeNJD
+  TARGET_OWNER_EMAIL: jmartin@merchantflare.com
+
+jobs:
+  backup-and-migrate:
+    if: contains(github.event.head_commit.message, 'release: snapshot and migrate production')
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          role-to-assume: ${{ env.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Load production database and verified Owner identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          DATABASE_URL="$(aws amplify get-branch \
+            --app-id "$AMPLIFY_APP_ID" \
+            --branch-name "$AMPLIFY_BRANCH" \
+            --query 'branch.environmentVariables.DATABASE_URL' \
+            --output text)"
+          if [[ -z "$DATABASE_URL" || "$DATABASE_URL" == "None" ]]; then
+            DATABASE_URL="$(aws amplify get-app \
+              --app-id "$AMPLIFY_APP_ID" \
+              --query 'app.environmentVariables.DATABASE_URL' \
+              --output text)"
+          fi
+          if [[ -z "$DATABASE_URL" || "$DATABASE_URL" == "None" ]]; then
+            echo "Production DATABASE_URL is unavailable." >&2
+            exit 1
+          fi
+          echo "::add-mask::$DATABASE_URL"
+          echo "DATABASE_URL=$DATABASE_URL" >> "$GITHUB_ENV"
+
+          owner="$(aws cognito-idp admin-get-user \
+            --user-pool-id "$COGNITO_USER_POOL_ID" \
+            --username "$TARGET_OWNER_EMAIL" \
+            --output json)"
+          COGNITO_BOOTSTRAP_SUBJECT="$(OWNER="$owner" TARGET_OWNER_EMAIL="$TARGET_OWNER_EMAIL" node -e '
+            const user = JSON.parse(process.env.OWNER);
+            const attributes = Object.fromEntries(user.UserAttributes.map((item) => [item.Name, item.Value]));
+            if (attributes.email?.toLowerCase() !== process.env.TARGET_OWNER_EMAIL.toLowerCase()) throw new Error("Cognito email does not match.");
+            if (attributes.email_verified !== "true") throw new Error("Cognito email is not verified.");
+            if (!attributes.sub) throw new Error("Cognito sub is missing.");
+            process.stdout.write(attributes.sub);
+          ')"
+          echo "::add-mask::$COGNITO_BOOTSTRAP_SUBJECT"
+          echo "COGNITO_BOOTSTRAP_SUBJECT=$COGNITO_BOOTSTRAP_SUBJECT" >> "$GITHUB_ENV"
+
+      - name: Create and verify manual RDS snapshot
+        shell: bash
+        run: |
+          set -euo pipefail
+          snapshot="merchantflare-predeploy-$(date -u +%Y%m%d-%H%M%S)"
+          aws rds create-db-snapshot \
+            --db-instance-identifier "$DB_INSTANCE_IDENTIFIER" \
+            --db-snapshot-identifier "$snapshot" \
+            --tags \
+              Key=Purpose,Value=MerchantFlarePredeployment \
+              Key=SourceCommit,Value="$GITHUB_SHA" \
+            --query 'DBSnapshot.{identifier:DBSnapshotIdentifier,status:Status,encrypted:Encrypted}'
+          aws rds wait db-snapshot-available \
+            --db-snapshot-identifier "$snapshot"
+          aws rds describe-db-snapshots \
+            --db-snapshot-identifier "$snapshot" \
+            --query 'DBSnapshots[0].{identifier:DBSnapshotIdentifier,status:Status,encrypted:Encrypted,engine:Engine,created:SnapshotCreateTime,source:DBInstanceIdentifier}'
+          echo "SNAPSHOT_IDENTIFIER=$snapshot" >> "$GITHUB_ENV"
+
+      - name: Apply checksum-enforced migrations
+        run: npm run migrate
+
+      - name: Re-audit migrations, isolation, and Owner membership
+        env:
+          NODE_ENV: production
+        run: npm run deployment:audit
+
+      - name: Record release database state
+        run: |
+          echo "Snapshot $SNAPSHOT_IDENTIFIER is available."
+          echo "Production migration and Owner audit completed successfully."
