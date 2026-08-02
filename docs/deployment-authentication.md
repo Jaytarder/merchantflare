@@ -4,7 +4,7 @@ MerchantFlare implements Amazon Cognito managed login with the OAuth 2.0 authori
 
 The canonical authenticated application origin is `https://app.merchantflare.com`. The public marketing origin remains `https://merchantflare.com`; do not attach the authenticated Amplify application to the apex record.
 
-The repository implementation is deployment-ready but is not considered operationally verified until the steps below have been completed against a real user pool in each environment.
+The production Owner flow was operationally verified on 2026-08-02. The checklist remains mandatory for new environments and additional role/user variants.
 
 ## 1. Deploy the Cognito stack
 
@@ -155,3 +155,36 @@ Use these labels in status documents and release reports:
 - **Deployed and verified:** HTTPS, Cognito callback, authenticated session, database access, Owner organization, logout, recovery, RBAC, responsive layouts, and browser logs were exercised successfully.
 - **Configured but unverified:** infrastructure or environment configuration exists, but one or more credentialed or data-backed checks were not run.
 - **Planned:** no deployed configuration was observed.
+
+## 8. Production release record — 2026-08-02
+
+### Deployed and verified
+
+- Branch: `main`
+- Commit: `ff018942b66adbd87b8a985a66dc320ce89e5fce`
+- Amplify application/job: `d2wkvdawpeotl8`, job `13`, status `SUCCEED`
+- Generated URL: `https://main.d2wkvdawpeotl8.amplifyapp.com`
+- Custom URL: `https://app.merchantflare.com`
+- Cognito callback/logout: exact app-subdomain URLs plus preserved localhost development URLs; public PKCE client with no secret
+- Database: RDS PostgreSQL instance `merchantflare-dev`; migrations `001` through `006` already applied with matching checksums
+- Recovery point: encrypted, available snapshot `merchantflare-predeploy-20260802-070703`
+- First Owner: verified Cognito email for `jmartin@merchantflare.com`, one active Owner membership, organization `fa1a7c7e-7894-4af7-a136-9fc8a239bba0`
+- Live QA: generated/custom HTTPS and health, unauthenticated protected-route redirect, Cognito login/callback, dashboard, refresh persistence, active organization API, Mercury history API, password-recovery entry page, logout, and 1440×900/390×844 public login layouts without browser errors
+
+### Configured but unverified
+
+- Reset-code email delivery and completion
+- Temporary-password challenge
+- Unknown/suspended identity denial in the live pool
+- Admin, Manager, Analyst, and Viewer live permission variants
+- Authenticated dashboard layout at both required viewports was user-observed but not independently captured by the isolated QA browser
+- The public marketing apex was not changed; `merchantflare.com` did not resolve from the QA environment before or after this release
+
+### Release history and rollback
+
+- Previous `main`: `122f63091958c0299f05242a1bba35733a334e4f`
+- Initial prepared release: `3c8a8f2eb08719edf1a07c4570ca23af2408a07b`; its Amplify build failed at `npm ci` and was never accepted as the release
+- Corrected deployed release: `ff018942b66adbd87b8a985a66dc320ce89e5fce`
+- DNS state: the existing Amplify `app` subdomain association was retained; no apex or unrelated DNS record was created, replaced, or deleted
+
+To roll back, redeploy `122f63091958c0299f05242a1bba35733a334e4f` from Amplify job history or revert `main` to a new commit based on that revision, then verify the generated URL before accepting the custom URL. If database recovery is required, stop writes and restore `merchantflare-predeploy-20260802-070703` to a replacement RDS instance before switching `DATABASE_URL`; do not overwrite the current instance in place. To detach the custom application hostname, remove only the `app` subdomain mapping from the `merchantflare.com` Amplify domain association. To revert Cognito, restore the previously recorded callback/logout allowlists while retaining localhost; never add a browser client secret.

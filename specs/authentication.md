@@ -2,7 +2,7 @@
 
 **Status:** Scaffolded
 
-The Cognito application flow, JWT verifier, organization-membership resolution, protected-route gateway, session refresh, infrastructure template, and owner-bootstrap tooling are implemented. A real Cognito authorization endpoint and the app-subdomain callback configuration were observed on 2026-08-01. The status remains scaffolded because callback completion, session lifecycle, recovery, production database membership, Owner bootstrap, and RBAC were not exercised with an authenticated user.
+The Cognito application flow, JWT verifier, organization-membership resolution, protected-route gateway, session refresh, infrastructure template, and owner-bootstrap tooling are implemented. Production Owner sign-in, app-subdomain callback, refresh persistence, active organization resolution, Mercury authorization, and logout were verified on 2026-08-02. Recovery-code completion, temporary-password handling, unknown/suspended identities, and non-Owner live role variants remain open verification work.
 
 ## Implemented contract
 

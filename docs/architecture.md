@@ -25,7 +25,7 @@ Identity:
   -> Platform Core organization membership and RBAC
 ```
 
-This diagram is the target architecture. An existing Amplify application is observable at `https://main.d2wkvdawpeotl8.amplifyapp.com` and `https://app.merchantflare.com`, but the remaining managed services and their production configuration are not inferred from that public surface.
+This diagram remains the target architecture. The Amplify application, Cognito client, and PostgreSQL RDS database used by the authenticated application were inspected and exercised in production on 2026-08-02; the remaining managed services are not inferred from those verified resources.
 
 ## Current repository implementation
 
@@ -84,7 +84,7 @@ The repository now contains a Cognito authentication implementation:
 - `lib/server-auth.ts` re-resolves active organization membership for every server authorization boundary; and
 - `scripts/bootstrap-cognito-owner.ts` provides an explicit, guarded first-Owner bootstrap without auto-provisioning unknown identities.
 
-The legacy administrator credential and cookie adapter has been removed. The live login entry currently redirects to a real Cognito managed-login domain using PKCE and the exact `https://app.merchantflare.com/api/auth/callback` URI. Authentication is still not operationally verified because callback completion, session refresh, recovery, logout, database-backed membership, and role boundaries have not been exercised with an authenticated test user. Deployment and first-user operations are defined in [`deployment-authentication.md`](deployment-authentication.md). Multi-organization selection and early centralized revocation remain open.
+The legacy administrator credential and cookie adapter has been removed. The live login entry redirects to Cognito managed login using PKCE and the exact `https://app.merchantflare.com/api/auth/callback` URI. Owner callback completion, refresh persistence, logout, database-backed membership, organization resolution, and Mercury authorization were verified live on 2026-08-02. Recovery completion and non-Owner live role variants remain open. Deployment and first-user operations are defined in [`deployment-authentication.md`](deployment-authentication.md). Multi-organization selection and early centralized revocation remain open.
 
 ### Platform Core
 
@@ -200,7 +200,7 @@ This helper is not wired into a route, UI, or the Commerce Evidence engine. The 
 
 ## Infrastructure state
 
-AWS Amplify Hosting and a Cognito managed-login endpoint are externally observable but were not verified through the AWS control plane on 2026-08-01. The following technologies remain architectural commitments not provisioned by this repository:
+AWS Amplify Hosting, Cognito, and the application PostgreSQL RDS instance were verified through the AWS control plane and live Owner flow on 2026-08-02. The following technologies remain architectural commitments not provisioned by this repository:
 
 - API Gateway resources;
 - Lambda deployment packages or general application infrastructure-as-code (Cognito is the first declared AWS resource set);
