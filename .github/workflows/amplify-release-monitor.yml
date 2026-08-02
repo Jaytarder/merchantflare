@@ -31,6 +31,13 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          aws amplify get-app \
+            --app-id "$AMPLIFY_APP_ID" \
+            --query 'app.{buildSpec:buildSpec,repository:repository,platform:platform}'
+          aws amplify get-branch \
+            --app-id "$AMPLIFY_APP_ID" \
+            --branch-name "$AMPLIFY_BRANCH" \
+            --query 'branch.{buildSpec:buildSpec,framework:framework,enableAutoBuild:enableAutoBuild,environmentVariableNames:keys(environmentVariables)}'
           for name in AUTH_SESSION_SECRET DATABASE_URL; do
             value="$(aws amplify get-branch \
               --app-id "$AMPLIFY_APP_ID" \
@@ -101,8 +108,8 @@ jobs:
                   echo "::add-mask::$log_url"
                   echo "--- Amplify step: $step_name (error excerpt) ---"
                   curl --fail --silent --show-error "$log_url" \
-                    | grep -Ei 'error|failed|failure|npm ERR|cannot|missing|invalid|unsupported' \
-                    | tail -n 80 || true
+                    | grep -Ei 'error|failed|failure|npm ERR|cannot|missing|invalid|unsupported|buildspec|appRoot|preBuild|npm ci|executing command|cloning|checking out|source directory' \
+                    | tail -n 140 || true
                 done
                 exit 1
                 ;;
