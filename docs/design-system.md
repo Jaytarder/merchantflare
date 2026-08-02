@@ -97,6 +97,10 @@ Current reusable areas:
 
 Some reusable components and `styles/design-system.css` are not wired into active pages. Confirm actual imports before assuming a component is in production or deleting it.
 
+### Decision Lab components
+
+The active Decision Lab composes a reusable Decision Case list, risk indicator, confidence treatment, investigation sections, and a persistent Mercury reasoning panel. Each item is driven by the authenticated Decision Case API. Progressive-disclosure sections use native `details` elements so the essential conclusion, recommended action, and confidence stay visible while supporting evidence and reasoning remain available on demand.
+
 ## Interaction states
 
 Every interactive element must define:

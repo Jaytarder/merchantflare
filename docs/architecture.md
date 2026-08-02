@@ -47,7 +47,7 @@ This diagram remains the target architecture. The Amplify application, Cognito c
 | --- | --- |
 | `/` | Marketing page; contains some legacy workforce positioning |
 | `/login` | Cognito sign-in entry, recovery link, and user-safe authentication states |
-| `/dashboard` | Auth-gated Mercury conversation workspace with durable threads and deterministic message-linked plans when PostgreSQL is available |
+| `/dashboard` | Auth-gated Decision Lab home that reads durable Decision Cases and renders an investigation with a non-chat Mercury reasoning panel; the previous Mercury conversation workspace remains in the codebase for compatibility but is no longer the dashboard home |
 | `/workers` | Legacy intelligence-module prototype using workforce terminology; not a canonical product destination |
 
 Atlas has an authenticated application route. Vector, Oracle, Sentinel, Forge, Pulse, Execution, Approvals, History, Knowledge, Integrations, Billing, and Settings appear in shell configuration, but corresponding page routes are not implemented.

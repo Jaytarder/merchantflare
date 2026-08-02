@@ -21,6 +21,7 @@ Sprint 1, the application shell, is implemented. Sprint 2 has an organization-sc
 - Shell integration on `/dashboard` and `/workers`.
 - MerchantFlare black, white, and orange visual treatment, shared CSS tokens, and reusable UI primitives.
 - A production brand system with reusable dark- and light-surface wordmarks and monograms, a shared typed `Logo` component, favicon assets, an app icon, and canonical product metadata.
+- Decision Lab now replaces the legacy conversation-first dashboard home. It lists durable organization-scoped Decision Cases and presents the selected investigation with progressive disclosure for evidence, alternatives, counter-evidence, experiments, outcomes, and lessons. Its permanent Mercury panel is a non-chat reasoning summary derived only from the selected case's recorded lifecycle.
 
 ### Application and service foundations
 
@@ -104,6 +105,7 @@ Production is deployed from merge commit `71da433c863393fa3b9564e9a8d64c613f0efa
 | Marketing | Root page plus components under `components/marketing/` | Public presentation only; the active page uses the shared brand component but does not use all newer marketing components |
 | Login | `/login`, `/api/auth/*`, `lib/auth/`, `proxy.ts` | Production PKCE initiation, callback, Owner membership, session persistence across refresh, logout, and the Cognito password-recovery entry page were verified live; reset-code delivery and every non-Owner role remain separate QA requirements |
 | Mercury workspace | `/dashboard`, `MercuryWorkspace`, `ConversationSidebar`, `MercuryPlanCard` | Creates and resumes durable conversations, submits messages, renders deterministic linked plans and evidence status, supports versioned revision and plan-level approval decisions, and supports rename/archive/restore |
+| Decision Lab | `/dashboard`, `DecisionLab` | Lists persisted Decision Cases, opens one investigation at a time, and keeps evidence, hypotheses, counter-evidence, experiments, outcomes, and lessons progressively disclosed; no sample decisions or inferred confidence are shown |
 | Legacy prototype | `/workers` | Static AI-worker-oriented prototype retained as migration debt; it is not a completed intelligence-module experience |
 | Mercury API | `/api/mercury/conversations`, conversation detail/message routes, `/api/mercury/plans/[planId]/approval`, `POST /api/mercury/plan`, `GET /api/mercury/history` | Enforces the Cognito-derived principal and active membership, scopes reads/writes by organization, persists idempotent conversation turns and revisions, records approval decisions, and supports compatibility planning/history |
 | Mercury services | `lib/mercury/` | Keyword planning, capability mapping, approval rules, dependency routing, events, repository operations, and two execution foundations |
@@ -210,6 +212,7 @@ Validation was run against this branch on 2026-08-02. Decision Platform migratio
 
 | Date | Change |
 | --- | --- |
+| 2026-08-02 | Replaced the authenticated dashboard home with Decision Lab: a responsive, evidence-backed Decision Case list and progressive investigation view with a non-chat Mercury reasoning panel. The experience reads only authenticated, organization-scoped Decision Case data and explicitly preserves unavailable and empty states. |
 | 2026-08-02 | Deployed the Scientific Decision Platform to `app.merchantflare.com` from merge commit `71da433c863393fa3b9564e9a8d64c613f0efaf1`; independently verified generated/custom health, protected Decision APIs, safe redirects, Cognito PKCE callback, password recovery entry, target viewport overflow, and browser console state. Owner-authenticated workspace/refresh QA was operator-confirmed. |
 | 2026-08-02 | Added the locally verified Scientific Decision Platform foundation: migration `007`, canonical decision objects, evidence and belief guardrails, experiments/interventions/outcomes/lessons, immutable history, RBAC APIs, optional Mercury context, and decision tests. Migrations `007` and `008` were subsequently applied after snapshot `merchantflare-pre-decision-platform-20260802`; live application QA remains pending. |
 | 2026-08-02 | Added the Decision Learning engine: migration `008`, immutable predictions, idempotent manual execution records, guarded transitions, atomic posterior learning, generated lessons, self-challenge, calibration metrics, an Atlas title pilot contract, and minimal Mercury authoring/internal metrics. Isolated PostgreSQL application remains unverified. |

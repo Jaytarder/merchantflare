@@ -43,14 +43,14 @@ export type PlatformConnection = {
 
 export const navigation: NavigationSection[] = [
   {
-    label: "Command",
+    label: "Workspace",
     items: [
       {
-        label: "Mercury",
+        label: "Decision Lab",
         href: "/dashboard",
         icon: "mercury",
-        description: "Commerce Intelligence workspace",
-        keywords: ["home", "dashboard", "command", "conversation"],
+        description: "Evidence-backed decision workspace",
+        keywords: ["home", "dashboard", "decision", "case"],
         permission: "mercury.read",
       },
     ],
