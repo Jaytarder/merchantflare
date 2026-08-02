@@ -50,26 +50,76 @@ IFS=$'\t' read -r DB_HOST DB_PORT DB_NAME DB_USER SECRET_ARN < <(
     --output text
 )
 
-for target_value in "$DB_HOST" "$DB_PORT" "$DB_NAME" "$DB_USER" "$SECRET_ARN"; do
+for target_value in "$DB_HOST" "$DB_PORT"; do
   test -n "$target_value" && test "$target_value" != "None" || {
-    echo "STOP: RDS target or managed-secret metadata is incomplete."
+    echo "STOP: RDS endpoint metadata is incomplete."
     exit 1
   }
 done
 
-SECRET_JSON="$(
-  aws secretsmanager get-secret-value \
-    --region "$REGION" \
-    --secret-id "$SECRET_ARN" \
-    --query SecretString \
-    --output text
-)"
+database_url_matches_target() {
+  CANDIDATE_DATABASE_URL="$1" TARGET_DB_HOST="$DB_HOST" TARGET_DB_PORT="$DB_PORT" \
+    python3 -c 'import os,sys,urllib.parse; url=urllib.parse.urlparse(os.environ["CANDIDATE_DATABASE_URL"]); expected_host=os.environ["TARGET_DB_HOST"].lower(); expected_port=int(os.environ["TARGET_DB_PORT"]); actual_port=url.port or 5432; database=urllib.parse.unquote(url.path.lstrip("/")); sys.exit(0 if url.scheme in ("postgres", "postgresql") and (url.hostname or "").lower()==expected_host and actual_port==expected_port and database else 1)'
+}
 
-DB_PASSWORD="$(jq -er '.password' <<<"$SECRET_JSON")"
-ENCODED_USER="$(python3 -c 'import sys,urllib.parse; print(urllib.parse.quote(sys.argv[1], safe=""))' "$DB_USER")"
-ENCODED_PASSWORD="$(python3 -c 'import sys,urllib.parse; print(urllib.parse.quote(sys.argv[1], safe=""))' "$DB_PASSWORD")"
+find_amplify_database_url() {
+  local apps_json app_id app_json candidate branches_json branch_name branch_json
+  apps_json="$(aws amplify list-apps --region "$REGION" --output json 2>/dev/null || true)"
 
-export DATABASE_URL="postgresql://${ENCODED_USER}:${ENCODED_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=require"
+  while IFS= read -r app_id; do
+    test -n "$app_id" || continue
+    app_json="$(aws amplify get-app --region "$REGION" --app-id "$app_id" --output json 2>/dev/null || true)"
+    candidate="$(jq -r '.app.environmentVariables.DATABASE_URL // empty' <<<"$app_json")"
+    if test -n "$candidate" && database_url_matches_target "$candidate"; then
+      printf '%s' "$candidate"
+      return 0
+    fi
+
+    branches_json="$(aws amplify list-branches --region "$REGION" --app-id "$app_id" --output json 2>/dev/null || true)"
+    while IFS= read -r branch_name; do
+      test -n "$branch_name" || continue
+      branch_json="$(aws amplify get-branch --region "$REGION" --app-id "$app_id" --branch-name "$branch_name" --output json 2>/dev/null || true)"
+      candidate="$(jq -r '.branch.environmentVariables.DATABASE_URL // empty' <<<"$branch_json")"
+      if test -n "$candidate" && database_url_matches_target "$candidate"; then
+        printf '%s' "$candidate"
+        return 0
+      fi
+    done < <(jq -r '.branches[]?.branchName' <<<"$branches_json")
+  done < <(jq -r '.apps[]?.appId' <<<"$apps_json")
+
+  return 1
+}
+
+DATABASE_URL="$(find_amplify_database_url || true)"
+
+if test -z "$DATABASE_URL" && test -n "$DB_NAME" && test "$DB_NAME" != "None" \
+  && test -n "$DB_USER" && test "$DB_USER" != "None" \
+  && test -n "$SECRET_ARN" && test "$SECRET_ARN" != "None"; then
+  SECRET_JSON="$(
+    aws secretsmanager get-secret-value \
+      --region "$REGION" \
+      --secret-id "$SECRET_ARN" \
+      --query SecretString \
+      --output text
+  )"
+  DB_PASSWORD="$(jq -er '.password' <<<"$SECRET_JSON")"
+  ENCODED_USER="$(python3 -c 'import sys,urllib.parse; print(urllib.parse.quote(sys.argv[1], safe=""))' "$DB_USER")"
+  ENCODED_PASSWORD="$(python3 -c 'import sys,urllib.parse; print(urllib.parse.quote(sys.argv[1], safe=""))' "$DB_PASSWORD")"
+  DATABASE_URL="postgresql://${ENCODED_USER}:${ENCODED_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=require"
+fi
+
+test -n "$DATABASE_URL" || {
+  echo "STOP: no Amplify DATABASE_URL matching $INSTANCE was accessible, and RDS has no usable managed master secret."
+  exit 1
+}
+
+database_url_matches_target "$DATABASE_URL" || {
+  echo "STOP: resolved DATABASE_URL does not point to $INSTANCE."
+  exit 1
+}
+
+DB_NAME="$(DATABASE_URL="$DATABASE_URL" python3 -c 'import os,urllib.parse; print(urllib.parse.unquote(urllib.parse.urlparse(os.environ["DATABASE_URL"]).path.lstrip("/")))')"
+export DATABASE_URL
 export DECISION_DB_EXPECTED_NAME="$DB_NAME"
 
 cleanup() {
