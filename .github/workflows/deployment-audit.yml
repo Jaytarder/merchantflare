@@ -186,3 +186,28 @@ jobs:
         env:
           NODE_ENV: production
         run: npm run deployment:audit
+
+      - name: Identify managed database backup target
+        shell: bash
+        run: |
+          set -euo pipefail
+          db_host="$(node -e 'process.stdout.write(new URL(process.env.DATABASE_URL).hostname)')"
+          echo "::add-mask::$db_host"
+
+          clusters="$(aws rds describe-db-clusters \
+            --query "DBClusters[?Endpoint=='$db_host' || ReaderEndpoint=='$db_host'].{type:'cluster',identifier:DBClusterIdentifier,arn:DBClusterArn,engine:Engine,status:Status,deletionProtection:DeletionProtection,backupRetentionPeriod:BackupRetentionPeriod}" \
+            --output json)"
+          instances="$(aws rds describe-db-instances \
+            --query "DBInstances[?Endpoint.Address=='$db_host'].{type:'instance',identifier:DBInstanceIdentifier,arn:DBInstanceArn,engine:Engine,status:DBInstanceStatus,deletionProtection:DeletionProtection,backupRetentionPeriod:BackupRetentionPeriod}" \
+            --output json)"
+
+          CLUSTERS="$clusters" INSTANCES="$instances" node -e '
+            const resources = [
+              ...JSON.parse(process.env.CLUSTERS),
+              ...JSON.parse(process.env.INSTANCES),
+            ];
+            if (resources.length !== 1) {
+              throw new Error(`Expected one RDS or Aurora backup target; found ${resources.length}.`);
+            }
+            console.log(JSON.stringify(resources[0]));
+          '
