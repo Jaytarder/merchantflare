@@ -10,6 +10,7 @@ import {
   calculateCalibration,
   classifyPredictionQuality,
   createAtlasTitlePilot,
+  reasonAboutDecision,
   assertLifecycleTransition,
   type Belief,
   type Evidence,
@@ -196,5 +197,55 @@ test("migration 008 is additive, tenant-scoped, immutable, and concurrency-safe"
   assert.match(sql, /unique \(organization_id, idempotency_key\)/);
   assert.match(sql, /resolved predictions are immutable/);
   assert.match(sql, /foreign key \(decision_case_id, organization_id\)/);
+  assert.doesNotMatch(sql, /\bdrop table\b|\btruncate\b/i);
+});
+
+test("Scientific Reasoning Engine exposes every score component and challenges weak conclusions", () => {
+  const detail = {
+    id: "case-reasoning", organizationId: "org-a", createdBy: "user-1", title: "Title test",
+    problem: "Conversion is below the predefined baseline.", objective: "Reduce uncertainty about title clarity.", status: "investigating" as const,
+    currentBeliefId: belief.id, risk: "low" as const, reversibility: "easy" as const, approvalStatus: "pending" as const,
+    assumptions: ["Traffic remains comparable"], confounders: ["Traffic mix"], expectedOutcome: "Measured lift", metadata: {},
+    createdAt: timestamp, updatedAt: timestamp,
+    evidence: [evidence, { ...evidence, id: "evidence-counter", statement: "Comparable products did not improve after title edits.", confidence: 0.7 }],
+    evidenceLinks: [
+      { organizationId: "org-a", evidenceId: evidence.id, entityType: "belief" as const, entityId: belief.id, relationship: "supports" as const, createdBy: "user-1", createdAt: timestamp },
+      { organizationId: "org-a", evidenceId: "evidence-counter", entityType: "belief" as const, entityId: belief.id, relationship: "counters" as const, createdBy: "user-1", createdAt: timestamp },
+    ],
+    beliefs: [belief], hypotheses: [hypothesis("hypothesis-a", "Title clarity matters."), hypothesis("hypothesis-b", "Traffic quality matters.")],
+    experiments: [{ id: "experiment-a", organizationId: "org-a", decisionCaseId: "case-reasoning", hypothesisId: "hypothesis-a", title: "Controlled title test", expectedLift: 0.1, expectedRisk: "low" as const, observationWindow: { durationDays: 14 }, rollbackPlan: "Restore original title", successCriteria: [{ metric: "conversion", operator: "gte" as const, value: 0.11 }], approvalStatus: "pending" as const, status: "awaiting_approval" as const, createdBy: "user-1", createdAt: timestamp }],
+    interventions: [], outcomes: [], lessons: [], reusedLessons: [],
+  };
+  const reasoning = reasonAboutDecision(detail, new Date(timestamp));
+  assert.equal(reasoning.supportingEvidence.length, 1);
+  assert.equal(reasoning.contradictoryEvidence.length, 1);
+  assert.equal(reasoning.metrics.contradictionScore, 0.5);
+  assert.equal(reasoning.recommendedExperimentId, "experiment-a");
+  assert.match(reasoning.formulas.confidence, /stated belief/);
+  assert.ok(reasoning.selfCritique.whatContradictsConclusion.includes("evidence-counter"));
+});
+
+test("Scientific Reasoning Engine proposes a labeled gap hypothesis without fabricating evidence", () => {
+  const detail = {
+    id: "case-gap", organizationId: "org-a", createdBy: "user-1", title: "Gap", problem: "Unknown driver", objective: "Reduce uncertainty",
+    status: "draft" as const, risk: "medium" as const, reversibility: "unknown" as const, approvalStatus: "not_required" as const,
+    assumptions: [], confounders: [], metadata: {}, createdAt: timestamp, updatedAt: timestamp,
+    evidence: [], evidenceLinks: [], beliefs: [], hypotheses: [], experiments: [], interventions: [], outcomes: [], lessons: [], reusedLessons: [],
+  };
+  const reasoning = reasonAboutDecision(detail, new Date(timestamp));
+  assert.equal(reasoning.generatedHypotheses.length, 1);
+  assert.deepEqual(reasoning.generatedHypotheses[0].supportingEvidence, []);
+  assert.match(reasoning.generatedHypotheses[0].provenance, /requires human review/);
+  assert.equal(reasoning.metrics.confidence, 0);
+  assert.equal(reasoning.metrics.uncertainty, 1);
+});
+
+test("migration 009 is additive, organization-scoped, indexed, and immutable", async () => {
+  const sql = await readFile(resolve("db/migrations/009_scientific_reasoning_engine.sql"), "utf8");
+  assert.match(sql, /decision_belief_graph_edges/);
+  assert.match(sql, /decision_reasoning_snapshots/);
+  assert.match(sql, /foreign key \(decision_case_id, organization_id\)/);
+  assert.match(sql, /scientific reasoning records are append-only/);
+  assert.match(sql, /decision_belief_graph_case_idx/);
   assert.doesNotMatch(sql, /\bdrop table\b|\btruncate\b/i);
 });

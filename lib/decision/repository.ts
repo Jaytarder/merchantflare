@@ -522,12 +522,115 @@ export class PostgresDecisionRepository {
           (select count(*)::int from decision_experiments where organization_id = ${organizationId}) as experiment_count,
           (select count(*)::int from decision_lessons where organization_id = ${organizationId}) as lesson_count,
           (select count(*)::int from decision_lesson_reuse where organization_id = ${organizationId}) as reuse_count,
+          (select count(*)::int from decision_confidence_history where organization_id = ${organizationId} and entity_type = 'belief') as belief_revision_count,
+          (select count(*)::int from decision_reasoning_snapshots where organization_id = ${organizationId}) as reasoning_snapshot_count,
+          (select avg(first_snapshot.uncertainty - last_snapshot.uncertainty)
+             from (select distinct on (decision_case_id) decision_case_id, uncertainty from decision_reasoning_snapshots where organization_id = ${organizationId} order by decision_case_id, calculated_at, id) first_snapshot
+             join (select distinct on (decision_case_id) decision_case_id, uncertainty from decision_reasoning_snapshots where organization_id = ${organizationId} order by decision_case_id, calculated_at desc, id desc) last_snapshot using (decision_case_id)) as uncertainty_reduction,
+          (select avg(case when last_snapshot.contradiction_score < first_snapshot.contradiction_score then 1.0 else 0.0 end)
+             from (select distinct on (decision_case_id) decision_case_id, contradiction_score from decision_reasoning_snapshots where organization_id = ${organizationId} order by decision_case_id, calculated_at, id) first_snapshot
+             join (select distinct on (decision_case_id) decision_case_id, contradiction_score from decision_reasoning_snapshots where organization_id = ${organizationId} order by decision_case_id, calculated_at desc, id desc) last_snapshot using (decision_case_id)) as contradiction_resolution_rate,
           (select count(*)::int from decision_evidence where organization_id = ${organizationId} and freshness in ('stale','unavailable')) as stale_evidence_count,
           (select avg(extract(epoch from (closed_at - created_at)) / 3600) from decision_cases where organization_id = ${organizationId} and closed_at is not null) as latency_hours,
           (select count(*)::int from decision_cases where organization_id = ${organizationId} and created_at >= now() - interval '30 days') as throughput_30d
       `,
     ]);
     return { predictions, counts: counts[0] };
+  }
+
+  async persistBeliefGraph(input: {
+    organizationId: string;
+    decisionCaseId: string;
+    createdBy: string;
+  }) {
+    await this.sql`
+      insert into decision_belief_graph_edges (
+        organization_id, decision_case_id, source_type, source_id,
+        target_type, target_id, relationship, rationale, created_by
+      )
+      select link.organization_id, evidence.decision_case_id, 'evidence', link.evidence_id,
+        link.entity_type, link.entity_id,
+        case link.relationship when 'counters' then 'contradicts' when 'confounds' then 'contradicts' else link.relationship end,
+        coalesce(link.rationale, 'Derived from an explicit evidence relationship.'), ${input.createdBy}
+      from decision_evidence_links link
+      join decision_evidence evidence on evidence.id = link.evidence_id and evidence.organization_id = link.organization_id
+      where link.organization_id = ${input.organizationId} and evidence.decision_case_id = ${input.decisionCaseId}
+      on conflict do nothing
+    `;
+    await this.sql`
+      insert into decision_belief_graph_edges (
+        organization_id, decision_case_id, source_type, source_id,
+        target_type, target_id, relationship, rationale, created_by
+      )
+      select experiment.organization_id, experiment.decision_case_id, 'hypothesis', experiment.hypothesis_id,
+        'experiment', experiment.id, 'tests', 'The experiment tests this hypothesis.', ${input.createdBy}
+      from decision_experiments experiment
+      where experiment.organization_id = ${input.organizationId} and experiment.decision_case_id = ${input.decisionCaseId}
+      on conflict do nothing
+    `;
+    await this.sql`
+      insert into decision_belief_graph_edges (
+        organization_id, decision_case_id, source_type, source_id,
+        target_type, target_id, relationship, rationale, created_by
+      )
+      select outcome.organization_id, outcome.decision_case_id, 'experiment', outcome.experiment_id,
+        'outcome', outcome.id, 'produced', 'The completed experiment produced this outcome.', ${input.createdBy}
+      from decision_outcomes outcome
+      where outcome.organization_id = ${input.organizationId} and outcome.decision_case_id = ${input.decisionCaseId}
+      on conflict do nothing
+    `;
+    await this.sql`
+      insert into decision_belief_graph_edges (
+        organization_id, decision_case_id, source_type, source_id,
+        target_type, target_id, relationship, rationale, created_by
+      )
+      select lesson.organization_id, lesson.decision_case_id, 'outcome', lesson.outcome_id,
+        'lesson', lesson.id, 'produced', 'The observed outcome produced this bounded lesson.', ${input.createdBy}
+      from decision_lessons lesson
+      where lesson.organization_id = ${input.organizationId} and lesson.decision_case_id = ${input.decisionCaseId}
+      on conflict do nothing
+    `;
+    return this.listBeliefGraph(input.organizationId, input.decisionCaseId);
+  }
+
+  async listBeliefGraph(organizationId: string, decisionCaseId: string) {
+    return this.sql<Array<any>>`
+      select id, source_type, source_id, target_type, target_id, relationship,
+        rationale, weight, created_at
+      from decision_belief_graph_edges
+      where organization_id = ${organizationId} and decision_case_id = ${decisionCaseId}
+      order by created_at, id
+    `;
+  }
+
+  async persistReasoningSnapshot(input: {
+    organizationId: string;
+    decisionCaseId: string;
+    beliefId: string | null;
+    engineVersion: string;
+    metrics: {
+      confidence: number; uncertainty: number; evidenceCoverage: number;
+      evidenceFreshness: number; knowledgeCompleteness: number;
+      contradictionScore: number; experimentPriority: number;
+    };
+    explanation: Record<string, unknown>;
+    calculatedBy: string;
+  }) {
+    const rows = await this.sql<Array<any>>`
+      insert into decision_reasoning_snapshots (
+        organization_id, decision_case_id, belief_id, engine_version,
+        confidence, uncertainty, evidence_coverage, evidence_freshness,
+        knowledge_completeness, contradiction_score, experiment_priority,
+        explanation, calculated_by
+      ) values (
+        ${input.organizationId}, ${input.decisionCaseId}, ${input.beliefId}, ${input.engineVersion},
+        ${input.metrics.confidence}, ${input.metrics.uncertainty}, ${input.metrics.evidenceCoverage},
+        ${input.metrics.evidenceFreshness}, ${input.metrics.knowledgeCompleteness},
+        ${input.metrics.contradictionScore}, ${input.metrics.experimentPriority},
+        ${this.sql.json(input.explanation as Json)}, ${input.calculatedBy}
+      ) returning id, calculated_at
+    `;
+    return rows[0];
   }
 
   async decideExperimentApproval(input: {
