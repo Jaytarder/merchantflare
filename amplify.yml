@@ -3,7 +3,7 @@ frontend:
   phases:
     preBuild:
       commands:
-        - npm ci
+        - npm install
     build:
       commands:
         - env | grep -E '^(COGNITO_AWS_REGION|COGNITO_USER_POOL_ID|COGNITO_APP_CLIENT_ID|COGNITO_ISSUER_URL|COGNITO_DOMAIN|APPLICATION_BASE_URL|AUTH_SESSION_SECRET|DATABASE_URL)=' > .env.production
