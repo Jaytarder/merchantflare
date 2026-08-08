@@ -57,18 +57,18 @@ export default function SearchBar({ role }: { role: OrganizationRole }) {
         if (matches[0]) navigate(matches[0].href);
       }}
     >
-      <label htmlFor="mercury-search">
+      <label htmlFor="decision-lab-search">
         <SearchIcon />
-        <span className="platform-search-label">Search Mercury</span>
+        <span className="platform-search-label">Search Decision Lab</span>
         <input
           ref={inputRef}
-          id="mercury-search"
+          id="decision-lab-search"
           type="search"
           value={query}
-          placeholder="Search Mercury, intelligence, and settings"
+          placeholder="Search decisions, evidence, and capabilities"
           autoComplete="off"
           aria-autocomplete="list"
-          aria-controls="mercury-search-results"
+          aria-controls="decision-lab-search-results"
           aria-expanded={focused && query.trim().length > 0}
           onChange={(event) => setQuery(event.target.value)}
           onFocus={() => setFocused(true)}
@@ -78,7 +78,7 @@ export default function SearchBar({ role }: { role: OrganizationRole }) {
       </label>
 
       {focused && query.trim() ? (
-        <div className="platform-search-results" id="mercury-search-results" role="listbox">
+        <div className="platform-search-results" id="decision-lab-search-results" role="listbox">
           {matches.length ? matches.map((item) => (
             <button key={item.href} type="button" role="option" onClick={() => navigate(item.href)}>
               <span>

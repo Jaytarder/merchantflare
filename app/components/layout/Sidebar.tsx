@@ -41,7 +41,7 @@ export default function Sidebar({
         aria-label="Application navigation"
       >
         <div className="platform-brand">
-          <Link href="/dashboard" aria-label="MerchantFlare Mercury command center" onClick={onClose}>
+          <Link href="/dashboard" aria-label="MerchantFlare Decision Lab" onClick={onClose}>
             <Logo
               className="platform-brand-logo"
               variant="horizontal"

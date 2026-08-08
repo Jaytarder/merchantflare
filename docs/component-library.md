@@ -11,6 +11,8 @@
 
 Decision Lab composes these into a Decision Timeline, Reasoning Panel, and persistent Belief Graph relationship view. Components use semantic headings, native buttons/details, visible text labels, responsive layouts, and reduced-motion handling.
 
+The shared application shell now uses a typed, inline SVG glyph set keyed by the existing `NavigationIcon` contract. These glyphs replace letter placeholders without changing destinations, authorization filtering, route matching, or search behavior. The premium application stylesheet supplies consistent shell, popover, control, Atlas, Mercury, and sign-in presentation with reduced-transparency and reduced-motion fallbacks.
+
 ## Planned
 
 Split specialized Evidence, Belief, Hypothesis, Experiment, Outcome, Lesson, and Knowledge card props once their independent collection routes exist. Add automated axe coverage and Storybook only when it supports production verification rather than decorative development work.

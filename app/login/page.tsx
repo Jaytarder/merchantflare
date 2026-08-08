@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Logo } from "../../components/brand/Logo";
 import { isAuthenticationConfigured, safeRedirectPath } from "../../lib/auth";
 import "./login.css";
+import "../components/premium-application.css";
 
 const errorMessages: Record<string, string> = {
   authorization_cancelled: "Sign-in was cancelled. You can try again when ready.",
@@ -31,11 +32,11 @@ export default async function LoginPage({
           <Logo variant="horizontal" surface="dark" tagline priority />
         </Link>
         <div className="login-hero-copy">
-          <span>MERCURY COMMAND</span>
-          <h1>Commerce intelligence, under your control.</h1>
-          <p>Connect catalog, advertising, demand, compliance, creative, and executive intelligence through one governed command center.</p>
+          <span>SCIENTIFIC DECISION PLATFORM</span>
+          <h1>Make better decisions with less uncertainty.</h1>
+          <p>Turn evidence, competing explanations, governed experiments, and measured outcomes into durable organizational learning.</p>
         </div>
-        <div className="login-system-status">Mercury · Commerce Intelligence Engine</div>
+        <div className="login-system-status">Decision Lab · Evidence before assertion</div>
       </section>
 
       <section className="login-form-panel">
