@@ -4,6 +4,8 @@ Release 1.0 adds a dark-first scientific component layer documented in [Componen
 
 The authenticated product also applies an Apple-inspired presentation layer through `app/dashboard/apple-decision-system.css`: system typography, neutral black and graphite surfaces, restrained translucency, precise radii, compact pill actions, minimal elevation, and the existing MerchantFlare orange as a functional decision accent. The marketing site is intentionally unaffected. Reduced-transparency and reduced-motion preferences receive solid-surface and motion-free fallbacks.
 
+The broader premium application layer is implemented in `app/components/premium-application.css`. It extends the same existing tokens to the shared authenticated shell, semantic SVG navigation glyphs, search and account surfaces, Atlas, Mercury, responsive layouts, and sign-in. It does not introduce another token family, alter navigation information architecture, or carry behavioral logic. Page-specific styles remain responsible for data layout; the premium layer normalizes their surface, typography, control, focus, and motion treatment.
+
 ## Brand direction
 
 MerchantFlare uses a black, white, and orange visual system with an enterprise aesthetic.
@@ -73,8 +75,8 @@ The application shell lives in `app/components/layout/` and is styled by `app/co
 
 Current behavior:
 
-- desktop: persistent 272px sidebar;
-- tablet: collapsible 84px rail or 272px expanded sidebar;
+- desktop: persistent 252px sidebar;
+- tablet: collapsible 76px rail or full sidebar;
 - mobile: off-canvas drawer;
 - topbar: sticky;
 - workspace: centered content boundary with responsive padding.
