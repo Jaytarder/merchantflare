@@ -15,8 +15,10 @@ type SidebarProps = {
 };
 
 function isActive(pathname: string, href: string) {
-  if (href === "/dashboard") return pathname === href;
-  return pathname === href || pathname.startsWith(`${href}/`);
+  const route = href.split("#")[0];
+  if (href.includes("#")) return false;
+  if (route === "/dashboard") return pathname === route;
+  return pathname === route || pathname.startsWith(`${route}/`);
 }
 
 export default function Sidebar({

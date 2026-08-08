@@ -8,6 +8,12 @@ Make evidence-backed decisions, experiments, outcomes, calibrated confidence, an
 
 ## Implemented foundation
 
+- Release 1.0 explainable reasoning with published formulas and component values.
+- Persistent append-only Belief Graph edges and reasoning snapshots through additive migration `009`.
+- Deterministic contradiction, stale/duplicate/missing evidence detection and labeled gap hypotheses.
+- Expected-information-gain experiment ranking and reusable organization knowledge.
+- Decision Lab as the authenticated dashboard with Mercury preserved at `/dashboard/mercury`.
+
 - First-class Decision Case, Evidence, Belief, Hypothesis, Counter-Evidence relationship, Experiment, Intervention, Outcome, and Lesson contracts.
 - Additive organization-scoped persistence and append-only Decision History.
 - Versioned beliefs and explicit confidence history.
@@ -40,7 +46,7 @@ Make evidence-backed decisions, experiments, outcomes, calibrated confidence, an
 
 ## Acceptance status
 
-Implemented and locally verified: domain contracts, RBAC, additive migrations `007` and `008`, authenticated routes, Mercury authoring, internal metrics, reasoning and calibration tests, typecheck, test suite, integration fixtures, and migration dry run.
+Implemented and locally verified: domain contracts, RBAC, additive migrations `007` through `009`, authenticated routes, Mercury authoring, Decision Lab build, internal metrics, reasoning and calibration tests, typecheck, test suite, integration fixtures, and migration dry run.
 
 Not yet verified: isolated-development migration application, live PostgreSQL transaction/concurrency behavior, authenticated browser QA, two-organization database integration, manual intervention recording against PostgreSQL, automated outcome collection, and a real calibration cohort. Production migration is explicitly out of scope.
 

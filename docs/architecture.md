@@ -47,7 +47,7 @@ This diagram remains the target architecture. The Amplify application, Cognito c
 | --- | --- |
 | `/` | Marketing page; contains some legacy workforce positioning |
 | `/login` | Cognito sign-in entry, recovery link, and user-safe authentication states |
-| `/dashboard` | Auth-gated Decision Lab home that reads durable Decision Cases and renders an investigation with a non-chat Mercury reasoning panel; the previous Mercury conversation workspace remains in the codebase for compatibility but is no longer the dashboard home |
+| `/dashboard` | Auth-gated Mercury conversation workspace with durable threads and deterministic message-linked plans when PostgreSQL is available |
 | `/workers` | Legacy intelligence-module prototype using workforce terminology; not a canonical product destination |
 
 Atlas has an authenticated application route. Vector, Oracle, Sentinel, Forge, Pulse, Execution, Approvals, History, Knowledge, Integrations, Billing, and Settings appear in shell configuration, but corresponding page routes are not implemented.
@@ -134,6 +134,8 @@ The repository contains an early Mercury foundation:
 These are foundations, not the completed Mercury orchestration engine. There are currently two execution paths (`executor.ts` and `runtime.ts`), and neither is exposed through a complete production API workflow.
 
 ### Scientific Decision Platform
+
+Release 1.0 adds an explainable Scientific Reasoning Engine and a persistent Belief Graph through additive migration `009_scientific_reasoning_engine.sql`. Read-only reasoning computes evidence coverage, freshness, knowledge completeness, contradictions, confidence, uncertainty, and experiment priority from an organization-scoped Decision Case. An explicit recalculation appends a reasoning snapshot, materializes only explicit graph relationships, and records Decision History. See [Reasoning Engine](reasoning-engine.md), [Belief Graph](belief-graph.md), [Knowledge Engine](knowledge-engine.md), and [Decision Lab](decision-lab.md).
 
 Migration `007_scientific_decision_platform.sql` adds organization-scoped Decision Cases, graded evidence, versioned beliefs, competing hypotheses, evidence relationships, experiments, interventions, outcomes, lessons, confidence history, and immutable decision history. It is additive: existing Mercury, Platform Core, evidence, authentication, and approval tables remain unchanged.
 

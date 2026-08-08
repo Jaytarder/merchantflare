@@ -8,6 +8,7 @@ export default async function DashboardPage() {
   return (
     <DecisionLab
       canWrite={principal ? hasPermission(principal, "decisions.write") : false}
+      canAudit={principal ? hasPermission(principal, "audit.read") : false}
     />
   );
 }

@@ -4,6 +4,7 @@ import { requirePermission } from "../platform/authorization";
 import { PlatformNotFoundError, PlatformValidationError } from "../platform/errors";
 import { PostgresDecisionRepository } from "./repository";
 import { calculateCalibration } from "./calibration";
+import { reasonAboutDecision } from "./reasoning";
 import { assertLifecycleReady } from "./lifecycle";
 import { challengeDecision } from "./challenge";
 import type {
@@ -743,6 +744,45 @@ export async function getDecisionChallenge(repository: PostgresDecisionRepositor
   return challengeDecision(detail);
 }
 
+export async function getScientificReasoning(
+  repository: PostgresDecisionRepository,
+  principal: OrganizationPrincipal,
+  caseIdValue: string,
+  persist = false,
+) {
+  requirePermission(principal, "decisions.read");
+  const detail = await repository.getCaseDetail(principal.organizationId, caseIdValue);
+  if (!detail) throw new PlatformNotFoundError("Decision Case");
+  const reasoning = reasonAboutDecision(detail);
+  const graph = persist
+    ? await repository.persistBeliefGraph({ organizationId: principal.organizationId, decisionCaseId: caseIdValue, createdBy: principal.subjectId })
+    : await repository.listBeliefGraph(principal.organizationId, caseIdValue);
+  let snapshot = null;
+  if (persist) {
+    requirePermission(principal, "decisions.write");
+    snapshot = await repository.persistReasoningSnapshot({
+      organizationId: principal.organizationId,
+      decisionCaseId: caseIdValue,
+      beliefId: reasoning.beliefId,
+      engineVersion: reasoning.engineVersion,
+      metrics: reasoning.metrics,
+      explanation: reasoning as unknown as Record<string, unknown>,
+      calculatedBy: principal.subjectId,
+    });
+    await repository.appendHistory({
+      organizationId: principal.organizationId,
+      decisionCaseId: caseIdValue,
+      actorId: principal.subjectId,
+      eventType: "reasoning.calculated",
+      entityType: "decision_case",
+      entityId: caseIdValue,
+      summary: "The explainable Scientific Reasoning Engine recalculated uncertainty.",
+      metadata: { engineVersion: reasoning.engineVersion, metrics: reasoning.metrics, snapshotId: snapshot.id },
+    });
+  }
+  return { reasoning, graph, snapshot };
+}
+
 export async function getDecisionMetrics(repository: PostgresDecisionRepository, principal: OrganizationPrincipal) {
   requirePermission(principal, "audit.read");
   const data = await repository.calibrationData(principal.organizationId);
@@ -762,6 +802,11 @@ export async function getDecisionMetrics(repository: PostgresDecisionRepository,
     decisionThroughput30d: Number(counts.throughput_30d),
     knowledgeGrowth: Number(counts.lesson_count),
     decisionReuse: Number(counts.reuse_count),
+    knowledgeReuse: Number(counts.reuse_count),
+    beliefRevisionRate: caseCount ? Number(counts.belief_revision_count) / caseCount : null,
+    averageUncertaintyReduction: counts.uncertainty_reduction === null ? null : Number(counts.uncertainty_reduction),
+    contradictionResolutionRate: counts.contradiction_resolution_rate === null ? null : Number(counts.contradiction_resolution_rate),
+    reasoningSnapshotCount: Number(counts.reasoning_snapshot_count),
     generatedAt: new Date().toISOString(),
   };
 }

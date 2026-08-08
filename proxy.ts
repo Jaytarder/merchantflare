@@ -38,9 +38,14 @@ export const config = {
   matcher: [
     "/dashboard/:path*",
     "/atlas/:path*",
+    "/approvals/:path*",
+    "/knowledge/:path*",
+    "/experiments/:path*",
+    "/evidence/:path*",
     "/workers/:path*",
     "/api/mercury/:path*",
     "/api/platform/:path*",
     "/api/atlas/:path*",
+    "/api/decisions/:path*",
   ],
 };

@@ -43,16 +43,21 @@ export type PlatformConnection = {
 
 export const navigation: NavigationSection[] = [
   {
-    label: "Workspace",
+    label: "Command",
     items: [
       {
         label: "Decision Lab",
         href: "/dashboard",
         icon: "mercury",
-        description: "Evidence-backed decision workspace",
-        keywords: ["home", "dashboard", "decision", "case"],
+        description: "Scientific decision workspace",
+        keywords: ["home", "dashboard", "decision", "lab"],
         permission: "mercury.read",
       },
+      { label: "Decision Cases", href: "/dashboard#decision-cases", icon: "history", description: "Evidence-backed decisions", permission: "decisions.read" },
+      { label: "Evidence", href: "/dashboard#evidence", icon: "execution", description: "Sources and contradictions", permission: "decisions.read" },
+      { label: "Knowledge", href: "/dashboard#knowledge", icon: "knowledge", description: "Lessons and reusable learning", permission: "decisions.read" },
+      { label: "Experiments", href: "/dashboard#experiments", icon: "execution", description: "Tests and outcomes", permission: "decisions.read" },
+      { label: "Approvals", href: "/approvals", icon: "approvals", description: "Human governance", permission: "decisions.approve" },
     ],
   },
   {
@@ -67,19 +72,8 @@ export const navigation: NavigationSection[] = [
     ],
   },
   {
-    label: "Operations",
-    items: [
-      { label: "Execution", href: "/execution", icon: "execution", description: "Staged and completed actions", permission: "mercury.write" },
-      { label: "Approvals", href: "/approvals", icon: "approvals", description: "Review approval-gated work", permission: "mercury.approve" },
-      { label: "History", href: "/history", icon: "history", description: "Mercury plan history", permission: "mercury.read" },
-      { label: "Knowledge", href: "/knowledge", icon: "knowledge", description: "Business context and sources", permission: "organization.read" },
-    ],
-  },
-  {
     label: "Platform",
     items: [
-      { label: "Integrations", href: "/integrations", icon: "integrations", description: "Data and commerce connections", permission: "integrations.read" },
-      { label: "Billing", href: "/billing", icon: "billing", description: "Plan and usage", permission: "billing.read" },
       { label: "Settings", href: "/settings", icon: "settings", description: "Workspace preferences", permission: "organization.read" },
     ],
   },

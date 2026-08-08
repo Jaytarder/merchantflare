@@ -6,6 +6,14 @@ This file is the current implementation record for MerchantFlare. Product direct
 
 ## Current project summary
 
+### Release 1.0 — Scientific Decision Platform
+
+Implemented on `release/scientific-decision-platform-1.0`: additive migration `009`, persistent Belief Graph relationships, deterministic explainable reasoning and uncertainty metrics, ranked reversible experiments, labeled gap hypotheses, self-critique, knowledge-reuse metrics, reusable scientific components, and an authenticated Decision Lab at `/dashboard`. Mercury is preserved at `/dashboard/mercury`; its APIs, authentication, RBAC, organization isolation, and existing Decision Platform contracts are unchanged.
+
+Verified status must be read from the validation table below. Production deployment, migration application, authenticated browser QA, accessibility inspection, and performance observation remain **planned/unverified** until this release passes the full validation and guarded production sequence. No production-complete claim is made by this section.
+
+The authenticated Decision Lab and Mercury compatibility route now use an Apple-inspired, MerchantFlare-owned visual layer. This changes typography, spacing, surfaces, controls, and responsive presentation only; it does not change navigation structure, authentication, APIs, decision data, or the public marketing site.
+
 MerchantFlare is an early-stage Scientific Decision Platform built with the Next.js App Router and TypeScript. Mercury remains the primary conversational interface into commerce evidence, governed plans, and the new decision-learning foundation.
 
 Sprint 1, the application shell, is implemented. Sprint 2 has an organization-scoped conversation, governance, and Commerce Evidence foundation. Sprint 4 adds the Platform Core foundation. Sprint 5 adds the Atlas foundation. Sprint 5B adds Cognito authentication code and infrastructure. The Decision Learning sprint now adds guarded lifecycle transitions, immutable calibrated predictions, atomic outcome-to-belief learning, reusable lessons, deterministic self-challenge, a minimal Mercury authoring workbench, and internal engineering metrics. The Scientific Decision Platform is deployed from `main`; migrations `007` and `008` were applied to `merchantflare-dev` after the new recovery snapshot.
@@ -21,7 +29,6 @@ Sprint 1, the application shell, is implemented. Sprint 2 has an organization-sc
 - Shell integration on `/dashboard` and `/workers`.
 - MerchantFlare black, white, and orange visual treatment, shared CSS tokens, and reusable UI primitives.
 - A production brand system with reusable dark- and light-surface wordmarks and monograms, a shared typed `Logo` component, favicon assets, an app icon, and canonical product metadata.
-- Decision Lab now replaces the legacy conversation-first dashboard home. It lists durable organization-scoped Decision Cases and presents the selected investigation with progressive disclosure for evidence, alternatives, counter-evidence, experiments, outcomes, and lessons. Its permanent Mercury panel is a non-chat reasoning summary derived only from the selected case's recorded lifecycle.
 
 ### Application and service foundations
 
@@ -105,7 +112,6 @@ Production is deployed from merge commit `71da433c863393fa3b9564e9a8d64c613f0efa
 | Marketing | Root page plus components under `components/marketing/` | Public presentation only; the active page uses the shared brand component but does not use all newer marketing components |
 | Login | `/login`, `/api/auth/*`, `lib/auth/`, `proxy.ts` | Production PKCE initiation, callback, Owner membership, session persistence across refresh, logout, and the Cognito password-recovery entry page were verified live; reset-code delivery and every non-Owner role remain separate QA requirements |
 | Mercury workspace | `/dashboard`, `MercuryWorkspace`, `ConversationSidebar`, `MercuryPlanCard` | Creates and resumes durable conversations, submits messages, renders deterministic linked plans and evidence status, supports versioned revision and plan-level approval decisions, and supports rename/archive/restore |
-| Decision Lab | `/dashboard`, `DecisionLab` | Lists persisted Decision Cases, opens one investigation at a time, and keeps evidence, hypotheses, counter-evidence, experiments, outcomes, and lessons progressively disclosed; no sample decisions or inferred confidence are shown |
 | Legacy prototype | `/workers` | Static AI-worker-oriented prototype retained as migration debt; it is not a completed intelligence-module experience |
 | Mercury API | `/api/mercury/conversations`, conversation detail/message routes, `/api/mercury/plans/[planId]/approval`, `POST /api/mercury/plan`, `GET /api/mercury/history` | Enforces the Cognito-derived principal and active membership, scopes reads/writes by organization, persists idempotent conversation turns and revisions, records approval decisions, and supports compatibility planning/history |
 | Mercury services | `lib/mercury/` | Keyword planning, capability mapping, approval rules, dependency routing, events, repository operations, and two execution foundations |
@@ -197,9 +203,9 @@ Validation was run against this branch on 2026-08-02. Decision Platform migratio
 | TypeScript typecheck (`npm run typecheck`) | Passed |
 | Production build (`npm run build`) | Passed |
 | Lint | Unavailable: no lint script is defined |
-| Automated tests (`npm test`) | Passed: 48 tests, including authentication, RBAC, organization scope, Atlas, Mercury, evidence, lifecycle, causal claims, posterior beliefs, calibration, and migration safety |
+| Automated tests (`npm test`) | Passed: 51 tests, including authentication, RBAC, organization scope, Atlas, Mercury, evidence, lifecycle, causal claims, posterior beliefs, calibration, explainable reasoning, contradiction handling, and migration safety |
 | Decision integration tests (`npm run test:integration`) | Passed: 3 in-process lifecycle, organization-boundary, and Atlas learning fixtures; PostgreSQL integration remains unverified |
-| Migration validation (`npm run migrate:dry-run`) | Passed: migrations `001` through `008` validated locally and applied through the snapshot-gated CloudShell runner with checksum/index verification |
+| Migration validation (`npm run migrate:dry-run`) | Passed locally: migrations `001` through `009` validated; `001` through `008` are applied in production, while additive migration `009` remains unapplied pending a new snapshot and guarded release |
 | Markdown relative links | Passed across `AGENTS.md`, `PROJECT_STATUS.md`, `docs/`, and `specs/` |
 | Public deployment smoke QA | Passed: generated Amplify URL and `app.merchantflare.com` returned HTTPS 200, `/api/health` returned `ok`, `/login` rendered without application console errors, login initiated Cognito PKCE with the exact app callback, and unauthenticated `/dashboard` returned a safe internal login redirect |
 | Apex marketing availability | Failed pre-change: `merchantflare.com` had no resolvable A, AAAA, or CNAME record from the test environment; no apex DNS record was changed |
@@ -212,7 +218,6 @@ Validation was run against this branch on 2026-08-02. Decision Platform migratio
 
 | Date | Change |
 | --- | --- |
-| 2026-08-02 | Replaced the authenticated dashboard home with Decision Lab: a responsive, evidence-backed Decision Case list and progressive investigation view with a non-chat Mercury reasoning panel. The experience reads only authenticated, organization-scoped Decision Case data and explicitly preserves unavailable and empty states. |
 | 2026-08-02 | Deployed the Scientific Decision Platform to `app.merchantflare.com` from merge commit `71da433c863393fa3b9564e9a8d64c613f0efaf1`; independently verified generated/custom health, protected Decision APIs, safe redirects, Cognito PKCE callback, password recovery entry, target viewport overflow, and browser console state. Owner-authenticated workspace/refresh QA was operator-confirmed. |
 | 2026-08-02 | Added the locally verified Scientific Decision Platform foundation: migration `007`, canonical decision objects, evidence and belief guardrails, experiments/interventions/outcomes/lessons, immutable history, RBAC APIs, optional Mercury context, and decision tests. Migrations `007` and `008` were subsequently applied after snapshot `merchantflare-pre-decision-platform-20260802`; live application QA remains pending. |
 | 2026-08-02 | Added the Decision Learning engine: migration `008`, immutable predictions, idempotent manual execution records, guarded transitions, atomic posterior learning, generated lessons, self-challenge, calibration metrics, an Atlas title pilot contract, and minimal Mercury authoring/internal metrics. Isolated PostgreSQL application remains unverified. |
