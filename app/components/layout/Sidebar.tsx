@@ -45,13 +45,13 @@ export default function Sidebar({
             <Logo
               className="platform-brand-logo"
               variant="horizontal"
-              surface="dark"
+              surface="auto"
               priority
             />
             <Logo
               className="platform-brand-mark"
               variant="monogram"
-              surface="dark"
+              surface="auto"
               decorative
             />
           </Link>

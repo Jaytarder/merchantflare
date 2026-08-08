@@ -1,10 +1,10 @@
 # Design System
 
-Release 1.0 adds a dark-first scientific component layer documented in [Component Library](component-library.md). It uses existing shell tokens, no gradients, semantic native controls, visible focus inherited from the shell, AA-target contrast, responsive single-column collapse, and reduced-motion handling. It represents real persisted work or an explicit empty state; decorative metrics are prohibited.
+Release 1.0 adds a system-themed scientific component layer documented in [Component Library](component-library.md). It uses the active shell tokens, restrained depth, semantic native controls, visible focus inherited from the shell, AA-target contrast, responsive single-column collapse, and reduced-motion handling. It represents real persisted work or an explicit empty state; decorative metrics are prohibited.
 
-The authenticated product also applies an Apple-inspired presentation layer through `app/dashboard/apple-decision-system.css`: system typography, neutral black and graphite surfaces, restrained translucency, precise radii, compact pill actions, minimal elevation, and the existing MerchantFlare orange as a functional decision accent. The marketing site is intentionally unaffected. Reduced-transparency and reduced-motion preferences receive solid-surface and motion-free fallbacks.
+The authenticated product also applies an Apple-inspired presentation layer through `app/dashboard/apple-decision-system.css`: system typography, neutral surfaces, restrained translucency, precise radii, compact pill actions, and minimal elevation. The marketing site is intentionally unaffected. Reduced-transparency and reduced-motion preferences receive solid-surface and motion-free fallbacks.
 
-The broader premium application layer is implemented in `app/components/premium-application.css`. It extends the same existing tokens to the shared authenticated shell, semantic SVG navigation glyphs, search and account surfaces, Atlas, Mercury, responsive layouts, and sign-in. It does not introduce another token family, alter navigation information architecture, or carry behavioral logic. Page-specific styles remain responsible for data layout; the premium layer normalizes their surface, typography, control, focus, and motion treatment.
+The broader premium application layer is implemented in `app/components/premium-application.css`. It centralizes the existing token roles for light and dark palettes, surfaces, controls, semantic colors, shadows, focus, and spacing. The operating-system preference selects the mode with no theme flash or stored preference required. It extends those tokens to the shared authenticated shell, semantic SVG navigation glyphs, search and account surfaces, Decision Lab, Atlas, Mercury, responsive layouts, and sign-in. It does not alter navigation information architecture or carry behavioral logic. Page-specific styles remain responsible for data layout; the premium layer normalizes their surface, typography, control, focus, and motion treatment.
 
 ## Brand direction
 
@@ -12,7 +12,8 @@ MerchantFlare uses a black, white, and orange visual system with an enterprise a
 
 - **Black:** primary canvas and navigation surfaces
 - **White:** primary typography and high-emphasis content
-- **Orange:** brand accent, active states, focus, and decisive actions
+- **Orange:** MerchantFlare brand artwork and identity
+- **Blue:** authenticated application actions, active states, and focus
 - **Neutral gray:** secondary text, borders, disabled states, and supporting structure
 - **Semantic colors:** restrained green, amber, and red for verified status meaning
 
@@ -50,6 +51,18 @@ The active global theme in `app/globals.css` defines:
 | Positive | `--success: #35d49a` |
 | Warning | `--warning: #f3c969` |
 | Critical | `--danger: #ff6f75` |
+
+The authenticated premium layer overrides these roles by system mode without changing their semantic names:
+
+| Role | Light | Dark |
+| --- | --- | --- |
+| Canvas | `#F5F5F7` | `#000000` |
+| Elevated surface | `#FFFFFF` | `#1C1C1E` |
+| Primary text | `#1D1D1F` | `#F5F5F7` |
+| Secondary text | `#6E6E73` | `#A1A1A6` |
+| Action/focus | `#0071E3` | `#0A84FF` |
+
+MerchantFlare orange remains visible in the adaptive logo assets; blue communicates interactive state and does not redefine the brand artwork.
 
 `styles/design-system.css` contains a parallel `--mf-*` token set and reusable UI classes, but it is not imported by the current root layout. Consolidating these token systems is future design-system work; do not create a third token family.
 

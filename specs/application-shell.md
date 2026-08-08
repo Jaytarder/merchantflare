@@ -11,8 +11,8 @@ Provide the consistent, responsive frame for authenticated MerchantFlare workflo
 
 The current shell implements:
 
-- a persistent 272px desktop sidebar;
-- an 84px collapsed or 272px expanded tablet sidebar;
+- a persistent 252px desktop sidebar;
+- a 76px collapsed or full-width expanded tablet sidebar;
 - an off-canvas mobile drawer;
 - config-driven navigation;
 - route highlighting;
@@ -21,10 +21,11 @@ The current shell implements:
 - role-filtered navigation plus notification and user-menu surfaces;
 - explicit “Not configured” platform-status presentation;
 - a responsive workspace boundary;
-- a reusable MerchantFlare horizontal wordmark and compact monogram; and
+- a reusable MerchantFlare horizontal wordmark and compact monogram;
+- system-preference light and dark palettes with adaptive logo assets; and
 - canonical application metadata, favicon, and app-icon references.
 
-The shell is composed from `app/components/layout/` and styled by `app/components/app-shell.css`. It is used by `/dashboard` and directly by the legacy `/workers` page.
+The shell is composed from `app/components/layout/` and styled by `app/components/app-shell.css` plus the system-themed `app/components/premium-application.css`. It is used by `/dashboard`, `/atlas`, and directly by the legacy `/workers` page.
 
 ## Required behavior
 
