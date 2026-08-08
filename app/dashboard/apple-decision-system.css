@@ -1,0 +1,426 @@
+/* Apple-inspired authenticated product surface.
+   MerchantFlare retains its own brand, language, and orange decision accent. */
+
+.platform-shell {
+  --bg: #000;
+  --bg-elevated: #0a0a0b;
+  --panel: rgba(28, 28, 30, 0.78);
+  --panel-2: rgba(44, 44, 46, 0.72);
+  --panel-3: rgba(58, 58, 60, 0.68);
+  --text: #f5f5f7;
+  --muted: #a1a1a6;
+  --subtle: #6e6e73;
+  --line: rgba(255, 255, 255, 0.1);
+  --line-strong: rgba(255, 255, 255, 0.18);
+  --accent: #ff7a1a;
+  --accent-2: #ff9f52;
+  --accent-soft: rgba(255, 122, 26, 0.12);
+  --success: #30d158;
+  --warning: #ffd60a;
+  --danger: #ff453a;
+  min-height: 100vh;
+  background: #000;
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+  font-synthesis: none;
+  letter-spacing: -0.008em;
+}
+
+.platform-sidebar {
+  border-right-color: rgba(255, 255, 255, 0.08);
+  background: rgba(18, 18, 19, 0.88);
+  box-shadow: none;
+  -webkit-backdrop-filter: saturate(180%) blur(28px);
+  backdrop-filter: saturate(180%) blur(28px);
+}
+
+.platform-brand {
+  border-bottom-color: rgba(255, 255, 255, 0.07);
+}
+
+.platform-nav-label,
+.platform-connections h2 {
+  color: #7d7d82;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+}
+
+.platform-nav-item {
+  min-height: 44px;
+  border: 0;
+  border-radius: 10px;
+  color: #b8b8bd;
+  transition: background 140ms ease, color 140ms ease, transform 140ms ease;
+}
+
+.platform-nav-item:hover {
+  background: rgba(255, 255, 255, 0.055);
+  color: #fff;
+}
+
+.platform-nav-item.is-active {
+  background: rgba(255, 255, 255, 0.105);
+  color: #fff;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.035);
+}
+
+.platform-nav-icon {
+  border: 0;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.07);
+  color: #d1d1d6;
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.platform-nav-item.is-active .platform-nav-icon {
+  background: var(--accent);
+  color: #fff;
+}
+
+.platform-nav-copy strong {
+  font-size: 13px;
+  font-weight: 590;
+  letter-spacing: -0.01em;
+}
+
+.platform-nav-copy small {
+  color: #747479;
+  font-size: 10px;
+  font-weight: 450;
+}
+
+.platform-connections {
+  border-top-color: rgba(255, 255, 255, 0.07);
+  background: transparent;
+}
+
+.platform-topbar {
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.76);
+  -webkit-backdrop-filter: saturate(180%) blur(28px);
+  backdrop-filter: saturate(180%) blur(28px);
+}
+
+.platform-search label,
+.platform-icon-button,
+.platform-menu {
+  border-color: rgba(255, 255, 255, 0.09);
+  border-radius: 11px;
+  background: rgba(118, 118, 128, 0.16);
+  box-shadow: none;
+}
+
+.platform-search label:focus-within {
+  border-color: rgba(255, 159, 82, 0.55);
+  background: rgba(118, 118, 128, 0.2);
+  box-shadow: 0 0 0 4px rgba(255, 122, 26, 0.1);
+}
+
+.platform-search input {
+  color: #f5f5f7;
+  font-size: 14px;
+}
+
+.platform-search-results,
+.platform-popover-panel {
+  border-color: rgba(255, 255, 255, 0.13);
+  border-radius: 16px;
+  background: rgba(35, 35, 37, 0.94);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.52);
+  -webkit-backdrop-filter: saturate(180%) blur(30px);
+  backdrop-filter: saturate(180%) blur(30px);
+}
+
+.platform-avatar {
+  border-radius: 50%;
+  background: #2c2c2e;
+  color: #f5f5f7;
+  font-weight: 650;
+}
+
+.platform-workspace {
+  background: #000;
+  padding: 40px clamp(20px, 3vw, 48px) 64px;
+}
+
+.decision-lab {
+  max-width: 1680px;
+}
+
+.decision-lab-header {
+  align-items: flex-end;
+  padding: 14px 2px 38px;
+}
+
+.decision-lab-header span,
+.reasoning-panel header span,
+.belief-graph header span,
+.decision-case-experience > header > div > span,
+.scientific-card-label {
+  color: #8e8e93;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.055em;
+}
+
+.decision-lab-header h1 {
+  margin: 10px 0 12px;
+  font-size: clamp(46px, 5vw, 72px);
+  font-weight: 680;
+  letter-spacing: -0.055em;
+  line-height: 0.98;
+}
+
+.decision-lab-header p {
+  max-width: 680px;
+  color: #a1a1a6;
+  font-size: 17px;
+  line-height: 1.52;
+  letter-spacing: -0.012em;
+}
+
+.decision-lab-actions a,
+.decision-lab-actions button {
+  min-height: 38px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  background: #f5f5f7;
+  color: #1d1d1f;
+  font-size: 13px;
+  font-weight: 590;
+  transition: opacity 140ms ease, transform 140ms ease;
+}
+
+.decision-lab-actions button {
+  background: #ff7a1a;
+  color: #fff;
+}
+
+.decision-lab-actions a:hover,
+.decision-lab-actions button:hover {
+  opacity: 0.88;
+  transform: translateY(-1px);
+}
+
+.decision-work-index {
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+.scientific-card,
+.decision-case-list,
+.decision-activity,
+.decision-case-experience,
+.reasoning-panel,
+.belief-graph {
+  border-color: rgba(255, 255, 255, 0.09);
+  background: rgba(28, 28, 30, 0.72);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
+  -webkit-backdrop-filter: saturate(160%) blur(22px);
+  backdrop-filter: saturate(160%) blur(22px);
+}
+
+.scientific-card {
+  padding: 22px;
+  border-radius: 18px;
+}
+
+.scientific-card h3 {
+  margin: 10px 0 12px;
+  color: #f5f5f7;
+  font-size: 19px;
+  font-weight: 620;
+  letter-spacing: -0.025em;
+}
+
+.scientific-card p,
+.scientific-card li,
+.scientific-card small {
+  color: #a1a1a6;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.decision-lab-layout {
+  grid-template-columns: 250px minmax(0, 1fr) 260px;
+  gap: 16px;
+}
+
+.decision-case-list,
+.decision-activity,
+.decision-case-experience {
+  border-radius: 20px;
+}
+
+.decision-case-list,
+.decision-activity {
+  padding: 16px;
+}
+
+.decision-case-list h2,
+.decision-activity h2 {
+  color: #f5f5f7;
+  font-size: 14px;
+  font-weight: 620;
+}
+
+.decision-case-list button {
+  padding: 13px;
+  border: 0;
+  border-radius: 12px;
+}
+
+.decision-case-list button:hover,
+.decision-case-list button.is-selected {
+  border-color: transparent;
+  background: rgba(255, 255, 255, 0.085);
+}
+
+.decision-case-list button strong {
+  font-size: 13px;
+  font-weight: 590;
+}
+
+.decision-case-list button span {
+  color: #7d7d82;
+  font-size: 10px;
+}
+
+.decision-case-experience {
+  padding: clamp(20px, 2.4vw, 32px);
+}
+
+.decision-case-experience > header {
+  padding-bottom: 24px;
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+.decision-case-experience > header h2 {
+  margin-top: 9px;
+  font-size: clamp(26px, 3vw, 38px);
+  font-weight: 650;
+  letter-spacing: -0.04em;
+}
+
+.approval-banner {
+  min-width: 132px;
+  padding: 10px 14px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.075);
+}
+
+.approval-banner strong,
+.approval-banner span {
+  display: inline;
+  font-size: 11px;
+  font-weight: 560;
+}
+
+.approval-banner span {
+  margin-left: 6px;
+}
+
+.decision-case-flow {
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.reasoning-panel,
+.belief-graph {
+  margin-top: 18px;
+  padding: 22px;
+  border-radius: 18px;
+}
+
+.reasoning-panel h2,
+.belief-graph h2 {
+  font-size: 22px;
+  font-weight: 620;
+  letter-spacing: -0.028em;
+}
+
+.confidence-track {
+  height: 6px;
+  background: rgba(118, 118, 128, 0.24);
+}
+
+.confidence-track span {
+  border-radius: inherit;
+  background: #ff7a1a;
+}
+
+.belief-graph-edges article {
+  padding: 14px;
+  border-color: rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.decision-activity p {
+  color: #a1a1a6;
+  font-size: 12px;
+}
+
+.mercury-workspace {
+  border-color: rgba(255, 255, 255, 0.09);
+  border-radius: 20px;
+  background: #0a0a0b;
+  box-shadow: none;
+}
+
+.mercury-conversations,
+.mercury-thread {
+  background: rgba(28, 28, 30, 0.72);
+}
+
+.mercury-conversations-heading,
+.mercury-thread-header {
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+.mercury-new-conversation,
+.mercury-thread-actions button,
+.mercury-title-form button,
+.mercury-configuration-state button {
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.09);
+}
+
+@media (max-width: 1250px) {
+  .decision-lab-layout { grid-template-columns: 230px minmax(0, 1fr); }
+}
+
+@media (max-width: 850px) {
+  .platform-workspace { padding-top: 28px; }
+  .decision-lab-header h1 { font-size: clamp(42px, 11vw, 64px); }
+}
+
+@media (max-width: 560px) {
+  .decision-lab-header { padding-bottom: 28px; }
+  .decision-lab-header p { font-size: 16px; }
+  .scientific-card { padding: 18px; }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .platform-sidebar,
+  .platform-topbar,
+  .platform-search-results,
+  .platform-popover-panel,
+  .scientific-card,
+  .decision-case-list,
+  .decision-activity,
+  .decision-case-experience,
+  .reasoning-panel,
+  .belief-graph { background: #1c1c1e; backdrop-filter: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .platform-nav-item,
+  .decision-lab-actions a,
+  .decision-lab-actions button { transition: none; }
+}

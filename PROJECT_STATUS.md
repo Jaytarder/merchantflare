@@ -12,6 +12,8 @@ Implemented on `release/scientific-decision-platform-1.0`: additive migration `0
 
 Verified status must be read from the validation table below. Production deployment, migration application, authenticated browser QA, accessibility inspection, and performance observation remain **planned/unverified** until this release passes the full validation and guarded production sequence. No production-complete claim is made by this section.
 
+The authenticated Decision Lab and Mercury compatibility route now use an Apple-inspired, MerchantFlare-owned visual layer. This changes typography, spacing, surfaces, controls, and responsive presentation only; it does not change navigation structure, authentication, APIs, decision data, or the public marketing site.
+
 MerchantFlare is an early-stage Scientific Decision Platform built with the Next.js App Router and TypeScript. Mercury remains the primary conversational interface into commerce evidence, governed plans, and the new decision-learning foundation.
 
 Sprint 1, the application shell, is implemented. Sprint 2 has an organization-scoped conversation, governance, and Commerce Evidence foundation. Sprint 4 adds the Platform Core foundation. Sprint 5 adds the Atlas foundation. Sprint 5B adds Cognito authentication code and infrastructure. The Decision Learning sprint now adds guarded lifecycle transitions, immutable calibrated predictions, atomic outcome-to-belief learning, reusable lessons, deterministic self-challenge, a minimal Mercury authoring workbench, and internal engineering metrics. The Scientific Decision Platform is deployed from `main`; migrations `007` and `008` were applied to `merchantflare-dev` after the new recovery snapshot.

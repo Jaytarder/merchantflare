@@ -2,6 +2,8 @@
 
 Release 1.0 adds a dark-first scientific component layer documented in [Component Library](component-library.md). It uses existing shell tokens, no gradients, semantic native controls, visible focus inherited from the shell, AA-target contrast, responsive single-column collapse, and reduced-motion handling. It represents real persisted work or an explicit empty state; decorative metrics are prohibited.
 
+The authenticated product also applies an Apple-inspired presentation layer through `app/dashboard/apple-decision-system.css`: system typography, neutral black and graphite surfaces, restrained translucency, precise radii, compact pill actions, minimal elevation, and the existing MerchantFlare orange as a functional decision accent. The marketing site is intentionally unaffected. Reduced-transparency and reduced-motion preferences receive solid-surface and motion-free fallbacks.
+
 ## Brand direction
 
 MerchantFlare uses a black, white, and orange visual system with an enterprise aesthetic.
