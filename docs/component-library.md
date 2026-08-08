@@ -13,6 +13,8 @@ Decision Lab composes these into a Decision Timeline, Reasoning Panel, and persi
 
 The shared application shell now uses a typed, inline SVG glyph set keyed by the existing `NavigationIcon` contract. These glyphs replace letter placeholders without changing destinations, authorization filtering, route matching, or search behavior. The premium application stylesheet supplies consistent shell, popover, control, Atlas, Mercury, and sign-in presentation with reduced-transparency and reduced-motion fallbacks.
 
+`Logo` supports `surface="auto"` for authenticated surfaces. It renders the existing light- and dark-surface assets and lets the system color-scheme preference select the accessible variant; the underlying production artwork is unchanged.
+
 ## Planned
 
 Split specialized Evidence, Belief, Hypothesis, Experiment, Outcome, Lesson, and Knowledge card props once their independent collection routes exist. Add automated axe coverage and Storybook only when it supports production verification rather than decorative development work.

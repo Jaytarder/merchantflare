@@ -2,7 +2,7 @@ import Image from "next/image";
 import styles from "./Logo.module.css";
 
 export type LogoVariant = "wordmark" | "monogram" | "horizontal";
-export type LogoSurface = "dark" | "light";
+export type LogoSurface = "dark" | "light" | "auto";
 
 type LogoProps = {
   variant?: LogoVariant;
@@ -38,8 +38,18 @@ export function Logo({
   className,
   sizes,
 }: LogoProps) {
-  const asset = assets[surface];
   const alt = decorative ? "" : "MerchantFlare";
+
+  if (surface === "auto") {
+    return (
+      <span className={classes(styles.adaptive, className)}>
+        <Logo variant={variant} surface="light" tagline={tagline} decorative={decorative} priority={priority} sizes={sizes} className={styles.adaptiveLight} />
+        <Logo variant={variant} surface="dark" tagline={tagline} decorative={decorative} priority={priority} sizes={sizes} className={styles.adaptiveDark} />
+      </span>
+    );
+  }
+
+  const asset = assets[surface];
 
   if (variant === "monogram") {
     return (

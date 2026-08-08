@@ -57,3 +57,16 @@
 .logo[data-surface="light"] {
   color: #5f646d;
 }
+
+.adaptive,
+.adaptiveLight {
+  display: inline-flex;
+  width: 100%;
+}
+
+.adaptiveDark { display: none; }
+
+@media (prefers-color-scheme: dark) {
+  .adaptiveLight { display: none; }
+  .adaptiveDark { display: inline-flex; width: 100%; }
+}

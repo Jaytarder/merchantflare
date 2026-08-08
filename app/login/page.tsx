@@ -29,7 +29,7 @@ export default async function LoginPage({
     <main className="login-page">
       <section className="login-brand-panel">
         <Link className="login-logo" href="/" aria-label="MerchantFlare home">
-          <Logo variant="horizontal" surface="dark" tagline priority />
+          <Logo variant="horizontal" surface="auto" tagline priority />
         </Link>
         <div className="login-hero-copy">
           <span>SCIENTIFIC DECISION PLATFORM</span>
