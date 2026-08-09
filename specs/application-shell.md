@@ -11,7 +11,7 @@ Provide the consistent, responsive frame for authenticated MerchantFlare workflo
 
 The current shell implements:
 
-- a persistent 252px desktop sidebar;
+- a persistent 232px desktop sidebar;
 - a 76px collapsed or full-width expanded tablet sidebar;
 - an off-canvas mobile drawer;
 - config-driven navigation;
