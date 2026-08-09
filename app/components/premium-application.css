@@ -3,9 +3,9 @@
 
 .platform-shell,
 .login-page {
-  --shell-sidebar: 252px;
-  --shell-sidebar-collapsed: 76px;
-  --shell-topbar: 64px;
+  --shell-sidebar: 232px;
+  --shell-sidebar-collapsed: 72px;
+  --shell-topbar: 60px;
   --bg: #f5f5f7;
   --bg-elevated: #fff;
   --panel: rgba(255, 255, 255, 0.8);
@@ -22,19 +22,19 @@
   --success: #248a3d;
   --warning: #b25000;
   --danger: #d70015;
-  --surface-sidebar: rgba(245, 245, 247, 0.86);
-  --surface-topbar: rgba(255, 255, 255, 0.76);
+  --surface-sidebar: rgba(245, 245, 247, 0.92);
+  --surface-topbar: rgba(255, 255, 255, 0.82);
   --surface-control: rgba(118, 118, 128, 0.12);
   --surface-control-hover: rgba(118, 118, 128, 0.2);
   --surface-hover: rgba(0, 0, 0, 0.045);
   --surface-selected: rgba(0, 113, 227, 0.11);
   --surface-popover: rgba(255, 255, 255, 0.94);
-  --surface-card: rgba(255, 255, 255, 0.82);
-  --surface-card-muted: rgba(255, 255, 255, 0.6);
+  --surface-card: #fff;
+  --surface-card-muted: #f5f5f7;
   --surface-message: #e9e9eb;
   --on-accent: #fff;
   --shadow-1: 0 1px 3px rgba(0, 0, 0, 0.08);
-  --shadow-2: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-2: 0 2px 8px rgba(0, 0, 0, 0.08);
   --shadow-3: 0 18px 38px rgba(0, 0, 0, 0.12);
   --focus-ring: 0 0 0 4px rgba(0, 113, 227, 0.14);
   color-scheme: light dark;
@@ -72,8 +72,8 @@
     --surface-hover: rgba(255, 255, 255, 0.055);
     --surface-selected: rgba(10, 132, 255, 0.15);
     --surface-popover: rgba(38, 38, 40, 0.95);
-    --surface-card: rgba(28, 28, 30, 0.78);
-    --surface-card-muted: rgba(255, 255, 255, 0.025);
+    --surface-card: #1c1c1e;
+    --surface-card-muted: #2c2c2e;
     --surface-message: #2c2c2e;
     --on-accent: #fff;
     --shadow-1: 0 1px 3px rgba(0, 0, 0, 0.24);
@@ -569,9 +569,218 @@
 .login-recovery { color: var(--accent); font-weight: 540; }
 .login-card > small { color: var(--subtle); }
 
+/* Composition pass: hierarchy and spacing follow the supplied Apple UI guide. */
+.platform-brand-logo { width: 158px; }
+
+.platform-nav { padding: 16px 10px 24px; }
+.platform-nav-section + .platform-nav-section { margin-top: 28px; }
+.platform-nav-label { padding-bottom: 6px; }
+
+.platform-nav-item {
+  min-height: 40px;
+  padding: 5px 8px;
+  border-radius: 10px;
+}
+
+.platform-nav-icon {
+  flex-basis: 28px;
+  width: 28px;
+  height: 28px;
+  background: transparent;
+}
+
+.platform-nav-item.is-active .platform-nav-icon {
+  background: transparent;
+  color: var(--accent);
+}
+
+.platform-nav-item.is-active {
+  background: var(--surface-selected);
+  box-shadow: none;
+}
+
+.platform-nav-copy small { display: none; }
+
+.platform-connections {
+  margin: 0 10px 12px;
+  padding: 14px 8px 4px;
+}
+
+.platform-topbar { padding-inline: 24px; }
+.platform-search { width: min(100%, 520px); }
+
+.platform-workspace {
+  padding: 32px clamp(24px, 3vw, 48px) max(64px, env(safe-area-inset-bottom));
+}
+
+.platform-shell .decision-lab { max-width: 1480px; }
+
+.platform-shell .decision-lab-header {
+  align-items: center;
+  padding: 4px 0 32px;
+}
+
+.platform-shell .decision-lab-header h1 {
+  margin: 6px 0 8px;
+  font-size: clamp(34px, 4vw, 48px);
+  font-weight: 650;
+  letter-spacing: -0.04em;
+  line-height: 1.08;
+}
+
+.platform-shell .decision-lab-header p {
+  max-width: 640px;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.platform-shell .decision-lab-actions a,
+.platform-shell .decision-lab-actions button {
+  min-height: 36px;
+  padding-inline: 14px;
+  border-radius: 10px;
+  font-size: 13px;
+}
+
+.platform-shell .decision-work-index {
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.platform-shell .scientific-card {
+  min-height: 132px;
+  padding: 20px;
+  border-radius: 16px;
+}
+
+.platform-shell .scientific-card h3 {
+  margin: 12px 0 8px;
+  font-size: 22px;
+  font-weight: 650;
+  line-height: 1.2;
+}
+
+.platform-shell .scientific-card p,
+.platform-shell .scientific-card li,
+.platform-shell .scientific-card small {
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.platform-shell .decision-lab-layout {
+  grid-template-columns: 216px minmax(0, 1fr) 232px;
+  gap: 16px;
+}
+
+.platform-shell .decision-case-list,
+.platform-shell .decision-activity,
+.platform-shell .decision-case-experience {
+  border-radius: 16px;
+}
+
+.platform-shell .decision-case-list,
+.platform-shell .decision-activity { padding: 12px; }
+
+.platform-shell .decision-case-list button {
+  padding: 12px;
+  border-radius: 10px;
+}
+
+.platform-shell .decision-case-experience {
+  padding: clamp(22px, 2.5vw, 32px);
+}
+
+.platform-shell .decision-case-experience > header h2 {
+  font-size: clamp(24px, 2.8vw, 34px);
+  font-weight: 650;
+  line-height: 1.15;
+}
+
+.platform-shell .decision-case-flow {
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.platform-shell .decision-case-flow .scientific-card { min-height: 0; }
+
+.platform-shell .reasoning-panel,
+.platform-shell .belief-graph {
+  margin-top: 24px;
+  padding: 24px;
+  border-radius: 16px;
+}
+
+.platform-shell .reasoning-panel h2,
+.platform-shell .belief-graph h2 {
+  font-size: 22px;
+  line-height: 1.28;
+}
+
+.platform-shell .belief-graph-edges { gap: 12px; }
+
+.platform-shell .belief-graph-edges article {
+  padding: 16px;
+  border-radius: 12px;
+}
+
+.platform-shell .atlas-page-header {
+  align-items: center;
+  padding: 4px 0 32px;
+}
+
+.platform-shell .atlas-page-header h1,
+.platform-shell .atlas-summary h1 {
+  font-size: clamp(34px, 4vw, 48px);
+  font-weight: 650;
+  line-height: 1.08;
+}
+
+.platform-shell .atlas-summary { padding: 24px 0; }
+.platform-shell .atlas-summary dl div,
+.platform-shell .atlas-card,
+.platform-shell .atlas-item-card { border-radius: 16px; }
+
+.platform-shell .mercury-workspace { border-radius: 16px; }
+
+.platform-shell .mercury-conversations-heading,
+.platform-shell .mercury-thread-header {
+  min-height: 72px;
+  padding: 16px 20px;
+}
+
+.platform-shell .mercury-thread-header h1 {
+  font-size: clamp(22px, 2vw, 28px);
+  font-weight: 650;
+}
+
+.platform-shell .mercury-welcome h2 {
+  font-size: clamp(32px, 4vw, 44px);
+  font-weight: 650;
+  line-height: 1.1;
+}
+
+.platform-shell .mercury-suggestions { gap: 12px; }
+.platform-shell .mercury-suggestions button { min-height: 88px; padding: 16px; }
+.platform-shell .mercury-plan { padding: 20px; border-radius: 16px; }
+
+.login-hero-copy h1 {
+  max-width: 760px;
+  font-size: clamp(48px, 5.5vw, 72px);
+  line-height: 1.02;
+}
+
+.login-card { border-radius: 20px; }
+.login-submit { border-radius: 10px; }
+
 @media (max-width: 1180px) {
-  .platform-shell { --shell-sidebar: 238px; }
+  .platform-shell { --shell-sidebar: 220px; }
   .platform-shell .atlas-page-header { align-items: start; }
+  .platform-shell .decision-lab-layout { grid-template-columns: 208px minmax(0, 1fr); }
+  .platform-shell .decision-activity {
+    position: static;
+    grid-column: 1 / -1;
+    max-height: none;
+  }
 }
 
 @media (max-width: 850px) {
@@ -579,6 +788,7 @@
   .platform-user-copy,
   .platform-user-chevron { display: none; }
   .platform-shell .atlas-page-header h1 { font-size: clamp(38px, 8vw, 58px); }
+  .platform-shell .decision-lab-header { align-items: flex-start; }
 }
 
 @media (max-width: 767px) {
@@ -586,6 +796,8 @@
   .platform-topbar { padding-inline: 12px; }
   .platform-search kbd { display: none; }
   .platform-workspace { padding: 20px 14px max(42px, env(safe-area-inset-bottom)); }
+  .platform-shell .decision-lab-layout { grid-template-columns: 1fr; }
+  .platform-shell .decision-case-list { max-height: 260px; }
   .platform-shell .mercury-workspace { min-height: auto; border-radius: 18px; }
   .login-brand-panel { min-height: 370px; }
 }

@@ -64,6 +64,18 @@ The authenticated premium layer overrides these roles by system mode without cha
 
 MerchantFlare orange remains visible in the adaptive logo assets; blue communicates interactive state and does not redefine the brand artwork.
 
+## Composition
+
+The Apple-inspired composition is intentionally quieter than the original operations dashboard:
+
+- page headlines use a 34–48px semibold range instead of display-scale hero typography;
+- the desktop sidebar is 232px with icon-and-label rows and descriptions reserved for search results;
+- content follows an 8-point spacing rhythm with 16–32px card and section gaps;
+- ordinary cards use solid system surfaces, subtle dividers, and low elevation;
+- blur is reserved for persistent navigation and transient popovers;
+- controls use 10px radii, while content groups use 16px radii; and
+- Decision Lab collapses from three columns to two and then one without changing its information or actions.
+
 `styles/design-system.css` contains a parallel `--mf-*` token set and reusable UI classes, but it is not imported by the current root layout. Consolidating these token systems is future design-system work; do not create a third token family.
 
 ## Typography
