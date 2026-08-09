@@ -70,3 +70,8 @@
   .adaptiveLight { display: none; }
   .adaptiveDark { display: inline-flex; width: 100%; }
 }
+
+:global(html[data-mf-theme="light"]) .adaptiveLight { display: inline-flex; width: 100%; }
+:global(html[data-mf-theme="light"]) .adaptiveDark { display: none; }
+:global(html[data-mf-theme="dark"]) .adaptiveLight { display: none; }
+:global(html[data-mf-theme="dark"]) .adaptiveDark { display: inline-flex; width: 100%; }

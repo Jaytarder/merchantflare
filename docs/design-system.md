@@ -76,6 +76,8 @@ The Apple-inspired composition is intentionally quieter than the original operat
 - controls use 10px radii, while content groups use 16px radii; and
 - Decision Lab collapses from three columns to two and then one without changing its information or actions.
 
+The topbar appearance control cycles System → Light → Dark. System remains the default. Explicit selection is restored from `merchantflare-appearance` in browser local storage before the application paints, avoiding a theme flash without adding a server-side preference or identity dependency.
+
 `styles/design-system.css` contains a parallel `--mf-*` token set and reusable UI classes, but it is not imported by the current root layout. Consolidating these token systems is future design-system work; do not create a third token family.
 
 ## Typography

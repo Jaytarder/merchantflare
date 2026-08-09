@@ -15,6 +15,8 @@ The shared application shell now uses a typed, inline SVG glyph set keyed by the
 
 `Logo` supports `surface="auto"` for authenticated surfaces. It renders the existing light- and dark-surface assets and lets the system color-scheme preference select the accessible variant; the underlying production artwork is unchanged.
 
+`AppearanceControl` is a real topbar control that cycles System, Light, and Dark modes with an accessible state/next-action label. It applies `data-mf-theme` to the document root, persists only the non-sensitive browser preference, and keeps adaptive brand assets synchronized with an explicit mode.
+
 ## Planned
 
 Split specialized Evidence, Belief, Hypothesis, Experiment, Outcome, Lesson, and Knowledge card props once their independent collection routes exist. Add automated axe coverage and Storybook only when it supports production verification rather than decorative development work.

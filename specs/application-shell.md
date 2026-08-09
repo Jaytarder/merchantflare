@@ -18,6 +18,7 @@ The current shell implements:
 - route highlighting;
 - a sticky topbar;
 - navigation search with `Ctrl+K`;
+- a System/Light/Dark appearance control with system default and local preference restoration;
 - role-filtered navigation plus notification and user-menu surfaces;
 - explicit “Not configured” platform-status presentation;
 - a responsive workspace boundary;

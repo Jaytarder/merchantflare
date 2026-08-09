@@ -83,6 +83,78 @@
   }
 }
 
+:root[data-mf-theme="light"] .platform-shell,
+:root[data-mf-theme="light"] .login-page {
+  --bg: #f5f5f7;
+  --bg-elevated: #fff;
+  --panel: rgba(255, 255, 255, 0.8);
+  --panel-2: #fff;
+  --panel-3: #e5e5ea;
+  --text: #1d1d1f;
+  --muted: #6e6e73;
+  --subtle: #86868b;
+  --line: rgba(0, 0, 0, 0.08);
+  --line-strong: rgba(0, 0, 0, 0.14);
+  --accent: #0071e3;
+  --accent-2: #147ce5;
+  --accent-soft: rgba(0, 113, 227, 0.1);
+  --success: #248a3d;
+  --warning: #b25000;
+  --danger: #d70015;
+  --surface-sidebar: rgba(245, 245, 247, 0.92);
+  --surface-topbar: rgba(255, 255, 255, 0.82);
+  --surface-control: rgba(118, 118, 128, 0.12);
+  --surface-control-hover: rgba(118, 118, 128, 0.2);
+  --surface-hover: rgba(0, 0, 0, 0.045);
+  --surface-selected: rgba(0, 113, 227, 0.11);
+  --surface-popover: rgba(255, 255, 255, 0.94);
+  --surface-card: #fff;
+  --surface-card-muted: #f5f5f7;
+  --surface-message: #e9e9eb;
+  --on-accent: #fff;
+  --shadow-1: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-2: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --shadow-3: 0 18px 38px rgba(0, 0, 0, 0.12);
+  --focus-ring: 0 0 0 4px rgba(0, 113, 227, 0.14);
+  color-scheme: light;
+}
+
+:root[data-mf-theme="dark"] .platform-shell,
+:root[data-mf-theme="dark"] .login-page {
+  --bg: #000;
+  --bg-elevated: #1c1c1e;
+  --panel: rgba(28, 28, 30, 0.8);
+  --panel-2: #1c1c1e;
+  --panel-3: #3a3a3c;
+  --text: #f5f5f7;
+  --muted: #a1a1a6;
+  --subtle: #8e8e93;
+  --line: rgba(255, 255, 255, 0.1);
+  --line-strong: rgba(255, 255, 255, 0.18);
+  --accent: #0a84ff;
+  --accent-2: #409cff;
+  --accent-soft: rgba(10, 132, 255, 0.13);
+  --success: #30d158;
+  --warning: #ffd60a;
+  --danger: #ff453a;
+  --surface-sidebar: rgba(28, 28, 30, 0.88);
+  --surface-topbar: rgba(0, 0, 0, 0.74);
+  --surface-control: rgba(118, 118, 128, 0.18);
+  --surface-control-hover: rgba(118, 118, 128, 0.28);
+  --surface-hover: rgba(255, 255, 255, 0.055);
+  --surface-selected: rgba(10, 132, 255, 0.15);
+  --surface-popover: rgba(38, 38, 40, 0.95);
+  --surface-card: #1c1c1e;
+  --surface-card-muted: #2c2c2e;
+  --surface-message: #2c2c2e;
+  --on-accent: #fff;
+  --shadow-1: 0 1px 3px rgba(0, 0, 0, 0.24);
+  --shadow-2: 0 4px 12px rgba(0, 0, 0, 0.3);
+  --shadow-3: 0 18px 48px rgba(0, 0, 0, 0.48);
+  --focus-ring: 0 0 0 4px rgba(10, 132, 255, 0.18);
+  color-scheme: dark;
+}
+
 .platform-shell button,
 .platform-shell input,
 .platform-shell textarea,
@@ -246,6 +318,19 @@
   color: var(--text);
 }
 
+.platform-appearance-control { position: relative; }
+
+:root[data-mf-theme] .platform-appearance-control::after {
+  content: "";
+  position: absolute;
+  right: 5px;
+  bottom: 5px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
 .platform-user {
   padding: 3px 6px 3px 4px;
   border-radius: 12px;
@@ -326,9 +411,9 @@
 .platform-shell .decision-case-experience,
 .platform-shell .reasoning-panel,
 .platform-shell .belief-graph {
-  border-color: var(--line);
+  border-color: transparent;
   background: var(--surface-card);
-  box-shadow: var(--shadow-2);
+  box-shadow: var(--shadow-1), inset 0 0 0 1px var(--line);
 }
 
 .platform-shell .scientific-card h3,
@@ -340,6 +425,16 @@
   background: var(--surface-selected);
   color: var(--text);
 }
+
+.platform-shell .decision-case-list button,
+.platform-shell .mercury-conversation-item,
+.platform-shell .mercury-suggestions button {
+  transition: background-color 150ms ease, color 150ms ease, transform 150ms ease;
+}
+
+.platform-shell .decision-case-list button:active,
+.platform-shell .mercury-conversation-item:active,
+.platform-shell .mercury-suggestions button:active { transform: scale(0.985); }
 
 .platform-shell .decision-case-list button span { color: var(--subtle); }
 
@@ -394,10 +489,10 @@
 .platform-shell .atlas-summary dl div,
 .platform-shell .atlas-card,
 .platform-shell .atlas-item-card {
-  border-color: var(--line);
+  border-color: transparent;
   border-radius: 18px;
   background: var(--surface-card);
-  box-shadow: var(--shadow-2);
+  box-shadow: var(--shadow-1), inset 0 0 0 1px var(--line);
   -webkit-backdrop-filter: blur(20px);
   backdrop-filter: blur(20px);
 }
@@ -422,10 +517,10 @@
 /* Mercury remains the conversational interface, presented as a focused workspace. */
 .platform-shell .mercury-workspace {
   min-height: calc(100svh - var(--shell-topbar) - 64px);
-  border-color: var(--line);
+  border-color: transparent;
   border-radius: 22px;
   background: var(--bg-elevated);
-  box-shadow: var(--shadow-2);
+  box-shadow: var(--shadow-1), inset 0 0 0 1px var(--line);
 }
 
 .platform-shell .mercury-conversations,
