@@ -49,8 +49,9 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" data-scroll-behavior="smooth">
+    <html lang="en" data-scroll-behavior="smooth" suppressHydrationWarning>
       <head>
+        <script dangerouslySetInnerHTML={{ __html: `try{var t=localStorage.getItem("merchantflare-appearance");if(t==="light"||t==="dark")document.documentElement.dataset.mfTheme=t}catch(e){}` }} />
         <link
           rel="mask-icon"
           href="/brand/merchantflare-mask-icon.svg"

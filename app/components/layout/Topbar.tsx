@@ -1,6 +1,7 @@
 import NotificationBell from "./NotificationBell";
 import SearchBar from "./SearchBar";
 import UserMenu from "./UserMenu";
+import AppearanceControl from "./AppearanceControl";
 import type {
   OrganizationRole,
   PlatformNotification,
@@ -72,6 +73,7 @@ export default function Topbar({
       <SearchBar role={userRole} />
 
       <div className="platform-topbar-actions">
+        <AppearanceControl />
         <NotificationBell notifications={notifications} />
         <UserMenu email={userEmail} role={userRole} />
       </div>
