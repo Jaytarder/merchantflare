@@ -35,7 +35,7 @@ Static data, navigation configuration, legacy prototypes, deterministic example 
 | [Mercury Command Center](mercury-command-center.md) | Scaffolded | Primary conversational Commerce Intelligence workspace |
 | [Atlas](atlas.md) | Planned | Catalog Intelligence |
 | [Vector](vector.md) | Planned | Advertising Intelligence |
-| [Oracle](oracle.md) | Planned | Demand Intelligence |
+| [Oracle](oracle.md) | Foundation implemented; production unverified | Demand Intelligence |
 | [Sentinel](sentinel.md) | Planned | Compliance Intelligence |
 | [Forge](forge.md) | Planned | Creative Intelligence |
 | [Pulse](pulse.md) | Planned | Executive Intelligence |

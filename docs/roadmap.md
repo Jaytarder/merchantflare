@@ -114,9 +114,11 @@ Atlas now has a provider-neutral domain, explainable assessment and health scori
 
 Navigation and advertising capability types exist. There is no Vector route, Amazon Ads integration, or complete Advertising Intelligence experience.
 
-## 5. Oracle — Not started
+## 5. Oracle — Foundation implemented
 
-Navigation and demand/inventory capability types exist. There is no Oracle route or complete Demand Intelligence experience.
+The repository now contains the authenticated Demand & Availability route, explicit MichaelModel and OracleModel calculations, normalized evidence mapping, separated inventory positions, WOS and stockout/excess reasoning, DF/BTR/MOQ rules, model competition, value of information, newness, censoring, planner overrides, immutable outcomes, RBAC APIs, Mercury context, and additive migration `010`.
+
+Still required: production demand/inventory ingestion, Outlook authorization and message retrieval, persisted production planning cohorts, provider execution, automated outcomes, calibrated category/SKU priors, and authenticated production lifecycle QA.
 
 ## 6. Sentinel — Not started
 

@@ -1,6 +1,6 @@
 # Oracle — Demand Intelligence Specification
 
-**Status:** Planned
+**Status:** Foundation implemented; production unverified
 **Roadmap stage:** 5
 **Canonical route:** `/oracle`
 
@@ -10,7 +10,7 @@ Oracle converts demand, inventory, availability, and lead-time evidence into for
 
 ## Current implementation evidence
 
-Oracle currently has navigation metadata, `inventory.forecast` and `inventory.protect` capability types, planning rules, legacy module registration, an approval rule for protection tasks, and deterministic example output. There is no Oracle route, demand pipeline, forecast model, replenishment integration, or live inventory data.
+Oracle now has additive organization-scoped persistence, explicit MichaelModel rules, an independent explainable OracleModel, normalized demand/inventory evidence mapping, inventory-position and replenishment reasoning, model comparison, value of information, newness and censoring logic, attributed overrides, immutable outcomes, organization-scoped APIs, Mercury context, and an authenticated `/oracle` route. No production evidence provider or Outlook connector is connected; empty production evidence must remain unavailable rather than becoming sample data.
 
 ## In scope
 
@@ -89,6 +89,8 @@ Oracle is implemented only when:
 - stale or missing data states are visible;
 - forecast accuracy and measured outcomes are available; and
 - tests cover time boundaries, sparse data, authorization, and stale inputs.
+
+The foundation satisfies the authenticated organization-scoped route, reproducible versioned model contracts, uncertainty, explainability, missing-data behavior, additive persistence, RBAC, and local tests. It does not satisfy the production-source, provider execution, or measured production-outcome criteria; therefore the end-to-end specification remains production unverified.
 
 ## Dependencies
 

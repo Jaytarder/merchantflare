@@ -117,6 +117,23 @@ export default function MercuryPlanCard({
         </div>
       ) : null}
 
+      {plan.oracleAssessment ? (
+        <div className={`mercury-evidence-notice is-${plan.oracleAssessment.status === "unavailable" ? "unavailable" : "available"}`}>
+          <strong>Demand &amp; Availability reasoning</strong>
+          {plan.oracleAssessment.decisions.length ? (
+            <ul className="mercury-evidence-list">
+              {plan.oracleAssessment.decisions.slice(0, 5).map((decision) => (
+                <li key={`${decision.product.marketplace ?? ""}:${decision.product.sku}`}>
+                  <strong>{decision.product.asin ?? decision.product.sku}</strong>
+                  <span>{decision.recommendedOption.action.replaceAll("_", " ")} · {decision.recommendedOption.quantity.toLocaleString()} units · {Math.round(decision.recommendedOption.confidence * 100)}% confidence</span>
+                  <p>MichaelModel {Math.round(decision.comparison.michael.baseForecast).toLocaleString()} vs OracleModel {Math.round(decision.comparison.oracle.baseForecast).toLocaleString()}. {decision.comparison.valueOfInformation.rationale}</p>
+                </li>
+              ))}
+            </ul>
+          ) : <p>{plan.oracleAssessment.limitations[0]}</p>}
+        </div>
+      ) : null}
+
       {plan.decisionContext?.length ? (
         <div className="mercury-evidence-notice is-available">
           <strong>Decision Case learning</strong>

@@ -15,6 +15,14 @@ import {
   OrganizationScopeError,
   requireOrganizationScope,
 } from "../lib/platform/authorization";
+import {
+  calculateInventoryPosition,
+  calculateMichaelForecast,
+  calculateOracleForecast,
+  compareForecasts,
+  generateReplenishmentOptions,
+  type OracleDemandSignal,
+} from "../lib/oracle";
 
 test("decision learning lifecycle preserves evidence, alternatives, and posterior confidence", () => {
   const createdAt = "2026-08-02T12:00:00.000Z";
@@ -125,4 +133,25 @@ test("Atlas pilot prediction becomes measurable learning without fabricating pro
   assert.equal(classifyPredictionQuality(resolved.confidence, resolved.succeeded).classificationCorrect, true);
   assert.equal(pilot.successCriteria[0].value, 0.11);
   assert.match(pilot.executionBoundary, /separate authenticated action/);
+});
+
+test("Oracle planning cycle keeps planner models independent through a governed option", () => {
+  const product = { sku: "INTEGRATION-SKU", asin: "B0INTEGRATION", productGroup: "Lic Kids" };
+  const signals: OracleDemandSignal[] = Array.from({ length: 6 }, (_, index) => {
+    const date = new Date(Date.UTC(2026, 6, 1 + index * 7)).toISOString();
+    return [
+      { id: `sales-${index}`, organizationId: "org-a", decisionCaseId: "case-a", product, metric: "sales_units" as const, value: 100, unit: "count", periodStart: date, periodEnd: date, observedAt: date, source: "normalized evidence", freshness: "current" as const, confidence: 0.9, demandCensored: false },
+      { id: `orders-${index}`, organizationId: "org-a", decisionCaseId: "case-a", product, metric: "order_units" as const, value: 180, unit: "count", periodStart: date, periodEnd: date, observedAt: date, source: "normalized evidence", freshness: "current" as const, confidence: 0.9, demandCensored: false },
+    ];
+  }).flat();
+  const michael = calculateMichaelForecast({ product, signals, horizonWeeks: 8, lifecycleState: "STABLE" });
+  const oracle = calculateOracleForecast({ product, signals, horizonWeeks: 8, lifecycleState: "STABLE" });
+  const comparison = compareForecasts({ michael, oracle, waitCost: 10, errorCostPerUnit: 2 });
+  const position = calculateInventoryPosition({ product, forecast: oracle, buckets: { amazonOnHand: 200, amazonOnOrder: 100, awcOnHand: 400, dfAvailable: 0, transferable: 0, committed: 0, promoCommitted: 0, inbound: 0, protected: 0 } });
+  const options = generateReplenishmentOptions({ position, forecast: oracle, latestWeekSales: 100, modelDisagreement: comparison.materiallyDisagrees });
+  assert.equal(michael.model, "MichaelModel");
+  assert.equal(oracle.model, "OracleModel");
+  assert.ok(options.some((option) => option.action === "BUY"));
+  assert.ok(options.some((option) => option.action === "DF"));
+  assert.ok(comparison.disagreementDrivers.length > 0);
 });

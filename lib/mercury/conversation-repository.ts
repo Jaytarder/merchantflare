@@ -16,6 +16,7 @@ import {
 } from "../evidence";
 import { orchestrate } from "./orchestrator";
 import { enrichOrchestrationWithAtlas } from "../atlas";
+import { enrichOrchestrationWithOracle } from "../oracle";
 import { getMercuryDecisionContexts } from "../decision/mercury";
 import {
   persistOrchestrationResult,
@@ -99,7 +100,12 @@ function mercuryResponseContent(
   const atlasMessage = plan.atlasAssessment
     ? ` Atlas ${plan.atlasAssessment.summary.headline.toLowerCase()}: ${plan.atlasAssessment.health.scoredDimensions} of ${plan.atlasAssessment.health.totalDimensions} health dimensions scored at ${Math.round(plan.atlasAssessment.confidence.score * 100)}% confidence with ${plan.atlasAssessment.freshness} evidence.`
     : "";
-  return `Mercury created plan v${version} with ${plan.tasks.length} ${taskLabel} across ${moduleCount} ${moduleLabel}. This plan uses deterministic routing. ${evidenceMessage}${atlasMessage}`;
+  const oracleMessage = plan.oracleAssessment
+    ? plan.oracleAssessment.decisions[0]
+      ? ` Demand & Availability compared MichaelModel with OracleModel for ${plan.oracleAssessment.decisions.length} product ${plan.oracleAssessment.decisions.length === 1 ? "decision" : "decisions"}; model disagreement and missing evidence remain explicit.`
+      : " Demand & Availability found insufficient normalized demand and inventory evidence and created no forecast."
+    : "";
+  return `Mercury created plan v${version} with ${plan.tasks.length} ${taskLabel} across ${moduleCount} ${moduleLabel}. This plan uses deterministic routing. ${evidenceMessage}${atlasMessage}${oracleMessage}`;
 }
 
 export async function listMercuryConversations(
@@ -420,6 +426,7 @@ export async function getMercuryConversation(
               : plan.evidence_limitation,
         },
         atlasAssessment: plan.payload.atlasAssessment,
+        oracleAssessment: plan.payload.oracleAssessment,
         decisionContext: decisionContexts.get(plan.id),
         approval: approvalsByPlan.get(plan.id),
         createdAt: plan.created_at.toISOString(),
@@ -472,8 +479,13 @@ export async function createMercuryConversationTurn(input: {
   const evidence = summarizeEvidence(
     normalizedEvidence.map(toMercuryEvidenceItem),
   );
-  const result = enrichOrchestrationWithAtlas({
+  const atlasResult = enrichOrchestrationWithAtlas({
     result: initialResult,
+    organizationId: input.principal.organizationId,
+    evidence: normalizedEvidence,
+  });
+  const result = enrichOrchestrationWithOracle({
+    result: atlasResult,
     organizationId: input.principal.organizationId,
     evidence: normalizedEvidence,
   });
