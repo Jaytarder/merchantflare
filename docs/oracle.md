@@ -2,7 +2,8 @@
 
 ## Status
 
-- **Implemented on the Oracle release branch:** first-class planning contracts, additive migration `010`, MichaelModel, an independent Oracle forecast, demand-censoring detection, separated inventory buckets, WOS and risk calculations, DF/BTR and MOQ rules, model comparison, value of information, newness review, planner overrides, immutable outcomes, organization-scoped APIs, Mercury context, and the authenticated `/oracle` route.
+- **Deployed and publicly verified on 2026-08-13:** snapshot-backed migrations `009` and `010`, generated/custom HTTPS health, protected Oracle route/API behavior, Cognito PKCE initiation, and responsive unauthenticated browser rendering.
+- **Implemented:** first-class planning contracts, additive migration `010`, MichaelModel, an independent Oracle forecast, demand-censoring detection, separated inventory buckets, WOS and risk calculations, DF/BTR and MOQ rules, model comparison, value of information, newness review, planner overrides, immutable outcomes, organization-scoped APIs, Mercury context, and the authenticated `/oracle` route.
 - **Verified locally:** TypeScript, domain tests, in-process integration, migration dry run, and production build status are recorded in `PROJECT_STATUS.md` after execution.
 - **Configured but unverified:** production migration, authenticated database reads/writes, browser behavior, and persisted model/outcome competition remain unverified until the guarded release completes.
 - **Planned:** a production demand/inventory provider, Outlook authorization and message retrieval, automated observation collection, calibrated category/SKU priors, provider execution, and purchase-order creation.
@@ -30,3 +31,8 @@ Amazon OH, Amazon OO, AWC OH, DF, transferable, committed, promo-committed, inbo
 Oracle planning cases link to canonical Decision Cases. Planning evidence, comparisons, overrides, and outcomes are append-only. Owner/Admin/Manager may approve; Analyst may investigate and measure; Viewer is read-only. Material actions remain proposals until existing approval and execution boundaries authorize and verify them.
 
 Rollback is application-first: redeploy the recorded prior commit while preserving additive tables. Database restoration, if required, uses the pre-Oracle snapshot to a replacement instance before switching `DATABASE_URL`.
+
+
+## Production release record
+
+Application code merge commit: `18fceaf2d658c814e08a1de3c01a4007c9bc9f18`. Application rollback commit: `9ec115b4d6b41c2a78cef93adb1076652d0dc2e9`. Recovery snapshot: `merchantflare-pre-oracle-20260813`. The snapshot must be restored to a replacement database instance before changing `DATABASE_URL`; additive Oracle tables are not removed during an application rollback.

@@ -22,7 +22,7 @@ The `agent/apple-composition-pass` follow-up corrects the application hierarchy 
 
 The `agent/apple-interaction-pass` follow-up adds an accessible System/Light/Dark appearance control with no-flash preference restoration, adaptive logo selection for explicit modes, grouped-list interaction motion, and quieter borderless application surfaces. The preference is stored only in browser local storage; no database or authentication contract changes are required.
 
-The `agent/oracle-planning-engine` release adds the Demand & Availability foundation: additive migration `010`, explicit MichaelModel rules, an independent OracleModel, inventory-bucket/WOS reasoning, stockout censoring, DF/BTR/MOQ logic, model disagreement and value of information, newness, attributed overrides, immutable outcomes, Oracle RBAC/APIs, Mercury context, and `/oracle`. No provider or Outlook source is connected; production inventory decisions remain unavailable until normalized evidence exists.
+The Demand & Availability foundation is deployed from `main` at application merge commit `18fceaf2d658c814e08a1de3c01a4007c9bc9f18`. It adds migration `010`, explicit MichaelModel rules, an independent OracleModel, inventory-bucket/WOS reasoning, stockout censoring, DF/BTR/MOQ logic, model disagreement and value of information, newness, attributed overrides, immutable outcomes, Oracle RBAC/APIs, Mercury context, and `/oracle`. Snapshot-backed migrations `009` and `010` are verified in production. No provider or Outlook source is connected; authenticated model calculations with real production evidence and measured outcomes remain unverified.
 
 MerchantFlare is an early-stage Scientific Decision Platform built with the Next.js App Router and TypeScript. Mercury remains the primary conversational interface into commerce evidence, governed plans, and the new decision-learning foundation.
 
@@ -108,7 +108,7 @@ The implemented application is a single Next.js codebase. The production databas
 
 ### Production deployment state
 
-Production is deployed from merge commit `71da433c863393fa3b9564e9a8d64c613f0efaf1`; previous application revision `9ffe4061ff2ac14db542fe42d4617cc75186b11d` remains the rollback point. Both `https://main.d2wkvdawpeotl8.amplifyapp.com` and `https://app.merchantflare.com` serve the protected Decision API over HTTPS. The eight required Amplify variables are configured without exposing values. Cognito uses a public PKCE client with the exact app callback/logout allowlists and preserved localhost entries. PostgreSQL migrations `001` through `008` were applied through the snapshot-gated CloudShell runner, which verified migration checksums and required Decision Platform indexes. Encrypted RDS snapshot `merchantflare-pre-decision-platform-20260802` is the immediate pre-migration recovery point. The verified Cognito identity for `jmartin@merchantflare.com` resolves to one active Owner membership in organization `fa1a7c7e-7894-4af7-a136-9fc8a239bba0`.
+Production application code is deployed from merge commit `18fceaf2d658c814e08a1de3c01a4007c9bc9f18`; previous application revision `9ec115b4d6b41c2a78cef93adb1076652d0dc2e9` is the application rollback point. Both `https://main.d2wkvdawpeotl8.amplifyapp.com` and `https://app.merchantflare.com` return HTTPS health `200`, protect `/oracle` with a safe `/login` redirect, and protect `/api/oracle/assessment` with `401`. Cognito login initiates PKCE with the exact app callback. PostgreSQL migrations `001` through `010` are applied. Encrypted snapshot `merchantflare-pre-oracle-20260813` was verified available before the Oracle release; the runner verified checksums for `009` and `010`, 12 Oracle tables, 6 required indexes, and 4 append-only triggers. Existing Owner identity and membership were not changed by this release.
 
 ## Implemented components
 
@@ -147,9 +147,9 @@ Production is deployed from merge commit `71da433c863393fa3b9564e9a8d64c613f0efa
 
 ## Known gaps and blockers
 
-- Production persistence has migrations `001` through `008`. The snapshot-gated runner verified the target, checksums, and required indexes; full multi-tenant concurrency and authenticated lifecycle QA remain pending.
+- Production persistence has migrations `001` through `010`. Snapshot `merchantflare-pre-oracle-20260813`, checksums for `009` and `010`, 12 Oracle tables, 6 indexes, and 4 append-only triggers were verified; credentialed Oracle calculations, multi-tenant concurrency against PostgreSQL, and outcome learning with real evidence remain pending.
 - Mercury responses are deterministic planning summaries. Normalized evidence retrieval and citation attachment are implemented, but no provider reader populates evidence, and there is no model-backed reasoning, attachments, or streaming.
-- Atlas has a production-quality foundation and route, but it has no connected source, provider ingestion, field-level diffing, publication adapter, or outcome measurement. Vector, Oracle, Sentinel, Forge, and Pulse remain scaffolds only.
+- Atlas has a production-quality foundation and route, but it has no connected source, provider ingestion, field-level diffing, publication adapter, or outcome measurement. Vector, Sentinel, Forge, and Pulse remain scaffolds only.
 - Navigation links for Execution, Approvals, History, Knowledge, Integrations, Billing, Settings, and five intelligence module pages currently lead to unimplemented routes.
 - Notifications are data-backed when PostgreSQL is configured. Sidebar provider entries remain static “Not configured” presentation rather than live health checks.
 - `/workers` is protected by the route gateway and authenticated shell but remains a legacy prototype.
@@ -197,7 +197,7 @@ The recommended Sprint 9 milestone is an isolated-database Atlas calibration coh
 | Scientific Decision Platform | Learning engine deployed; migrations applied | Lifecycle guards, predictions, atomic posterior updates, lessons, self-challenge, calibration metrics, APIs, and Mercury authoring are live; public QA is independently verified and Owner-authenticated QA is operator-confirmed |
 | 3. Atlas | Foundation implemented | Explainable normalized-evidence assessment, health scoring, findings, recommendations, opportunities, governed plans, Mercury integration, and `/atlas` exist; live ingestion, diffs, execution, and outcomes remain |
 | 4. Vector | Not started | Navigation, types, routing, and output scaffolding only |
-| 5. Oracle | Foundation implemented; production unverified | Explicit planner/model competition, inventory reasoning, Oracle APIs/Mercury context, `/oracle`, and migration `010`; live evidence and outcomes remain |
+| 5. Oracle | Foundation deployed; source/outcome verification pending | Explicit planner/model competition, inventory reasoning, Oracle APIs/Mercury context, `/oracle`, and migration `010` are deployed; live evidence and measured outcomes remain |
 | 6. Sentinel | Not started | Navigation, types, routing, and output scaffolding only |
 | 7. Forge | Not started | Navigation, types, routing, and output scaffolding only |
 | 8. Pulse | Not started | Navigation, types, routing, and output scaffolding only |
@@ -206,7 +206,7 @@ The recommended Sprint 9 milestone is an isolated-database Atlas calibration coh
 
 ## Validation status
 
-Validation was run against this branch on 2026-08-02. Decision Platform migrations were subsequently applied by the snapshot-gated CloudShell runner. Authenticated application and full PostgreSQL lifecycle checks remain explicitly unverified until the new application revision is live.
+Oracle validation was run on 2026-08-13 before deployment. Snapshot-backed migrations and public production smoke tests were subsequently verified. Credentialed Oracle calculations, organization isolation against live Oracle records, Mercury Oracle rendering after authenticated plan creation, and outcome learning with real evidence remain explicitly unverified.
 
 | Check | Status |
 | --- | --- |
@@ -215,19 +215,20 @@ Validation was run against this branch on 2026-08-02. Decision Platform migratio
 | Lint | Unavailable: no lint script is defined |
 | Automated tests (`npm test`) | Passed: 51 tests, including authentication, RBAC, organization scope, Atlas, Mercury, evidence, lifecycle, causal claims, posterior beliefs, calibration, explainable reasoning, contradiction handling, and migration safety |
 | Decision integration tests (`npm run test:integration`) | Passed: 3 in-process lifecycle, organization-boundary, and Atlas learning fixtures; PostgreSQL integration remains unverified |
-| Migration validation (`npm run migrate:dry-run`) | Passed locally: migrations `001` through `009` validated; `001` through `008` are applied in production, while additive migration `009` remains unapplied pending a new snapshot and guarded release |
+| Migration validation (`npm run migrate:dry-run`) | Passed locally for migrations `001` through `010`; production runner verified applied checksums for `009` and `010`, 12 Oracle tables, 6 required indexes, and 4 append-only triggers |
 | Markdown relative links | Passed across `AGENTS.md`, `PROJECT_STATUS.md`, `docs/`, and `specs/` |
 | Public deployment smoke QA | Passed: generated Amplify URL and `app.merchantflare.com` returned HTTPS 200, `/api/health` returned `ok`, `/login` rendered without application console errors, login initiated Cognito PKCE with the exact app callback, and unauthenticated `/dashboard` returned a safe internal login redirect |
 | Apex marketing availability | Failed pre-change: `merchantflare.com` had no resolvable A, AAAA, or CNAME record from the test environment; no apex DNS record was changed |
 | Credentialed Cognito/database QA | Passed for the first Owner: callback returned to `/dashboard`, refresh preserved the session, active organization JSON resolved, Mercury history returned JSON without authorization/database errors, and logout returned to login. Password-recovery entry passed; code delivery and non-Owner role variants remain unverified |
-| Database recovery gate | Passed: encrypted snapshot `merchantflare-pre-decision-platform-20260802` was confirmed available before migrations `007` and `008`; the runner verified the database target, checksums, and required indexes afterward |
-| Amplify release | Passed: production serves merge commit `71da433c863393fa3b9564e9a8d64c613f0efaf1`; generated/custom health returned 200 and the protected Decision API returned 401 instead of the prior 404 |
+| Database recovery gate | Passed for Oracle: encrypted snapshot `merchantflare-pre-oracle-20260813` was confirmed available before the release; application rollback is `9ec115b4d6b41c2a78cef93adb1076652d0dc2e9` |
+| Amplify release | Passed for Oracle application code: production switched to merge commit `18fceaf2d658c814e08a1de3c01a4007c9bc9f18`; generated/custom health returned 200, `/oracle` redirected safely to login, and the protected Oracle API returned 401 instead of the prior 404 |
 | Dependency audit (`npm audit --omit=dev`) | Passed after pinning patched `postcss` and `sharp` transitive versions |
 
 ## Changelog
 
 | Date | Change |
 | --- | --- |
+| 2026-08-13 | Deployed the Oracle Demand & Availability foundation from merge commit `18fceaf2d658c814e08a1de3c01a4007c9bc9f18`; verified snapshot `merchantflare-pre-oracle-20260813`, migrations `009`–`010`, generated/custom HTTPS, protected Oracle routes, Cognito PKCE initiation, responsive login layout, and public browser console state. Credentialed Oracle calculations and live-source outcomes remain unverified. |
 | 2026-08-02 | Deployed the Scientific Decision Platform to `app.merchantflare.com` from merge commit `71da433c863393fa3b9564e9a8d64c613f0efaf1`; independently verified generated/custom health, protected Decision APIs, safe redirects, Cognito PKCE callback, password recovery entry, target viewport overflow, and browser console state. Owner-authenticated workspace/refresh QA was operator-confirmed. |
 | 2026-08-02 | Added the locally verified Scientific Decision Platform foundation: migration `007`, canonical decision objects, evidence and belief guardrails, experiments/interventions/outcomes/lessons, immutable history, RBAC APIs, optional Mercury context, and decision tests. Migrations `007` and `008` were subsequently applied after snapshot `merchantflare-pre-decision-platform-20260802`; live application QA remains pending. |
 | 2026-08-02 | Added the Decision Learning engine: migration `008`, immutable predictions, idempotent manual execution records, guarded transitions, atomic posterior learning, generated lessons, self-challenge, calibration metrics, an Atlas title pilot contract, and minimal Mercury authoring/internal metrics. Isolated PostgreSQL application remains unverified. |
