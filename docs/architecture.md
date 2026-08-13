@@ -50,7 +50,7 @@ This diagram remains the target architecture. The Amplify application, Cognito c
 | `/dashboard` | Auth-gated Mercury conversation workspace with durable threads and deterministic message-linked plans when PostgreSQL is available |
 | `/workers` | Legacy intelligence-module prototype using workforce terminology; not a canonical product destination |
 
-Atlas has an authenticated application route. Vector, Oracle, Sentinel, Forge, Pulse, Execution, Approvals, History, Knowledge, Integrations, Billing, and Settings appear in shell configuration, but corresponding page routes are not implemented.
+Atlas and Oracle have authenticated application routes. Vector, Sentinel, Forge, Pulse, Execution, Approvals, History, Knowledge, Integrations, Billing, and Settings appear in shell configuration, but corresponding page routes are not implemented.
 
 ### Application shell
 
@@ -204,7 +204,7 @@ Aurora PostgreSQL is the target managed database, but the repository contains no
 
 `lib/oracle/` extends the Scientific Decision Platform without replacing Mercury or the Commerce Evidence boundary. It defines explicit human and independent forecast models, inventory-position semantics, model disagreement and value-of-information calculations, governed replenishment options, newness and stockout-censoring analysis, and outcome scoring. `/oracle` and `/api/oracle/*` enforce the active organization and centralized Oracle permissions. Mercury inventory plans attach the same evidence-derived assessment to their immutable plan payload.
 
-Migration `010_oracle_planning_engine.sql` is additive and links Oracle planning cases, email evidence, demand signals, inventory positions, models, rules, forecasts, comparisons, options, decisions, overrides, and outcomes to canonical Decision Cases and organization scope. Planning evidence, comparisons, overrides, and outcomes are append-only. The schema is not evidence that a provider or Outlook source is connected.
+Migration `010_oracle_planning_engine.sql` is additive and links Oracle planning cases, email evidence, demand signals, inventory positions, models, rules, forecasts, comparisons, options, decisions, overrides, and outcomes to canonical Decision Cases and organization scope. Planning evidence, comparisons, overrides, and outcomes are append-only. The schema is deployed through migration `010`; snapshot-backed production verification confirmed all 12 Oracle tables, 6 required indexes, and 4 append-only triggers. This is not evidence that a provider or Outlook source is connected.
 
 ### Amazon integration foundation
 
