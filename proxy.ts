@@ -39,6 +39,7 @@ export const config = {
     "/dashboard/:path*",
     "/atlas/:path*",
     "/oracle/:path*",
+    "/vector/:path*",
     "/approvals/:path*",
     "/knowledge/:path*",
     "/experiments/:path*",
@@ -48,6 +49,7 @@ export const config = {
     "/api/platform/:path*",
     "/api/atlas/:path*",
     "/api/oracle/:path*",
+    "/api/vector/:path*",
     "/api/decisions/:path*",
   ],
 };

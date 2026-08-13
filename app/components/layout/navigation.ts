@@ -64,7 +64,7 @@ export const navigation: NavigationSection[] = [
     label: "Intelligence",
     items: [
       { label: "Atlas", href: "/atlas", icon: "atlas", description: "Catalog intelligence", permission: "atlas.read" },
-      { label: "Vector", href: "/vector", icon: "vector", description: "Advertising control", permission: "mercury.read" },
+      { label: "Media Diagnostics", href: "/vector", icon: "vector", description: "Advertising and supply coordination", permission: "vector.read" },
       { label: "Oracle", href: "/oracle", icon: "oracle", description: "Demand & availability", permission: "oracle.read" },
       { label: "Sentinel", href: "/sentinel", icon: "sentinel", description: "Compliance defense", permission: "mercury.read" },
       { label: "Forge", href: "/forge", icon: "forge", description: "Creative operations", permission: "mercury.read" },

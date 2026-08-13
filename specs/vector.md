@@ -1,6 +1,6 @@
 # Vector — Advertising Intelligence Specification
 
-**Status:** Planned
+**Status:** Foundation implemented and locally verified; live data and execution planned
 **Roadmap stage:** 4
 **Canonical route:** `/vector`
 
@@ -10,7 +10,7 @@ Vector explains advertising performance, identifies waste and growth opportuniti
 
 ## Current implementation evidence
 
-Vector currently has navigation metadata, `advertising.audit` and `advertising.optimize` capabilities, planning rules, legacy module registration, approval policy scaffolding, deterministic example output, and an Amazon Ads reader contract with a provider-neutral normalization pipeline. There is no Vector route, Amazon Ads API client or authorization flow, connected ingestion, mutation adapter, or outcome measurement.
+Vector now has an authenticated organization-scoped compatibility route, assessment API, typed independent model, Christian report ingestion boundary, Safe Demand Envelope, Oracle–Vector coordination, possible futures, dependency invalidation, outcome scoring, RBAC, and additive migration `011`. There is no Amazon Ads API client or authorization flow, connected ingestion, or mutation adapter. With no product-resolved evidence, the route returns an explicit empty state.
 
 ## In scope
 
@@ -50,7 +50,7 @@ Each Vector recommendation MUST include:
 
 ## Functional requirements
 
-- Users MUST filter by account, marketplace, brand, campaign, objective, status, and date range.
+- Future connected-data views MUST filter by account, marketplace, brand, campaign, objective, status, and date range.
 - Metric definitions MUST expose attribution window and currency.
 - Recommendations MUST identify conflicts with inventory, catalog, or organization guardrails.
 - Bid, budget, targeting, and state changes MUST be approval-gated according to policy.

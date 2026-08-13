@@ -8,6 +8,7 @@ import type { MercuryEvidenceCoverage } from "./evidence";
 import type { CatalogAssessment } from "../atlas";
 import type { MercuryDecisionContext } from "../decision/mercury";
 import type { OracleAssessment } from "../oracle/types";
+import type { JointAssessment } from "../vector/types";
 
 export type ConversationStatus = "active" | "archived";
 export type ConversationAuthor = "user" | "mercury" | "system";
@@ -49,6 +50,7 @@ export type ConversationPlan = {
   evidence: MercuryEvidenceCoverage;
   atlasAssessment?: CatalogAssessment;
   oracleAssessment?: OracleAssessment;
+  jointAssessment?: JointAssessment;
   decisionContext?: MercuryDecisionContext[];
   approval?: {
     id: string;

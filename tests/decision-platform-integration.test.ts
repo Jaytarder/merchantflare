@@ -23,6 +23,7 @@ import {
   generateReplenishmentOptions,
   type OracleDemandSignal,
 } from "../lib/oracle";
+import { dependencyEvent, safeDemandEnvelope } from "../lib/vector";
 
 test("decision learning lifecycle preserves evidence, alternatives, and posterior confidence", () => {
   const createdAt = "2026-08-02T12:00:00.000Z";
@@ -154,4 +155,12 @@ test("Oracle planning cycle keeps planner models independent through a governed 
   assert.ok(options.some((option) => option.action === "BUY"));
   assert.ok(options.some((option) => option.action === "DF"));
   assert.ok(comparison.disagreementDrivers.length > 0);
+});
+
+test("Vector and Oracle coordinate through a supply envelope and explicit invalidation", () => {
+  const envelope = safeDemandEnvelope({ product: { sku: "INTEGRATION-SKU", asin: "B0INTEGRATION" }, currentWeeklyDemand: 100, usableInventory: 700, weeksUntilReplenishment: 5, minimumBufferUnits: 100 });
+  assert.equal(envelope.maximumSustainableWeeklyDemand, 120);
+  assert.equal(envelope.safeIncrementalUnits, 20);
+  const event = dependencyEvent({ organizationId: "org-a", sourceDomain: "VECTOR", sourceId: "intervention-a", targetDomain: "ORACLE", targetId: "forecast-a", event: "ADVERTISING_CHANGED", occurredAt: "2026-08-13T00:00:00.000Z" });
+  assert.equal(event.invalidates, "FORECAST");
 });
