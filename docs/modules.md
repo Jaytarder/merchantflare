@@ -89,7 +89,7 @@ Scope:
 - availability impact; and
 - demand-aware commercial planning.
 
-Current implementation is limited to navigation metadata, inventory capability types, planning rules, and deterministic example output. There is no Oracle product route or live demand pipeline.
+The Demand & Availability foundation is implemented under `lib/oracle/`, migration `010`, `/api/oracle/*`, and the authenticated `/oracle` route. It compares a versioned MichaelModel with an independent OracleModel, preserves inventory buckets, detects censored demand, ranks governed replenishment options, records attributed overrides, and scores immutable outcomes. Mercury attaches the same evidence-derived assessment for inventory plans. No live demand/inventory provider or Outlook connector is connected, so the route reports unavailable evidence rather than generating sample decisions.
 
 ## Sentinel
 

@@ -22,6 +22,8 @@ The `agent/apple-composition-pass` follow-up corrects the application hierarchy 
 
 The `agent/apple-interaction-pass` follow-up adds an accessible System/Light/Dark appearance control with no-flash preference restoration, adaptive logo selection for explicit modes, grouped-list interaction motion, and quieter borderless application surfaces. The preference is stored only in browser local storage; no database or authentication contract changes are required.
 
+The `agent/oracle-planning-engine` release adds the Demand & Availability foundation: additive migration `010`, explicit MichaelModel rules, an independent OracleModel, inventory-bucket/WOS reasoning, stockout censoring, DF/BTR/MOQ logic, model disagreement and value of information, newness, attributed overrides, immutable outcomes, Oracle RBAC/APIs, Mercury context, and `/oracle`. No provider or Outlook source is connected; production inventory decisions remain unavailable until normalized evidence exists.
+
 MerchantFlare is an early-stage Scientific Decision Platform built with the Next.js App Router and TypeScript. Mercury remains the primary conversational interface into commerce evidence, governed plans, and the new decision-learning foundation.
 
 Sprint 1, the application shell, is implemented. Sprint 2 has an organization-scoped conversation, governance, and Commerce Evidence foundation. Sprint 4 adds the Platform Core foundation. Sprint 5 adds the Atlas foundation. Sprint 5B adds Cognito authentication code and infrastructure. The Decision Learning sprint now adds guarded lifecycle transitions, immutable calibrated predictions, atomic outcome-to-belief learning, reusable lessons, deterministic self-challenge, a minimal Mercury authoring workbench, and internal engineering metrics. The Scientific Decision Platform is deployed from `main`; migrations `007` and `008` were applied to `merchantflare-dev` after the new recovery snapshot.
@@ -99,7 +101,7 @@ Sprint 1, the application shell, is implemented. Sprint 2 has an organization-sc
 | Authentication | Cognito managed-login/PKCE application flow, RS256 JWT verifier, encrypted refresh token, signed session, protected-route gateway, and active Platform Core membership resolution; the production Owner flow and database-backed membership were verified live on 2026-08-02 |
 | Authorization | Central Owner, Admin, Manager, Analyst, and Viewer permission matrix enforced by platform and Mercury server boundaries |
 | Domain services | `lib/platform/` for SaaS control-plane services, `lib/mercury/` for planning/governance, `lib/evidence/` for provider-neutral commerce evidence, `lib/decision/` for decision learning, and `lib/atlas/` for explainable catalog intelligence |
-| Data | PostgreSQL connection via `DATABASE_URL`; eight ordered SQL migrations and a cross-platform checksum-enforced migration runner |
+| Data | PostgreSQL connection via `DATABASE_URL`; ten ordered additive SQL migrations and a cross-platform checksum-enforced migration runner |
 | Integrations | An incomplete legacy Amazon SP-API helper plus typed SP-API and Amazon Ads evidence interfaces; no provider reader or live integration is connected |
 
 The implemented application is a single Next.js codebase. The production database uses migrations through `008_decision_learning_engine.sql`; the Scientific Decision Platform application code remains pending deployment. Mercury queries normalized evidence through the provider-neutral boundary, but no live provider populates it.
@@ -195,7 +197,7 @@ The recommended Sprint 9 milestone is an isolated-database Atlas calibration coh
 | Scientific Decision Platform | Learning engine deployed; migrations applied | Lifecycle guards, predictions, atomic posterior updates, lessons, self-challenge, calibration metrics, APIs, and Mercury authoring are live; public QA is independently verified and Owner-authenticated QA is operator-confirmed |
 | 3. Atlas | Foundation implemented | Explainable normalized-evidence assessment, health scoring, findings, recommendations, opportunities, governed plans, Mercury integration, and `/atlas` exist; live ingestion, diffs, execution, and outcomes remain |
 | 4. Vector | Not started | Navigation, types, routing, and output scaffolding only |
-| 5. Oracle | Not started | Navigation, types, routing, and output scaffolding only |
+| 5. Oracle | Foundation implemented; production unverified | Explicit planner/model competition, inventory reasoning, Oracle APIs/Mercury context, `/oracle`, and migration `010`; live evidence and outcomes remain |
 | 6. Sentinel | Not started | Navigation, types, routing, and output scaffolding only |
 | 7. Forge | Not started | Navigation, types, routing, and output scaffolding only |
 | 8. Pulse | Not started | Navigation, types, routing, and output scaffolding only |

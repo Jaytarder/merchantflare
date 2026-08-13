@@ -200,6 +200,12 @@ Mercury enriches catalog plans after normalized evidence retrieval and embeds th
 
 Aurora PostgreSQL is the target managed database, but the repository contains no AWS deployment configuration proving an Aurora cluster exists.
 
+### Demand & Availability domain layer
+
+`lib/oracle/` extends the Scientific Decision Platform without replacing Mercury or the Commerce Evidence boundary. It defines explicit human and independent forecast models, inventory-position semantics, model disagreement and value-of-information calculations, governed replenishment options, newness and stockout-censoring analysis, and outcome scoring. `/oracle` and `/api/oracle/*` enforce the active organization and centralized Oracle permissions. Mercury inventory plans attach the same evidence-derived assessment to their immutable plan payload.
+
+Migration `010_oracle_planning_engine.sql` is additive and links Oracle planning cases, email evidence, demand signals, inventory positions, models, rules, forecasts, comparisons, options, decisions, overrides, and outcomes to canonical Decision Cases and organization scope. Planning evidence, comparisons, overrides, and outcomes are append-only. The schema is not evidence that a provider or Outlook source is connected.
+
 ### Amazon integration foundation
 
 `lib/amazon/sp-api.ts` contains:
