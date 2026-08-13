@@ -1,6 +1,6 @@
 # Oracle — Demand Intelligence Specification
 
-**Status:** Foundation implemented; production unverified
+**Status:** Foundation deployed; live-source outcomes unverified
 **Roadmap stage:** 5
 **Canonical route:** `/oracle`
 
@@ -90,7 +90,7 @@ Oracle is implemented only when:
 - forecast accuracy and measured outcomes are available; and
 - tests cover time boundaries, sparse data, authorization, and stale inputs.
 
-The foundation satisfies the authenticated organization-scoped route, reproducible versioned model contracts, uncertainty, explainability, missing-data behavior, additive persistence, RBAC, and local tests. It does not satisfy the production-source, provider execution, or measured production-outcome criteria; therefore the end-to-end specification remains production unverified.
+The deployed foundation satisfies the protected organization-scoped route, reproducible versioned model contracts, uncertainty, explainability, missing-data behavior, additive persistence, RBAC, snapshot-backed migration verification, and local tests. It does not satisfy the live production-source, credentialed calculation, provider execution, or measured production-outcome criteria; therefore the end-to-end specification remains source/outcome unverified.
 
 ## Dependencies
 
