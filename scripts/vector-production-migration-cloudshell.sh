@@ -6,7 +6,7 @@ INSTANCE="merchantflare-dev"
 SNAPSHOT="merchantflare-pre-vector-joint-20260814"
 BRANCH="agent/vector-joint-decision-engine"
 ROLLBACK_COMMIT="491b69f27feeba387d9ebb56e063ca935e39388a"
-EXPECTED_011="9c870765a301cfcd530238e3a85767150947f8d2ab5601ccc1ee8946ff86af3f"
+EXPECTED_011="626deed03bbda224cca92536039d2d315229f6878c4c0455387c5a9eb53042a2"
 export EXPECTED_011
 
 for command_name in aws git node npm python3; do command -v "$command_name" >/dev/null || { echo "STOP: $command_name is unavailable."; exit 1; }; done
