@@ -200,6 +200,12 @@ Mercury enriches catalog plans after normalized evidence retrieval and embeds th
 
 Aurora PostgreSQL is the target managed database, but the repository contains no AWS deployment configuration proving an Aurora cluster exists.
 
+### Media and supply coordination layer
+
+`lib/vector/` consumes normalized advertising evidence and joins it to the same SKU/ASIN identity and Oracle assessment used by Demand & Availability. Vector computes observed efficiency separately from causal incrementality, the Christian Advertising Model retains only attributed report evidence, and the Joint Engine ranks possible futures inside a Safe Demand Envelope. Cross-domain dependency events invalidate stale forecasts or recommendations explicitly.
+
+Migration `011_vector_joint_decision_engine.sql` is additive and organization-scoped. The `/vector` compatibility route, `/api/vector/*`, centralized permissions, and Mercury plan payload extension preserve existing APIs and Oracle behavior. No Amazon Ads or Outlook client is implied by this architecture.
+
 ### Demand & Availability domain layer
 
 `lib/oracle/` extends the Scientific Decision Platform without replacing Mercury or the Commerce Evidence boundary. It defines explicit human and independent forecast models, inventory-position semantics, model disagreement and value-of-information calculations, governed replenishment options, newness and stockout-censoring analysis, and outcome scoring. `/oracle` and `/api/oracle/*` enforce the active organization and centralized Oracle permissions. Mercury inventory plans attach the same evidence-derived assessment to their immutable plan payload.

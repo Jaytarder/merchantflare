@@ -1,6 +1,7 @@
 import type { TaskPriority, WorkerKey } from "../domain";
 import type { CatalogAssessment } from "../atlas";
 import type { OracleAssessment } from "../oracle/types";
+import type { JointAssessment } from "../vector/types";
 
 export type MercuryCapability =
   | "catalog.audit"
@@ -35,6 +36,7 @@ export type ExecutionPlan = {
   requiresApproval: boolean;
   atlasAssessment?: CatalogAssessment;
   oracleAssessment?: OracleAssessment;
+  jointAssessment?: JointAssessment;
 };
 
 export type OrchestrationEventType =

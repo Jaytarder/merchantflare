@@ -17,6 +17,7 @@ import {
 import { orchestrate } from "./orchestrator";
 import { enrichOrchestrationWithAtlas } from "../atlas";
 import { enrichOrchestrationWithOracle } from "../oracle";
+import { enrichOrchestrationWithJointDecision } from "../vector";
 import { getMercuryDecisionContexts } from "../decision/mercury";
 import {
   persistOrchestrationResult,
@@ -105,7 +106,12 @@ function mercuryResponseContent(
       ? ` Demand & Availability compared MichaelModel with OracleModel for ${plan.oracleAssessment.decisions.length} product ${plan.oracleAssessment.decisions.length === 1 ? "decision" : "decisions"}; model disagreement and missing evidence remain explicit.`
       : " Demand & Availability found insufficient normalized demand and inventory evidence and created no forecast."
     : "";
-  return `Mercury created plan v${version} with ${plan.tasks.length} ${taskLabel} across ${moduleCount} ${moduleLabel}. This plan uses deterministic routing. ${evidenceMessage}${atlasMessage}${oracleMessage}`;
+  const jointMessage = plan.jointAssessment
+    ? plan.jointAssessment.decisions.length
+      ? ` Media Diagnostics coordinated Vector demand interventions with Oracle supply constraints for ${plan.jointAssessment.decisions.length} product ${plan.jointAssessment.decisions.length === 1 ? "decision" : "decisions"}; possible futures and safe demand envelopes remain evidence-backed.`
+      : " Media Diagnostics found no advertising product that could be joined to an Oracle inventory assessment, so it created no joint recommendation."
+    : "";
+  return `Mercury created plan v${version} with ${plan.tasks.length} ${taskLabel} across ${moduleCount} ${moduleLabel}. This plan uses deterministic routing. ${evidenceMessage}${atlasMessage}${oracleMessage}${jointMessage}`;
 }
 
 export async function listMercuryConversations(
@@ -427,6 +433,7 @@ export async function getMercuryConversation(
         },
         atlasAssessment: plan.payload.atlasAssessment,
         oracleAssessment: plan.payload.oracleAssessment,
+        jointAssessment: plan.payload.jointAssessment,
         decisionContext: decisionContexts.get(plan.id),
         approval: approvalsByPlan.get(plan.id),
         createdAt: plan.created_at.toISOString(),
@@ -484,8 +491,13 @@ export async function createMercuryConversationTurn(input: {
     organizationId: input.principal.organizationId,
     evidence: normalizedEvidence,
   });
-  const result = enrichOrchestrationWithOracle({
+  const oracleResult = enrichOrchestrationWithOracle({
     result: atlasResult,
+    organizationId: input.principal.organizationId,
+    evidence: normalizedEvidence,
+  });
+  const result = enrichOrchestrationWithJointDecision({
+    result: oracleResult,
     organizationId: input.principal.organizationId,
     evidence: normalizedEvidence,
   });
